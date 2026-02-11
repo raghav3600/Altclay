@@ -28,14 +28,14 @@ function R({ children, className = "" }: { children: React.ReactNode; className?
 
 // All models flattened for the calculator
 const ALL_MODELS: { id: ModelId; name: string; provider: Provider }[] = [
-  ...Object.entries(ANTHROPIC_MODELS).map(([id, m]) => ({ id: id as ModelId, name: m.name, provider: "anthropic" as Provider })),
   ...Object.entries(GEMINI_MODELS).map(([id, m]) => ({ id: id as ModelId, name: m.name, provider: "gemini" as Provider })),
+  ...Object.entries(ANTHROPIC_MODELS).map(([id, m]) => ({ id: id as ModelId, name: m.name, provider: "anthropic" as Provider })),
 ];
 
 function CostCalculator() {
   const [rows, setRows] = useState(500);
   const [fields, setFields] = useState(5);
-  const [selectedModel, setSelectedModel] = useState<{ id: ModelId; provider: Provider }>({ id: "claude-sonnet-4-5-20250929", provider: "anthropic" });
+  const [selectedModel, setSelectedModel] = useState<{ id: ModelId; provider: Provider }>({ id: "gemini-2.5-pro", provider: "gemini" });
 
   const estimate = useMemo(() => {
     if (rows <= 0 || fields <= 0) return null;
@@ -76,11 +76,11 @@ function CostCalculator() {
                 if (m) setSelectedModel({ id: m.id, provider: m.provider });
               }}
               className="w-full rounded-lg border border-white/10 bg-zinc-800 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 focus:outline-none">
-              <optgroup label="Anthropic (Claude)">
-                {ALL_MODELS.filter((m) => m.provider === "anthropic").map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </optgroup>
               <optgroup label="Google (Gemini)">
                 {ALL_MODELS.filter((m) => m.provider === "gemini").map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </optgroup>
+              <optgroup label="Anthropic (Claude)">
+                {ALL_MODELS.filter((m) => m.provider === "anthropic").map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
               </optgroup>
             </select>
             {guidance && (
@@ -90,7 +90,7 @@ function CostCalculator() {
                 <span className="text-zinc-500">{guidance.bestFor}</span>
               </div>
             )}
-            <p className="mt-1 text-[11px] text-zinc-600">Not sure? Claude Sonnet 4.5 or Gemini 2.5 Pro are great defaults.</p>
+            <p className="mt-1 text-[11px] text-zinc-600">Not sure? Gemini 2.5 Pro or Claude Sonnet 4.5 are great defaults.</p>
           </div>
         </div>
 
@@ -206,10 +206,10 @@ export default function LandingPage() {
                 </thead>
                 <tbody className="text-zinc-300">
                   {[
-                    { co: "Stripe", d: "stripe.com", dm: "Patrick Collison, CEO", roles: "14 engineering roles", news: "Launched Stripe Tax in 12 new markets" },
-                    { co: "Vercel", d: "vercel.com", dm: "Guillermo Rauch, CEO", roles: "8 open roles", news: "Announced Next.js 16 at VConf" },
-                    { co: "Linear", d: "linear.app", dm: "Karri Saarinen, CEO", roles: "3 engineering roles", news: "Raised Series B at $400M valuation" },
-                    { co: "Notion", d: "notion.so", dm: "Ivan Zhao, CEO", roles: "22 open roles", news: "Launched Notion Mail & Calendar" },
+                    { co: "Stripe", d: "stripe.com", dm: "Patrick Collison (Co-founder & CEO)", roles: "Approximately 14 engineering-related openings on their careers page", news: "Recently expanded Stripe Tax to 12 additional markets in Q4 2025" },
+                    { co: "Vercel", d: "vercel.com", dm: "Guillermo Rauch, CEO & Co-founder", roles: "~8 open positions listed, mostly engineering and sales", news: "Announced Next.js 16 with major performance improvements at VConf 2025" },
+                    { co: "Linear", d: "linear.app", dm: "Karri Saarinen, Co-founder & CEO", roles: "3 roles found (2 engineering, 1 design)", news: "Reported to have raised Series B at ~$400M valuation per TechCrunch" },
+                    { co: "Notion", d: "notion.so", dm: "Ivan Zhao, CEO (Co-founder)", roles: "Around 22 open roles across engineering, product, and GTM", news: "Launched Notion Mail and integrated calendar features in late 2025" },
                   ].map((r, i) => (
                     <tr key={i} className="border-b border-white/[0.03] transition hover:bg-white/[0.02]">
                       <td className="px-4 py-2.5 font-medium text-white">{r.co}</td>

@@ -159,8 +159,8 @@ export default function ToolPage() {
   const [showAllColumns, setShowAllColumns] = useState(false);
   const [columnsAutoSelected, setColumnsAutoSelected] = useState(false);
 
-  const [provider, setProvider] = useState<Provider>("anthropic");
-  const [modelId, setModelId] = useState<ModelId>("claude-sonnet-4-5-20250929");
+  const [provider, setProvider] = useState<Provider>("gemini");
+  const [modelId, setModelId] = useState<ModelId>("gemini-2.5-pro");
 
   const [apiKey, setApiKey] = useState("");
   const [keyValid, setKeyValid] = useState(false);
@@ -473,21 +473,6 @@ export default function ToolPage() {
                 </div>
               )}
 
-              {/* Prompt templates */}
-              {file && !enrichmentDescription && (
-                <div className="mb-4">
-                  <p className="mb-2 text-[11px] text-zinc-600">Quick start — pick a template or write your own below</p>
-                  <div className="flex flex-wrap gap-2">
-                    {PROMPT_TEMPLATES.map((t) => (
-                      <button key={t.label} onClick={() => applyTemplate(t)}
-                        className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-1.5 text-[11px] font-medium text-zinc-400 transition hover:border-indigo-500/30 hover:bg-indigo-500/5 hover:text-indigo-300">
-                        {t.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               {/* B: Describe what AI should find */}
               <div className="mb-5">
                 <label className="mb-2 flex items-center text-xs font-medium text-zinc-300">
@@ -502,6 +487,20 @@ export default function ToolPage() {
                   placeholder="e.g. Find the CEO name, total funding raised, employee count, and a brief company description"
                   className="w-full rounded-lg border border-white/10 bg-zinc-800 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20 focus:outline-none"
                 />
+
+                {/* Prompt templates — always visible */}
+                <div className="mt-2.5">
+                  <p className="mb-1.5 text-[11px] text-zinc-600">{enrichmentDescription ? "Or try a template:" : "Quick start — click a template or write your own above"}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {PROMPT_TEMPLATES.map((t) => (
+                      <button key={t.label} onClick={() => applyTemplate(t)}
+                        className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-1.5 text-[11px] font-medium text-zinc-500 transition hover:border-indigo-500/30 hover:bg-indigo-500/5 hover:text-indigo-300">
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-1.5 text-[10px] text-zinc-700">Works for any dataset — restaurants, universities, countries, people, you name it.</p>
+                </div>
               </div>
 
               {/* C: New columns to add */}
@@ -574,13 +573,13 @@ export default function ToolPage() {
               <StepHeader num={3} title="Choose provider & model" subtitle="All models include live web search" done={!!modelId} active={!!file} />
 
               <div className="mb-4 grid grid-cols-2 gap-2">
-                <button onClick={() => { setProvider("anthropic"); setModelId("claude-sonnet-4-5-20250929"); setKeyValid(false); setApiKey(""); setKeyError(""); setKeyWarning(""); }}
-                  className={`rounded-lg border-2 px-3 py-2.5 text-xs font-medium transition ${provider === "anthropic" ? "border-indigo-500/40 bg-indigo-500/10 text-indigo-300" : "border-white/[0.06] text-zinc-500 hover:border-white/10"}`}>
-                  Anthropic (Claude)
-                </button>
                 <button onClick={() => { setProvider("gemini"); setModelId("gemini-2.5-pro"); setKeyValid(false); setApiKey(""); setKeyError(""); setKeyWarning(""); }}
                   className={`rounded-lg border-2 px-3 py-2.5 text-xs font-medium transition ${provider === "gemini" ? "border-indigo-500/40 bg-indigo-500/10 text-indigo-300" : "border-white/[0.06] text-zinc-500 hover:border-white/10"}`}>
                   Google (Gemini)
+                </button>
+                <button onClick={() => { setProvider("anthropic"); setModelId("claude-sonnet-4-5-20250929"); setKeyValid(false); setApiKey(""); setKeyError(""); setKeyWarning(""); }}
+                  className={`rounded-lg border-2 px-3 py-2.5 text-xs font-medium transition ${provider === "anthropic" ? "border-indigo-500/40 bg-indigo-500/10 text-indigo-300" : "border-white/[0.06] text-zinc-500 hover:border-white/10"}`}>
+                  Anthropic (Claude)
                 </button>
               </div>
 

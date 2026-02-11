@@ -17,7 +17,7 @@ function extractJSON(text: string): Record<string, string> {
 
 export async function POST(req: NextRequest) {
   try {
-    const { provider, apiKey, modelId, prompt } = await req.json();
+    const { provider, apiKey, modelId, prompt, useWebSearch = true } = await req.json();
 
     if (!apiKey || !modelId || !prompt) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -25,16 +25,15 @@ export async function POST(req: NextRequest) {
 
     if (provider === "anthropic") {
       const client = new Anthropic({ apiKey });
+
+      const tools = useWebSearch
+        ? [{ type: "web_search_20250305" as const, name: "web_search" as const, max_uses: 3 }]
+        : [];
+
       const response = await client.messages.create({
         model: modelId,
         max_tokens: 1024,
-        tools: [
-          {
-            type: "web_search_20250305",
-            name: "web_search",
-            max_uses: 3,
-          },
-        ],
+        ...(tools.length > 0 ? { tools } : {}),
         messages: [{ role: "user", content: prompt }],
       });
 
@@ -53,10 +52,12 @@ export async function POST(req: NextRequest) {
       });
     } else if (provider === "gemini") {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({
-        model: modelId,
-        tools: [{ googleSearch: {} } as never],
-      });
+
+      const modelConfig = useWebSearch
+        ? { model: modelId, tools: [{ googleSearch: {} } as never] }
+        : { model: modelId };
+
+      const model = genAI.getGenerativeModel(modelConfig);
 
       const result = await model.generateContent(prompt);
       const text = result.response.text();

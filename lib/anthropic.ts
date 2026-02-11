@@ -19,7 +19,8 @@ export async function validateAnthropicKey(apiKey: string): Promise<boolean> {
 export async function enrichRowAnthropic(
   apiKey: string,
   modelId: AnthropicModelId,
-  prompt: string
+  prompt: string,
+  useWebSearch: boolean = true
 ): Promise<AnthropicEnrichResult> {
   const res = await fetch("/api/enrich", {
     method: "POST",
@@ -29,6 +30,7 @@ export async function enrichRowAnthropic(
       apiKey,
       modelId,
       prompt,
+      useWebSearch,
     }),
   });
 

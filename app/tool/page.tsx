@@ -20,7 +20,7 @@ import {
   GEMINI_PRICING_URL,
 } from "@/lib/pricing";
 import { buildPrompt } from "@/lib/promptTemplates";
-import { estimateInputTokensPerRow, estimateOutputTokensPerRow, calculateCostEstimate } from "@/lib/costEstimator";
+import { estimateInputTokensPerRow, estimateOutputTokensPerRow, calculateCostRange, calculateCostFromActualTokens } from "@/lib/costEstimator";
 import { parseFile, exportToFile } from "@/lib/fileParser";
 import { enrichRowAnthropic } from "@/lib/anthropic";
 import { enrichRowGemini } from "@/lib/gemini";
@@ -180,23 +180,26 @@ export default function ToolPage() {
   const pauseRef = useRef(false);
   const stopRef = useRef(false);
 
+  const [useWebSearch, setUseWebSearch] = useState(true);
+  const [realCostEstimate, setRealCostEstimate] = useState<import("@/lib/types").CostEstimate | null>(null);
+
   const [advancedMode, setAdvancedMode] = useState(false);
   const [customPrompt, setCustomPrompt] = useState("");
 
   /* ---- derived ---- */
   const models = provider === "anthropic" ? Object.entries(ANTHROPIC_MODELS) : Object.entries(GEMINI_MODELS);
   const describeReady = file && enrichmentDescription.trim().length > 0 && inputColumns.length > 0 && outputColumns.length > 0;
-  const generatedPrompt = file && inputColumns.length > 0 && outputColumns.length > 0 ? buildPrompt(inputColumns, file.rows[0], outputColumns, enrichmentDescription) : "";
+  const generatedPrompt = file && inputColumns.length > 0 && outputColumns.length > 0 ? buildPrompt(inputColumns, file.rows[0], outputColumns, enrichmentDescription, undefined, useWebSearch) : "";
   const configReady = describeReady && (!advancedMode || customPrompt.trim().length > 0);
   const runReady = configReady && keyValid;
 
-  const costEstimate = useMemo(() => {
+  const costRange = useMemo(() => {
     if (!file || inputColumns.length === 0 || outputColumns.length === 0) return null;
-    const sample = buildPrompt(inputColumns, file.rows[0], outputColumns, enrichmentDescription, advancedMode ? customPrompt : undefined);
+    const sample = buildPrompt(inputColumns, file.rows[0], outputColumns, enrichmentDescription, advancedMode ? customPrompt : undefined, useWebSearch);
     const inp = estimateInputTokensPerRow(sample, provider, modelId);
     const out = estimateOutputTokensPerRow(outputColumns);
-    return calculateCostEstimate(file.totalRows, inp, out, provider, modelId);
-  }, [file, inputColumns, outputColumns, enrichmentDescription, customPrompt, advancedMode, provider, modelId]);
+    return calculateCostRange(file.totalRows, inp, out, provider, modelId, useWebSearch);
+  }, [file, inputColumns, outputColumns, enrichmentDescription, customPrompt, advancedMode, provider, modelId, useWebSearch]);
 
   /* Smart columns: split into "recommended" and "other" */
   const smartColumns = useMemo(() => {
@@ -269,30 +272,38 @@ export default function ToolPage() {
   };
 
   const enrichSingleRow = useCallback(async (row: Record<string, string>, index: number): Promise<EnrichmentResult> => {
-    const prompt = buildPrompt(inputColumns, row, outputColumns, enrichmentDescription, advancedMode ? customPrompt : undefined);
+    const prompt = buildPrompt(inputColumns, row, outputColumns, enrichmentDescription, advancedMode ? customPrompt : undefined, useWebSearch);
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
         const result = provider === "anthropic"
-          ? await enrichRowAnthropic(apiKey, modelId as AnthropicModelId, prompt)
-          : await enrichRowGemini(apiKey, modelId as GeminiModelId, prompt);
-        return { rowIndex: index, success: true, data: result.data };
+          ? await enrichRowAnthropic(apiKey, modelId as AnthropicModelId, prompt, useWebSearch)
+          : await enrichRowGemini(apiKey, modelId as GeminiModelId, prompt, useWebSearch);
+        return { rowIndex: index, success: true, data: result.data, inputTokens: result.inputTokens, outputTokens: result.outputTokens };
       } catch (err) {
         if (attempt === 2) return { rowIndex: index, success: false, data: {}, error: (err as Error).message };
         await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt)));
       }
     }
     return { rowIndex: index, success: false, data: {}, error: "Max retries" };
-  }, [inputColumns, outputColumns, enrichmentDescription, advancedMode, customPrompt, provider, apiKey, modelId]);
+  }, [inputColumns, outputColumns, enrichmentDescription, advancedMode, customPrompt, provider, apiKey, modelId, useWebSearch]);
 
   const runTest = async () => {
     if (!file) return;
-    setTestRunning(true); setTestResults([]); setTestDone(false);
+    setTestRunning(true); setTestResults([]); setTestDone(false); setRealCostEstimate(null);
     const rows = file.rows.slice(0, 3);
     const results: EnrichmentResult[] = [];
     for (let i = 0; i < rows.length; i++) {
       const r = await enrichSingleRow(rows[i], i);
       results.push(r);
       setTestResults([...results]);
+    }
+    // Calculate precise estimate from real token usage
+    const successResults = results.filter((r) => r.success && r.inputTokens && r.outputTokens);
+    if (successResults.length > 0) {
+      const avgInput = Math.round(successResults.reduce((s, r) => s + (r.inputTokens || 0), 0) / successResults.length);
+      const avgOutput = Math.round(successResults.reduce((s, r) => s + (r.outputTokens || 0), 0) / successResults.length);
+      const precise = calculateCostFromActualTokens(file.totalRows, avgInput, avgOutput, provider, modelId, useWebSearch);
+      setRealCostEstimate(precise);
     }
     setTestDone(true); setTestRunning(false);
   };
@@ -573,11 +584,11 @@ export default function ToolPage() {
               <StepHeader num={3} title="Choose provider & model" subtitle="All models include live web search" done={!!modelId} active={!!file} />
 
               <div className="mb-4 grid grid-cols-2 gap-2">
-                <button onClick={() => { setProvider("gemini"); setModelId("gemini-2.5-pro"); setKeyValid(false); setApiKey(""); setKeyError(""); setKeyWarning(""); }}
+                <button onClick={() => { setProvider("gemini"); setModelId("gemini-2.5-pro"); setKeyValid(false); setApiKey(""); setKeyError(""); setKeyWarning(""); setRealCostEstimate(null); }}
                   className={`rounded-lg border-2 px-3 py-2.5 text-xs font-medium transition ${provider === "gemini" ? "border-indigo-500/40 bg-indigo-500/10 text-indigo-300" : "border-white/[0.06] text-zinc-500 hover:border-white/10"}`}>
                   Google (Gemini)
                 </button>
-                <button onClick={() => { setProvider("anthropic"); setModelId("claude-sonnet-4-5-20250929"); setKeyValid(false); setApiKey(""); setKeyError(""); setKeyWarning(""); }}
+                <button onClick={() => { setProvider("anthropic"); setModelId("claude-sonnet-4-5-20250929"); setKeyValid(false); setApiKey(""); setKeyError(""); setKeyWarning(""); setRealCostEstimate(null); }}
                   className={`rounded-lg border-2 px-3 py-2.5 text-xs font-medium transition ${provider === "anthropic" ? "border-indigo-500/40 bg-indigo-500/10 text-indigo-300" : "border-white/[0.06] text-zinc-500 hover:border-white/10"}`}>
                   Anthropic (Claude)
                 </button>
@@ -613,6 +624,20 @@ export default function ToolPage() {
                 })}
               </div>
               <p className="mt-3 text-[11px] text-zinc-600">Not sure? The recommended model is a great default for most tasks.</p>
+
+              {/* Web search toggle */}
+              <div className="mt-4 border-t border-white/[0.06] pt-3">
+                <label className="flex items-center gap-2 text-xs">
+                  <input type="checkbox" checked={useWebSearch}
+                    onChange={(e) => { setUseWebSearch(e.target.checked); setRealCostEstimate(null); }}
+                    className="rounded border-white/20 bg-zinc-800 text-indigo-500 focus:ring-indigo-500/20" />
+                  <span className="text-zinc-300">Enable web search</span>
+                  <InfoTip text="Web search lets AI look up live data from the internet. Disable to use AI knowledge only (cheaper but may be outdated)." />
+                </label>
+                {!useWebSearch && (
+                  <p className="mt-1.5 ml-6 text-[11px] text-amber-400">AI will use its training data only — results may not reflect the latest information.</p>
+                )}
+              </div>
             </Card>
 
             {/* --- 4. API Key --- */}
@@ -769,28 +794,56 @@ export default function ToolPage() {
 
               {/* Estimate sidebar */}
               <Card>
-                <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">Estimate</h3>
-                {costEstimate ? (
+                <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  {realCostEstimate ? "Precise Estimate" : "Estimate"}
+                </h3>
+                {realCostEstimate ? (
                   <div className="space-y-3">
                     <div className="space-y-1.5 text-xs">
-                      <div className="flex justify-between"><span className="text-zinc-500">Rows</span><span className="font-medium text-white">{costEstimate.totalRows.toLocaleString()}</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-500">Model</span><span className="font-medium text-white">{costEstimate.modelName}</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-500">Rows</span><span className="font-medium text-white">{realCostEstimate.totalRows.toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-500">Model</span><span className="font-medium text-white">{realCostEstimate.modelName}</span></div>
                       <div className="flex justify-between"><span className="text-zinc-500">New columns</span><span className="font-medium text-white">{outputColumns.length}</span></div>
                     </div>
                     <div className="border-t border-white/[0.06] pt-3 space-y-1.5 text-xs">
                       <div className="flex justify-between"><span className="text-zinc-500">FreeClay platform fee</span><span className="font-semibold text-emerald-400">$0.00</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-500">Input tokens</span><span className="text-zinc-300">${costEstimate.inputCost.toFixed(2)}</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-500">Output tokens</span><span className="text-zinc-300">${costEstimate.outputCost.toFixed(2)}</span></div>
-                      {costEstimate.searchCost > 0 && (
-                        <div className="flex justify-between"><span className="text-zinc-500">Web search</span><span className="text-zinc-300">${costEstimate.searchCost.toFixed(2)}</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-500">Input tokens</span><span className="text-zinc-300">${realCostEstimate.inputCost.toFixed(2)}</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-500">Output tokens</span><span className="text-zinc-300">${realCostEstimate.outputCost.toFixed(2)}</span></div>
+                      {realCostEstimate.searchCost > 0 && (
+                        <div className="flex justify-between"><span className="text-zinc-500">Web search</span><span className="text-zinc-300">${realCostEstimate.searchCost.toFixed(2)}</span></div>
                       )}
                     </div>
-                    {costEstimate.freeSearchNote && <p className="text-[11px] text-emerald-400">{costEstimate.freeSearchNote}</p>}
+                    {realCostEstimate.freeSearchNote && <p className="text-[11px] text-emerald-400">{realCostEstimate.freeSearchNote}</p>}
                     <div className="border-t border-white/[0.06] pt-3 flex justify-between">
                       <span className="text-sm font-semibold text-white">Estimated Total</span>
-                      <span className="text-lg font-bold text-white">~${costEstimate.totalCost.toFixed(2)}</span>
+                      <span className="text-lg font-bold text-white">~${realCostEstimate.totalCost.toFixed(2)}</span>
                     </div>
-                    <p className="text-[10px] text-zinc-600">Paid directly to AI provider, not us. May vary +/-20%.</p>
+                    <div className="rounded-lg bg-emerald-500/5 px-2.5 py-1.5 text-[10px] text-emerald-400 ring-1 ring-emerald-500/10">
+                      Based on real token usage from your test run
+                    </div>
+                  </div>
+                ) : costRange ? (
+                  <div className="space-y-3">
+                    <div className="space-y-1.5 text-xs">
+                      <div className="flex justify-between"><span className="text-zinc-500">Rows</span><span className="font-medium text-white">{costRange.low.totalRows.toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-500">Model</span><span className="font-medium text-white">{costRange.low.modelName}</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-500">New columns</span><span className="font-medium text-white">{outputColumns.length}</span></div>
+                    </div>
+                    <div className="border-t border-white/[0.06] pt-3 space-y-1.5 text-xs">
+                      <div className="flex justify-between"><span className="text-zinc-500">FreeClay platform fee</span><span className="font-semibold text-emerald-400">$0.00</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-500">Input tokens</span><span className="text-zinc-300">${costRange.low.inputCost.toFixed(2)} – ${costRange.high.inputCost.toFixed(2)}</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-500">Output tokens</span><span className="text-zinc-300">${costRange.low.outputCost.toFixed(2)}</span></div>
+                      {costRange.high.searchCost > 0 && (
+                        <div className="flex justify-between"><span className="text-zinc-500">Web search</span><span className="text-zinc-300">${costRange.low.searchCost.toFixed(2)}</span></div>
+                      )}
+                    </div>
+                    {costRange.low.freeSearchNote && <p className="text-[11px] text-emerald-400">{costRange.low.freeSearchNote}</p>}
+                    <div className="border-t border-white/[0.06] pt-3 flex justify-between">
+                      <span className="text-sm font-semibold text-white">Estimated Range</span>
+                      <span className="text-lg font-bold text-white">${costRange.low.totalCost.toFixed(2)} – ${costRange.high.totalCost.toFixed(2)}</span>
+                    </div>
+                    <div className="rounded-lg bg-amber-500/5 px-2.5 py-1.5 text-[10px] text-amber-400 ring-1 ring-amber-500/10">
+                      {useWebSearch ? "Range accounts for web search token inflation. Run a test for a precise estimate." : "Web search disabled. Estimate based on prompt tokens only."}
+                    </div>
                   </div>
                 ) : (
                   <p className="text-xs text-zinc-600">Upload a file and configure enrichment to see your estimate. No API key needed.</p>
@@ -820,13 +873,17 @@ export default function ToolPage() {
       </div>
 
       {/* Mobile estimate bar */}
-      {costEstimate && (
+      {(realCostEstimate || costRange) && (
         <div className="fixed bottom-0 left-0 right-0 border-t border-white/5 bg-[#09090b]/90 p-3 backdrop-blur-xl lg:hidden">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-zinc-500">{costEstimate.totalRows.toLocaleString()} rows &middot; {costEstimate.modelName}</span>
+            <span className="text-zinc-500">{(realCostEstimate || costRange?.low)?.totalRows.toLocaleString()} rows &middot; {(realCostEstimate || costRange?.low)?.modelName}</span>
             <div className="flex items-center gap-3">
               <span className="text-emerald-400 text-[10px]">Platform: $0</span>
-              <span className="font-bold text-white">~${costEstimate.totalCost.toFixed(2)}</span>
+              {realCostEstimate ? (
+                <span className="font-bold text-white">~${realCostEstimate.totalCost.toFixed(2)}</span>
+              ) : costRange ? (
+                <span className="font-bold text-white">${costRange.low.totalCost.toFixed(2)} – ${costRange.high.totalCost.toFixed(2)}</span>
+              ) : null}
             </div>
           </div>
         </div>

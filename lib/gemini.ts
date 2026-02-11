@@ -19,7 +19,8 @@ export async function validateGeminiKey(apiKey: string): Promise<boolean> {
 export async function enrichRowGemini(
   apiKey: string,
   modelId: GeminiModelId,
-  prompt: string
+  prompt: string,
+  useWebSearch: boolean = true
 ): Promise<GeminiEnrichResult> {
   const res = await fetch("/api/enrich", {
     method: "POST",
@@ -29,6 +30,7 @@ export async function enrichRowGemini(
       apiKey,
       modelId,
       prompt,
+      useWebSearch,
     }),
   });
 

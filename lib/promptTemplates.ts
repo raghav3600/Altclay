@@ -5,7 +5,8 @@ export function buildPrompt(
   rowData: Record<string, string>,
   outputColumns: OutputColumn[],
   enrichmentDescription: string,
-  customPrompt?: string
+  customPrompt?: string,
+  useWebSearch: boolean = true
 ): string {
   if (customPrompt) {
     let prompt = customPrompt;
@@ -15,30 +16,24 @@ export function buildPrompt(
     return prompt;
   }
 
-  const inputDataLines = inputColumns
-    .map((col) => `  "${col}": "${rowData[col] || ""}"`)
-    .join("\n");
+  const inputData = inputColumns
+    .map((col) => `"${col}":"${rowData[col] || ""}"`)
+    .join(",");
 
-  const outputFieldLines = outputColumns
-    .map((f) => `  "${f.key}": "string"`)
-    .join(",\n");
+  const outputFields = outputColumns
+    .map((f) => `"${f.key}":"string"`)
+    .join(",");
 
-  return `You are a data enrichment assistant. You have access to web search to find current, accurate information.
+  // Trimmed prompt: ~60% fewer tokens than the original verbose version.
+  // Every token here is multiplied by every row in the batch.
+  const searchInstruction = useWebSearch
+    ? "Use web search for current data."
+    : "Use your knowledge only (no web search).";
 
-Goal: ${enrichmentDescription}
+  return `${enrichmentDescription}
 
-Given the following data about this entity:
-${inputDataLines}
+Data: {${inputData}}
 
-Research this entity and return ONLY a valid JSON object with these exact fields:
-{
-${outputFieldLines}
-}
-
-Rules:
-- Use web search to find accurate, up-to-date information
-- Be concise and factual in every field
-- If data is genuinely unavailable after searching, use "N/A"
-- Return ONLY valid JSON, no markdown, no explanation, no extra text
-- Do not guess or fabricate data — only report what you can verify`;
+Return ONLY valid JSON: {${outputFields}}
+${searchInstruction} Be concise. "N/A" if unavailable. No extra text.`;
 }

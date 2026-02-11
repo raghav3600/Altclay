@@ -100,18 +100,19 @@ function CostCalculator() {
             <div className="space-y-3">
               <div className="space-y-1.5 text-xs">
                 <div className="flex justify-between"><span className="text-zinc-500">FreeClay platform fee</span><span className="font-semibold text-emerald-400">$0.00</span></div>
-                <div className="flex justify-between"><span className="text-zinc-500">Input tokens</span><span className="text-zinc-300">${estimate.inputCost.toFixed(2)}</span></div>
-                <div className="flex justify-between"><span className="text-zinc-500">Output tokens</span><span className="text-zinc-300">${estimate.outputCost.toFixed(2)}</span></div>
-                {estimate.searchCost > 0 && <div className="flex justify-between"><span className="text-zinc-500">Web search</span><span className="text-zinc-300">${estimate.searchCost.toFixed(2)}</span></div>}
+                <div className="flex justify-between"><span className="text-zinc-500">Input tokens</span><span className="text-zinc-300">${estimate.low.inputCost.toFixed(2)} – ${estimate.high.inputCost.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span className="text-zinc-500">Output tokens</span><span className="text-zinc-300">${estimate.low.outputCost.toFixed(2)}</span></div>
+                {estimate.high.searchCost > 0 && <div className="flex justify-between"><span className="text-zinc-500">Web search</span><span className="text-zinc-300">${estimate.low.searchCost.toFixed(2)}</span></div>}
               </div>
-              {estimate.freeSearchNote && <p className="text-[11px] text-emerald-400">{estimate.freeSearchNote}</p>}
+              {estimate.low.freeSearchNote && <p className="text-[11px] text-emerald-400">{estimate.low.freeSearchNote}</p>}
               <div className="border-t border-white/5 pt-3">
                 <div className="flex items-baseline justify-between">
-                  <span className="text-sm font-medium text-zinc-400">Estimated total</span>
-                  <span className="text-3xl font-bold text-white">~${estimate.totalCost.toFixed(2)}</span>
+                  <span className="text-sm font-medium text-zinc-400">Estimated range</span>
+                  <span className="text-2xl font-bold text-white">${estimate.low.totalCost.toFixed(2)} – ${estimate.high.totalCost.toFixed(2)}</span>
                 </div>
-                <p className="mt-1 text-[11px] text-zinc-600">~${(estimate.totalCost / rows).toFixed(4)} per row &middot; Paid directly to AI provider, not us</p>
+                <p className="mt-1 text-[11px] text-zinc-600">~${(estimate.low.totalCost / rows).toFixed(4)} – ${(estimate.high.totalCost / rows).toFixed(4)} per row &middot; Paid directly to AI provider, not us</p>
               </div>
+              <p className="text-[10px] text-amber-400/80">Range accounts for web search token inflation. The tool gives a precise estimate after a 3-row test.</p>
               <Link href="/tool" className="mt-2 block rounded-lg bg-white py-2.5 text-center text-sm font-semibold text-zinc-900 transition hover:bg-zinc-200">
                 Start free enrichment
               </Link>

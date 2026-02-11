@@ -85,6 +85,8 @@ export interface EnrichmentResult {
   success: boolean;
   data: Record<string, string>;
   error?: string;
+  inputTokens?: number;
+  outputTokens?: number;
 }
 
 export interface RunProgress {

@@ -47,8 +47,8 @@ function CostCalculator() {
   return (
     <div className="overflow-hidden rounded-2xl border border-white/10 bg-zinc-900">
       <div className="border-b border-white/5 px-6 py-4">
-        <h3 className="text-sm font-semibold text-white">Cost Calculator</h3>
-        <p className="mt-0.5 text-xs text-zinc-500">See exactly what your enrichment will cost. No API key needed.</p>
+        <h3 className="text-sm font-semibold text-white">Estimate Calculator</h3>
+        <p className="mt-0.5 text-xs text-zinc-500">See what the AI provider will charge you. We charge nothing.</p>
       </div>
 
       <div className="grid gap-6 p-6 sm:grid-cols-2">
@@ -98,6 +98,7 @@ function CostCalculator() {
           {estimate ? (
             <div className="space-y-3">
               <div className="space-y-1.5 text-xs">
+                <div className="flex justify-between"><span className="text-zinc-500">FreeClay platform fee</span><span className="font-semibold text-emerald-400">$0.00</span></div>
                 <div className="flex justify-between"><span className="text-zinc-500">Input tokens</span><span className="text-zinc-300">${estimate.inputCost.toFixed(2)}</span></div>
                 <div className="flex justify-between"><span className="text-zinc-500">Output tokens</span><span className="text-zinc-300">${estimate.outputCost.toFixed(2)}</span></div>
                 {estimate.searchCost > 0 && <div className="flex justify-between"><span className="text-zinc-500">Web search</span><span className="text-zinc-300">${estimate.searchCost.toFixed(2)}</span></div>}
@@ -108,14 +109,14 @@ function CostCalculator() {
                   <span className="text-sm font-medium text-zinc-400">Estimated total</span>
                   <span className="text-3xl font-bold text-white">~${estimate.totalCost.toFixed(2)}</span>
                 </div>
-                <p className="mt-1 text-[11px] text-zinc-600">~${(estimate.totalCost / rows).toFixed(4)} per row &middot; You pay the AI provider directly</p>
+                <p className="mt-1 text-[11px] text-zinc-600">~${(estimate.totalCost / rows).toFixed(4)} per row &middot; Paid directly to AI provider, not us</p>
               </div>
               <Link href="/tool" className="mt-2 block rounded-lg bg-white py-2.5 text-center text-sm font-semibold text-zinc-900 transition hover:bg-zinc-200">
-                Start enriching
+                Start free enrichment
               </Link>
             </div>
           ) : (
-            <p className="text-center text-sm text-zinc-500">Enter your parameters to see cost</p>
+            <p className="text-center text-sm text-zinc-500">Enter your parameters to see estimate</p>
           )}
         </div>
       </div>
@@ -136,8 +137,7 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-8">
             <a href="#how" className="hidden text-sm text-zinc-400 transition hover:text-white sm:block">How It Works</a>
-            <a href="#cost" className="hidden text-sm text-zinc-400 transition hover:text-white sm:block">Cost Calculator</a>
-            <a href="#byok" className="hidden text-sm text-zinc-400 transition hover:text-white sm:block">BYOK</a>
+            <a href="#calculator" className="hidden text-sm text-zinc-400 transition hover:text-white sm:block">Calculator</a>
             <a href="#about" className="hidden text-sm text-zinc-400 transition hover:text-white sm:block">About Me</a>
             <Link href="/tool" className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-[#09090b] transition hover:bg-zinc-200">
               Open App
@@ -154,7 +154,7 @@ export default function LandingPage() {
         <div className="relative mx-auto max-w-4xl text-center">
           <div className="animate-fade-in-up mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-zinc-300 backdrop-blur-sm">
             <span className="h-2 w-2 rounded-full bg-emerald-400" />
-            100% free &middot; 100% open source &middot; No account needed
+            100% free &middot; No sign-up &middot; No credit card
           </div>
 
           <h1 className="animate-fade-in-up delay-100 text-[2.75rem] font-extrabold leading-[1.08] tracking-tight sm:text-7xl lg:text-8xl">
@@ -162,18 +162,15 @@ export default function LandingPage() {
             <span className="gradient-text">Powered by your API key.</span>
           </h1>
 
-          <div className="animate-fade-in-up delay-300 mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+          <div className="animate-fade-in-up delay-300 mt-10">
             <Link href="/tool" className="animate-pulse-glow inline-flex items-center gap-2.5 rounded-xl bg-white px-8 py-4 text-base font-bold text-[#09090b] shadow-xl transition hover:bg-zinc-100">
-              Start Enriching
+              Start 100% Free Enrichment
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
             </Link>
-            <a href="#cost" className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-8 py-4 text-base font-semibold text-zinc-300 backdrop-blur-sm transition hover:border-white/20 hover:bg-white/10">
-              See What It Costs
-            </a>
           </div>
 
           <div className="animate-fade-in delay-500 mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-zinc-500">
-            {["No sign-up required", "No data ever stored", "No tracking whatsoever"].map((t) => (
+            {["We charge $0 — always", "No data stored", "No tracking", "Open source"].map((t) => (
               <span key={t} className="flex items-center gap-1.5">
                 <svg className="h-4 w-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" /></svg>
                 {t}
@@ -237,24 +234,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* COST CALCULATOR */}
-      <section id="cost" className="px-6 py-24 sm:py-32">
-        <div className="mx-auto max-w-4xl">
-          <R>
-            <p className="text-sm font-semibold uppercase tracking-widest text-emerald-400">Transparent pricing</p>
-            <h2 className="mt-4 text-3xl font-bold sm:text-5xl">Know what it costs<br />before you start.</h2>
-            <p className="mt-5 max-w-2xl text-lg text-zinc-400">
-              You pay the AI provider directly at their published rates. We add $0. Use this calculator to estimate your cost — no API key, no sign-up.
-            </p>
-          </R>
-          <R className="delay-200">
-            <div className="mt-12">
-              <CostCalculator />
-            </div>
-          </R>
-        </div>
-      </section>
-
       {/* HOW IT WORKS */}
       <section id="how" className="border-t border-white/5 bg-zinc-900/50 px-6 py-24 sm:py-32">
         <div className="mx-auto max-w-5xl">
@@ -265,10 +244,10 @@ export default function LandingPage() {
 
           <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { n: "01", t: "Upload your spreadsheet", d: "CSV or Excel. Parsed 100% client-side. Nothing touches any server.", icon: "M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" },
-              { n: "02", t: "Describe what you need", d: "Type what you want in plain English. We auto-detect your output columns.", icon: "M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" },
-              { n: "03", t: "See cost & pick a model", d: "Compare models across Claude and Gemini. See exact cost before you spend.", icon: "M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" },
-              { n: "04", t: "Add key, preview & run", d: "Test on 3 rows first. Verify quality. Then run the full batch and download.", icon: "M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" },
+              { n: "01", t: "Upload your spreadsheet", d: "CSV or Excel. Parsed 100% in your browser. Nothing touches any server.", icon: "M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" },
+              { n: "02", t: "Describe what you need", d: "Type in plain English. We auto-detect the new columns to add to your file.", icon: "M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" },
+              { n: "03", t: "Pick a model", d: "Choose Claude or Gemini. See the estimated API usage before you start.", icon: "M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" },
+              { n: "04", t: "Add key, preview & run", d: "Test 3 rows free. Then run the full batch and download your enriched file.", icon: "M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" },
             ].map((s, i) => (
               <R key={s.n} className={`delay-${(i + 1) * 100}`}>
                 <div className="group rounded-2xl border border-white/5 bg-zinc-900 p-6 transition hover:border-indigo-500/20 hover:bg-zinc-900/80">
@@ -285,13 +264,31 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ESTIMATE CALCULATOR */}
+      <section id="calculator" className="px-6 py-24 sm:py-32">
+        <div className="mx-auto max-w-4xl">
+          <R>
+            <p className="text-sm font-semibold uppercase tracking-widest text-emerald-400">100% free platform</p>
+            <h2 className="mt-4 text-3xl font-bold sm:text-5xl">We charge nothing.<br />See your API estimate.</h2>
+            <p className="mt-5 max-w-2xl text-lg text-zinc-400">
+              FreeClay is 100% free. The only thing you pay is the AI provider&apos;s token usage — at their published rates, with zero markup from us.
+            </p>
+          </R>
+          <R className="delay-200">
+            <div className="mt-12">
+              <CostCalculator />
+            </div>
+          </R>
+        </div>
+      </section>
+
       {/* COMPARISON TABLE */}
-      <section id="compare" className="px-6 py-24 sm:py-32">
+      <section id="compare" className="border-t border-white/5 bg-zinc-900/50 px-6 py-24 sm:py-32">
         <div className="mx-auto max-w-4xl">
           <R>
             <p className="text-sm font-semibold uppercase tracking-widest text-indigo-400">Why FreeClay</p>
             <h2 className="mt-4 text-3xl font-bold leading-tight sm:text-5xl">
-              Same enrichment. <span className="gradient-text">Fraction of the cost.</span>
+              Same enrichment. <span className="gradient-text">100% free.</span>
             </h2>
           </R>
 
@@ -303,12 +300,11 @@ export default function LandingPage() {
                 <div className="border-l border-indigo-500/30 bg-indigo-500/5 px-6 py-4 font-semibold text-indigo-300">FreeClay</div>
               </div>
               {[
-                ["Platform cost", "$149 \u2013 $800/mo", "$0 forever"],
-                ["500 rows enriched", "Eats your credits", "~$2 \u2013 $10 in API costs"],
+                ["Platform fee", "$149 \u2013 $800/mo", "$0 forever"],
+                ["500 rows enriched", "Eats your credits", "~$2 \u2013 $10 in API usage"],
                 ["Your data", "On their servers", "Never leaves your browser"],
                 ["AI providers", "Their selection", "Claude or Gemini"],
                 ["Source code", "Proprietary", "Fully open source"],
-                ["Analytics & tracking", "Yes", "None"],
                 ["Account required", "Yes + credit card", "No"],
               ].map(([feat, clay, free], i) => (
                 <div key={i} className="grid grid-cols-3 border-b border-white/[0.03] text-sm last:border-0">
@@ -322,22 +318,19 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* BYOK */}
-      <section id="byok" className="border-t border-white/5 bg-zinc-900/50 px-6 py-24 sm:py-32">
+      {/* BYOK — trimmed */}
+      <section id="byok" className="px-6 py-24 sm:py-32">
         <div className="mx-auto max-w-5xl">
           <R>
             <p className="text-sm font-semibold uppercase tracking-widest text-emerald-400">Bring Your Own Key</p>
-            <h2 className="mt-4 text-3xl font-bold sm:text-5xl">You own the connection.<br />You see every cent.</h2>
-            <p className="mt-5 max-w-2xl text-lg text-zinc-400">
-              Use your own API key from Anthropic or Google. Every enrichment shows you the exact token count and cost before you run it. No hidden fees, no opaque credit systems.
-            </p>
+            <h2 className="mt-4 text-3xl font-bold sm:text-5xl">Your key. Your usage.<br />We see nothing.</h2>
           </R>
 
           <div className="mt-14 grid gap-6 sm:grid-cols-3">
             {[
-              { title: "Know the cost upfront", desc: "Real-time cost calculator with per-row breakdown. See what your enrichment will cost before you process a single row.", label: "Transparent" },
-              { title: "Pay only for tokens", desc: "No markup. You pay Anthropic or Google directly at their published rates. We add literally $0.", label: "Direct" },
-              { title: "Preview before you commit", desc: "Always preview on 3 rows first. Verify quality and actual cost. Then decide if you want to run the full batch.", label: "Safe" },
+              { title: "No middleman", desc: "Your API key goes directly to the AI provider. We never see, store, or log it.", label: "Direct" },
+              { title: "No markup", desc: "You pay the provider's published rate. We add $0. Ever.", label: "$0 fee" },
+              { title: "Preview first", desc: "Test on 3 rows before running the full batch. No surprises.", label: "Safe" },
             ].map((f, i) => (
               <R key={f.title} className={`delay-${(i + 1) * 100}`}>
                 <div className="rounded-2xl border border-white/5 bg-zinc-900 p-6">
@@ -352,13 +345,13 @@ export default function LandingPage() {
       </section>
 
       {/* TRUST / PRIVACY */}
-      <section className="px-6 py-24 sm:py-32">
+      <section className="border-t border-white/5 bg-zinc-900/50 px-6 py-24 sm:py-32">
         <div className="mx-auto max-w-4xl">
           <R>
             <p className="text-sm font-semibold uppercase tracking-widest text-indigo-400">Trust architecture</p>
             <h2 className="mt-4 text-3xl font-bold sm:text-5xl">We literally can&apos;t see your data.</h2>
             <p className="mt-5 max-w-2xl text-lg text-zinc-400">
-              No database. No cookies. No localStorage. Your file is parsed in the browser. Your API key lives in React state. When you close the tab, everything is gone.
+              No database. No cookies. No localStorage. Everything stays in your browser. Close the tab and it&apos;s all gone.
             </p>
           </R>
 
@@ -396,13 +389,13 @@ export default function LandingPage() {
       </section>
 
       {/* WORKS FOR ANYTHING */}
-      <section className="border-t border-white/5 bg-zinc-900/50 px-6 py-24 sm:py-32">
+      <section className="px-6 py-24 sm:py-32">
         <div className="mx-auto max-w-4xl text-center">
           <R>
             <p className="text-sm font-semibold uppercase tracking-widest text-indigo-400">Universal</p>
             <h2 className="mt-4 text-3xl font-bold sm:text-5xl">Works for any dataset.</h2>
             <p className="mx-auto mt-5 max-w-2xl text-lg text-zinc-400">
-              Describe what you need in plain English. FreeClay works for companies, people, universities, products, research papers, countries, or anything else. No rigid templates — just tell it what you want.
+              Describe what you need in plain English. No rigid templates.
             </p>
             <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
               {["Companies", "Universities", "People", "Countries", "Products", "Research", "Startups", "Restaurants", "Real Estate", "Anything"].map((t) => (
@@ -414,17 +407,17 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <section className="relative overflow-hidden px-6 py-28 sm:py-36">
+      <section className="relative overflow-hidden border-t border-white/5 bg-zinc-900/50 px-6 py-28 sm:py-36">
         <div className="pointer-events-none absolute inset-0" style={{backgroundImage: "linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)", backgroundSize: "64px 64px"}} />
         <div className="pointer-events-none absolute top-1/2 left-1/2 h-[400px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-600/8 blur-[100px]" />
 
         <div className="relative mx-auto max-w-2xl text-center">
           <R>
             <h2 className="text-4xl font-extrabold sm:text-6xl">
-              Your data. Your key.<br /><span className="gradient-text">Your enrichment.</span>
+              Your data. Your key.<br /><span className="gradient-text">100% free.</span>
             </h2>
             <p className="mt-6 text-lg text-zinc-400">
-              100% free. 100% open source. No account. No credit card. No catch.
+              No account. No credit card. No catch. Start enriching now.
             </p>
             <Link href="/tool" className="animate-pulse-glow mt-10 inline-flex items-center gap-2.5 rounded-xl bg-white px-10 py-4 text-base font-bold text-[#09090b] shadow-xl transition hover:bg-zinc-100">
               Open FreeClay
@@ -435,7 +428,7 @@ export default function LandingPage() {
       </section>
 
       {/* CREATED BY */}
-      <section id="about" className="border-t border-white/5 bg-zinc-900/50 px-6 py-16">
+      <section id="about" className="border-t border-white/5 px-6 py-16">
         <div className="mx-auto max-w-4xl text-center">
           <R>
             <p className="text-sm font-semibold uppercase tracking-widest text-indigo-400">Created by</p>
@@ -458,12 +451,17 @@ export default function LandingPage() {
 
       {/* FOOTER */}
       <footer className="border-t border-white/5 px-6 py-8">
-        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 text-xs text-zinc-600 sm:flex-row">
-          <div className="flex items-center gap-2">
-            <div className="flex h-5 w-5 items-center justify-center rounded bg-white text-[10px] font-black text-[#09090b]">F</div>
-            <span>FreeClay — 100% free, open-source data enrichment. No accounts. No tracking. No storage.</span>
+        <div className="mx-auto max-w-5xl">
+          <div className="flex flex-col items-center justify-between gap-4 text-xs text-zinc-600 sm:flex-row">
+            <div className="flex items-center gap-2">
+              <div className="flex h-5 w-5 items-center justify-center rounded bg-white text-[10px] font-black text-[#09090b]">F</div>
+              <span>FreeClay — 100% free, open-source data enrichment.</span>
+            </div>
+            <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-zinc-500 transition hover:text-white">Source on GitHub</a>
           </div>
-          <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-zinc-500 transition hover:text-white">Source on GitHub</a>
+          <p className="mt-4 text-center text-[10px] leading-relaxed text-zinc-700">
+            Disclaimer: FreeClay is provided as-is without warranty. AI-generated data may be inaccurate — always verify results. We are not responsible for the accuracy, completeness, or consequences of any enrichment output. Use at your own risk.
+          </p>
         </div>
       </footer>
     </div>

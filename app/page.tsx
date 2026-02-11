@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import Link from "next/link";
 import type { Provider, ModelId } from "@/lib/types";
-import { ANTHROPIC_MODELS, GEMINI_MODELS, OPENAI_MODELS, MODEL_GUIDANCE } from "@/lib/pricing";
+import { ANTHROPIC_MODELS, GEMINI_MODELS, MODEL_GUIDANCE } from "@/lib/pricing";
 import { estimateCostSimple } from "@/lib/costEstimator";
 
 function useReveal() {
@@ -30,7 +30,6 @@ function R({ children, className = "" }: { children: React.ReactNode; className?
 const ALL_MODELS: { id: ModelId; name: string; provider: Provider }[] = [
   ...Object.entries(ANTHROPIC_MODELS).map(([id, m]) => ({ id: id as ModelId, name: m.name, provider: "anthropic" as Provider })),
   ...Object.entries(GEMINI_MODELS).map(([id, m]) => ({ id: id as ModelId, name: m.name, provider: "gemini" as Provider })),
-  ...Object.entries(OPENAI_MODELS).map(([id, m]) => ({ id: id as ModelId, name: m.name, provider: "openai" as Provider })),
 ];
 
 function CostCalculator() {
@@ -61,7 +60,10 @@ function CostCalculator() {
               className="w-full rounded-lg border border-white/10 bg-zinc-800 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 focus:outline-none" />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-zinc-400">Output fields per row</label>
+            <label className="mb-1 block text-xs font-medium text-zinc-400">
+              New columns to add
+              <span className="ml-1.5 font-normal text-zinc-600">(e.g. CEO name, funding, employee count)</span>
+            </label>
             <input type="number" value={fields} onChange={(e) => setFields(Math.max(0, parseInt(e.target.value) || 0))} min={0}
               className="w-full rounded-lg border border-white/10 bg-zinc-800 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 focus:outline-none" />
           </div>
@@ -80,17 +82,10 @@ function CostCalculator() {
               <optgroup label="Google (Gemini)">
                 {ALL_MODELS.filter((m) => m.provider === "gemini").map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
               </optgroup>
-              <optgroup label="OpenAI">
-                {ALL_MODELS.filter((m) => m.provider === "openai").map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </optgroup>
             </select>
             {guidance && (
               <div className="mt-1.5 flex items-center gap-2 text-[11px]">
-                {guidance.hasWebSearch ? (
-                  <span className="text-blue-400">Has web search</span>
-                ) : (
-                  <span className="text-zinc-500">Training data only</span>
-                )}
+                <span className="text-blue-400">Has web search</span>
                 <span className="text-zinc-600">|</span>
                 <span className="text-zinc-500">{guidance.bestFor}</span>
               </div>
@@ -143,6 +138,7 @@ export default function LandingPage() {
             <a href="#how" className="hidden text-sm text-zinc-400 transition hover:text-white sm:block">How It Works</a>
             <a href="#cost" className="hidden text-sm text-zinc-400 transition hover:text-white sm:block">Cost Calculator</a>
             <a href="#byok" className="hidden text-sm text-zinc-400 transition hover:text-white sm:block">BYOK</a>
+            <a href="#about" className="hidden text-sm text-zinc-400 transition hover:text-white sm:block">About Me</a>
             <Link href="/tool" className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-[#09090b] transition hover:bg-zinc-200">
               Open App
             </Link>
@@ -165,10 +161,6 @@ export default function LandingPage() {
             Free data enrichment.<br />
             <span className="gradient-text">Powered by your API key.</span>
           </h1>
-
-          <p className="animate-fade-in-up delay-200 mx-auto mt-7 max-w-xl text-lg leading-relaxed text-zinc-400 sm:text-xl">
-            Upload a spreadsheet, describe what you need, and enrich your data with AI. You bring your own API key and pay <span className="text-white font-medium">only for the tokens you use</span>. No subscription. No platform fee.
-          </p>
 
           <div className="animate-fade-in-up delay-300 mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link href="/tool" className="animate-pulse-glow inline-flex items-center gap-2.5 rounded-xl bg-white px-8 py-4 text-base font-bold text-[#09090b] shadow-xl transition hover:bg-zinc-100">
@@ -205,27 +197,27 @@ export default function LandingPage() {
                   <tr className="border-b border-white/5 text-left">
                     <th className="px-4 py-3 font-medium text-zinc-400">Company</th>
                     <th className="px-4 py-3 font-medium text-zinc-400">Domain</th>
-                    <th className="border-l border-indigo-500/30 bg-indigo-500/5 px-4 py-3 font-medium text-indigo-300">Description</th>
-                    <th className="bg-indigo-500/5 px-4 py-3 font-medium text-indigo-300">Industry</th>
-                    <th className="bg-indigo-500/5 px-4 py-3 font-medium text-indigo-300">Employees</th>
-                    <th className="bg-indigo-500/5 px-4 py-3 font-medium text-indigo-300">Funding</th>
+                    <th className="border-l border-indigo-500/30 bg-indigo-500/5 px-4 py-3 font-medium text-indigo-300">Decision Maker</th>
+                    <th className="bg-indigo-500/5 px-4 py-3 font-medium text-indigo-300">Open Roles</th>
+                    <th className="bg-indigo-500/5 px-4 py-3 font-medium text-indigo-300">Sustainability Initiatives</th>
+                    <th className="bg-indigo-500/5 px-4 py-3 font-medium text-indigo-300">Recent News</th>
                   </tr>
                 </thead>
                 <tbody className="text-zinc-300">
                   {[
-                    { co: "Stripe", d: "stripe.com", desc: "Financial infrastructure for the internet", ind: "Fintech", emp: "~8,000", f: "$8.7B" },
-                    { co: "Vercel", d: "vercel.com", desc: "Cloud platform for frontend frameworks", ind: "DevTools", emp: "~500", f: "$563M" },
-                    { co: "Linear", d: "linear.app", desc: "Streamlined issue tracking for teams", ind: "SaaS", emp: "~80", f: "$52M" },
-                    { co: "Notion", d: "notion.so", desc: "All-in-one workspace for teams", ind: "Productivity", emp: "~800", f: "$343M" },
-                    { co: "Figma", d: "figma.com", desc: "Collaborative interface design tool", ind: "Design", emp: "~1,200", f: "$333M" },
+                    { co: "Stripe", d: "stripe.com", dm: "Patrick Collison, CEO", roles: "14 engineering roles", sust: "100% renewable energy ops", news: "Launched Stripe Tax in 12 new markets" },
+                    { co: "Vercel", d: "vercel.com", dm: "Guillermo Rauch, CEO", roles: "8 open roles", sust: "Carbon-neutral hosting", news: "Announced Next.js 16 at VConf" },
+                    { co: "Linear", d: "linear.app", dm: "Karri Saarinen, CEO", roles: "3 engineering roles", sust: "Remote-first, low footprint", news: "Raised Series B at $400M valuation" },
+                    { co: "Notion", d: "notion.so", dm: "Ivan Zhao, CEO", roles: "22 open roles", sust: "LEED-certified offices", news: "Launched Notion Mail & Calendar" },
+                    { co: "Figma", d: "figma.com", dm: "Dylan Field, CEO", roles: "18 open roles", sust: "Green energy data centers", news: "Figma Slides GA release" },
                   ].map((r, i) => (
                     <tr key={i} className="border-b border-white/[0.03] transition hover:bg-white/[0.02]">
                       <td className="px-4 py-2.5 font-medium text-white">{r.co}</td>
                       <td className="px-4 py-2.5 text-zinc-500">{r.d}</td>
-                      <td className="border-l border-indigo-500/30 bg-indigo-500/5 px-4 py-2.5 text-indigo-200">{r.desc}</td>
-                      <td className="bg-indigo-500/5 px-4 py-2.5 text-indigo-200">{r.ind}</td>
-                      <td className="bg-indigo-500/5 px-4 py-2.5 text-indigo-200">{r.emp}</td>
-                      <td className="bg-indigo-500/5 px-4 py-2.5 text-indigo-200">{r.f}</td>
+                      <td className="border-l border-indigo-500/30 bg-indigo-500/5 px-4 py-2.5 text-indigo-200">{r.dm}</td>
+                      <td className="bg-indigo-500/5 px-4 py-2.5 text-indigo-200">{r.roles}</td>
+                      <td className="bg-indigo-500/5 px-4 py-2.5 text-indigo-200">{r.sust}</td>
+                      <td className="bg-indigo-500/5 px-4 py-2.5 text-indigo-200">{r.news}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -242,24 +234,6 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* SOCIAL PROOF NUMBERS */}
-      <section className="border-y border-white/5 bg-zinc-900/50 px-6 py-16">
-        <div className="mx-auto grid max-w-4xl gap-8 text-center sm:grid-cols-3">
-          <R>
-            <div className="text-4xl font-extrabold text-white sm:text-5xl">$0</div>
-            <div className="mt-2 text-sm text-zinc-400">Platform fee. Forever.</div>
-          </R>
-          <R className="delay-100">
-            <div className="text-4xl font-extrabold sm:text-5xl"><span className="gradient-text-green">~$5</span></div>
-            <div className="mt-2 text-sm text-zinc-400">To enrich 500 rows with Claude</div>
-          </R>
-          <R className="delay-200">
-            <div className="text-4xl font-extrabold text-white sm:text-5xl">0 bytes</div>
-            <div className="mt-2 text-sm text-zinc-400">Of your data stored. Ever.</div>
-          </R>
         </div>
       </section>
 
@@ -292,8 +266,8 @@ export default function LandingPage() {
           <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[
               { n: "01", t: "Upload your spreadsheet", d: "CSV or Excel. Parsed 100% client-side. Nothing touches any server.", icon: "M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" },
-              { n: "02", t: "Describe what you need", d: "Type what you want in plain English. Define your output columns. That's it.", icon: "M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" },
-              { n: "03", t: "See cost & pick a model", d: "Compare models across Anthropic, Gemini, and OpenAI. See exact cost before you spend.", icon: "M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" },
+              { n: "02", t: "Describe what you need", d: "Type what you want in plain English. We auto-detect your output columns.", icon: "M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" },
+              { n: "03", t: "See cost & pick a model", d: "Compare models across Claude and Gemini. See exact cost before you spend.", icon: "M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" },
               { n: "04", t: "Add key, preview & run", d: "Test on 3 rows first. Verify quality. Then run the full batch and download.", icon: "M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" },
             ].map((s, i) => (
               <R key={s.n} className={`delay-${(i + 1) * 100}`}>
@@ -332,7 +306,7 @@ export default function LandingPage() {
                 ["Platform cost", "$149 \u2013 $800/mo", "$0 forever"],
                 ["500 rows enriched", "Eats your credits", "~$2 \u2013 $10 in API costs"],
                 ["Your data", "On their servers", "Never leaves your browser"],
-                ["AI providers", "Their selection", "Claude, Gemini, or OpenAI"],
+                ["AI providers", "Their selection", "Claude or Gemini"],
                 ["Source code", "Proprietary", "Fully open source"],
                 ["Analytics & tracking", "Yes", "None"],
                 ["Account required", "Yes + credit card", "No"],
@@ -355,14 +329,14 @@ export default function LandingPage() {
             <p className="text-sm font-semibold uppercase tracking-widest text-emerald-400">Bring Your Own Key</p>
             <h2 className="mt-4 text-3xl font-bold sm:text-5xl">You own the connection.<br />You see every cent.</h2>
             <p className="mt-5 max-w-2xl text-lg text-zinc-400">
-              Use your own API key from Anthropic, Google, or OpenAI. Every enrichment shows you the exact token count and cost before you run it. No hidden fees, no opaque credit systems.
+              Use your own API key from Anthropic or Google. Every enrichment shows you the exact token count and cost before you run it. No hidden fees, no opaque credit systems.
             </p>
           </R>
 
           <div className="mt-14 grid gap-6 sm:grid-cols-3">
             {[
               { title: "Know the cost upfront", desc: "Real-time cost calculator with per-row breakdown. See what your enrichment will cost before you process a single row.", label: "Transparent" },
-              { title: "Pay only for tokens", desc: "No markup. You pay Anthropic, Google, or OpenAI directly at their published rates. We add literally $0.", label: "Direct" },
+              { title: "Pay only for tokens", desc: "No markup. You pay Anthropic or Google directly at their published rates. We add literally $0.", label: "Direct" },
               { title: "Preview before you commit", desc: "Always preview on 3 rows first. Verify quality and actual cost. Then decide if you want to run the full batch.", label: "Safe" },
             ].map((f, i) => (
               <R key={f.title} className={`delay-${(i + 1) * 100}`}>
@@ -402,7 +376,7 @@ export default function LandingPage() {
               </div>
               <div className="animate-float delay-300 rounded-xl border border-white/10 bg-zinc-900 px-8 py-5 text-center">
                 <div className="text-3xl">{"\u{1F916}"}</div>
-                <div className="mt-2 text-sm font-semibold text-white">Claude / Gemini / OpenAI</div>
+                <div className="mt-2 text-sm font-semibold text-white">Claude / Gemini</div>
                 <div className="text-xs text-zinc-500">AI + Web search</div>
               </div>
               <div className="flex flex-col items-center py-2 sm:flex-row sm:py-0 sm:px-2">
@@ -456,6 +430,28 @@ export default function LandingPage() {
               Open FreeClay
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
             </Link>
+          </R>
+        </div>
+      </section>
+
+      {/* CREATED BY */}
+      <section id="about" className="border-t border-white/5 bg-zinc-900/50 px-6 py-16">
+        <div className="mx-auto max-w-4xl text-center">
+          <R>
+            <p className="text-sm font-semibold uppercase tracking-widest text-indigo-400">Created by</p>
+            <h2 className="mt-4 text-2xl font-bold sm:text-3xl">Raghav</h2>
+            <p className="mx-auto mt-3 max-w-lg text-sm text-zinc-400">
+              Built FreeClay because data enrichment shouldn&apos;t cost $800/month. If you find it useful, connect with me.
+            </p>
+            <a
+              href="https://www.linkedin.com/in/-raghav/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-6 inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-medium text-zinc-300 transition hover:border-white/20 hover:bg-white/10"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+              Connect on LinkedIn
+            </a>
           </R>
         </div>
       </section>

@@ -10,24 +10,20 @@ import type {
   EnrichmentResult,
   AnthropicModelId,
   GeminiModelId,
-  OpenAIModelId,
 } from "@/lib/types";
 import {
   ANTHROPIC_MODELS,
   GEMINI_MODELS,
-  OPENAI_MODELS,
   MODEL_GUIDANCE,
   PRICING_LAST_UPDATED,
   ANTHROPIC_PRICING_URL,
   GEMINI_PRICING_URL,
-  OPENAI_PRICING_URL,
 } from "@/lib/pricing";
 import { buildPrompt } from "@/lib/promptTemplates";
 import { estimateInputTokensPerRow, estimateOutputTokensPerRow, calculateCostEstimate } from "@/lib/costEstimator";
 import { parseFile, exportToFile } from "@/lib/fileParser";
 import { enrichRowAnthropic } from "@/lib/anthropic";
 import { enrichRowGemini } from "@/lib/gemini";
-import { enrichRowOpenAI } from "@/lib/openai";
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                             */
@@ -76,6 +72,36 @@ function InfoTooltip({ text }: { text: string }) {
 const SPEED_COLORS = { fast: "bg-emerald-100 text-emerald-700", medium: "bg-amber-100 text-amber-700", slow: "bg-red-100 text-red-700" };
 const QUALITY_COLORS = { good: "bg-zinc-100 text-zinc-600", great: "bg-blue-100 text-blue-700", best: "bg-purple-100 text-purple-700" };
 
+/** Try to extract output column names from a free-text description */
+function detectOutputColumns(description: string): OutputColumn[] {
+  if (!description.trim()) return [];
+  // Look for patterns like "find the X, Y, and Z" or "get X, Y, Z for each"
+  // Also handle "their X, Y, and Z" or "the X, the Y, the Z"
+  const cleaned = description
+    .replace(/find\s+(out\s+)?(the\s+)?/gi, "")
+    .replace(/get\s+(me\s+)?(the\s+)?/gi, "")
+    .replace(/look\s+up\s+(the\s+)?/gi, "")
+    .replace(/research\s+(the\s+)?/gi, "")
+    .replace(/for\s+each\s+\w+/gi, "")
+    .replace(/of\s+each\s+\w+/gi, "")
+    .replace(/for\s+every\s+\w+/gi, "")
+    .replace(/per\s+\w+/gi, "")
+    .trim();
+
+  // Split on commas and "and"
+  const parts = cleaned
+    .split(/,\s*|\s+and\s+/i)
+    .map((p) => p.replace(/^(the|their|its|a|an)\s+/i, "").trim())
+    .filter((p) => p.length > 1 && p.length < 60 && !p.includes("."));
+
+  if (parts.length === 0) return [];
+
+  return parts.map((label) => {
+    const key = label.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+    return { key, label };
+  }).filter((c) => c.key.length > 0);
+}
+
 /* ------------------------------------------------------------------ */
 /*  Main page                                                          */
 /* ------------------------------------------------------------------ */
@@ -89,26 +115,25 @@ export default function ToolPage() {
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Step 2: Describe
+  // Step 2: Describe + Output columns (merged)
   const [enrichmentDescription, setEnrichmentDescription] = useState("");
   const [inputColumns, setInputColumns] = useState<string[]>([]);
-
-  // Step 3: Output columns
   const [outputColumns, setOutputColumns] = useState<OutputColumn[]>([]);
   const [newColumnName, setNewColumnName] = useState("");
+  const [autoDetected, setAutoDetected] = useState(false);
 
-  // Step 4: Provider + Model
+  // Step 3: Provider + Model
   const [provider, setProvider] = useState<Provider>("anthropic");
   const [modelId, setModelId] = useState<ModelId>("claude-sonnet-4-5-20250929");
 
-  // Step 5: API key (deferred — only needed to run)
+  // Step 4: API key (deferred — only needed to run)
   const [apiKey, setApiKey] = useState("");
   const [keyValid, setKeyValid] = useState(false);
   const [validating, setValidating] = useState(false);
   const [keyError, setKeyError] = useState("");
   const [keyWarning, setKeyWarning] = useState("");
 
-  // Step 6: Test + Run
+  // Step 5: Test + Run
   const [testRunning, setTestRunning] = useState(false);
   const [testResults, setTestResults] = useState<EnrichmentResult[]>([]);
   const [testDone, setTestDone] = useState(false);
@@ -129,9 +154,7 @@ export default function ToolPage() {
   const models =
     provider === "anthropic"
       ? Object.entries(ANTHROPIC_MODELS)
-      : provider === "gemini"
-        ? Object.entries(GEMINI_MODELS)
-        : Object.entries(OPENAI_MODELS);
+      : Object.entries(GEMINI_MODELS);
 
   const describeReady = file && enrichmentDescription.trim().length > 0 && inputColumns.length > 0 && outputColumns.length > 0;
 
@@ -173,6 +196,7 @@ export default function ToolPage() {
       setFile(parsed);
       setInputColumns([]);
       setOutputColumns([]);
+      setAutoDetected(false);
       setTestDone(false); setTestResults([]); setFullDone(false); setFullResults([]);
     } catch (err) { setFileError((err as Error).message); }
   };
@@ -190,6 +214,17 @@ export default function ToolPage() {
 
   const removeOutputColumn = (key: string) => setOutputColumns((p) => p.filter((c) => c.key !== key));
 
+  const handleDescriptionBlur = () => {
+    // Auto-detect output columns from description if user hasn't manually added any
+    if (outputColumns.length === 0 && enrichmentDescription.trim()) {
+      const detected = detectOutputColumns(enrichmentDescription);
+      if (detected.length > 0) {
+        setOutputColumns(detected);
+        setAutoDetected(true);
+      }
+    }
+  };
+
   const enrichSingleRow = useCallback(async (row: Record<string, string>, index: number): Promise<EnrichmentResult> => {
     const prompt = buildPrompt(inputColumns, row, outputColumns, enrichmentDescription, advancedMode ? customPrompt : undefined);
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -197,9 +232,7 @@ export default function ToolPage() {
         const result =
           provider === "anthropic"
             ? await enrichRowAnthropic(apiKey, modelId as AnthropicModelId, prompt)
-            : provider === "gemini"
-              ? await enrichRowGemini(apiKey, modelId as GeminiModelId, prompt)
-              : await enrichRowOpenAI(apiKey, modelId as OpenAIModelId, prompt);
+            : await enrichRowGemini(apiKey, modelId as GeminiModelId, prompt);
         return { rowIndex: index, success: true, data: result.data };
       } catch (err) {
         if (attempt === 2) return { rowIndex: index, success: false, data: {}, error: (err as Error).message };
@@ -264,7 +297,7 @@ export default function ToolPage() {
     document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
   };
 
-  const providerPricingUrl = provider === "anthropic" ? ANTHROPIC_PRICING_URL : provider === "gemini" ? GEMINI_PRICING_URL : OPENAI_PRICING_URL;
+  const providerPricingUrl = provider === "anthropic" ? ANTHROPIC_PRICING_URL : GEMINI_PRICING_URL;
 
   /* ---- render ---- */
   return (
@@ -287,7 +320,7 @@ export default function ToolPage() {
         <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
 
           {/* ============ LEFT COLUMN ============ */}
-          <div className="space-y-5">
+          <div className="min-w-0 space-y-5">
 
             {/* --- 1. Upload File (FIRST — no barriers) --- */}
             <SectionCard>
@@ -317,19 +350,21 @@ export default function ToolPage() {
                     </div>
                     <button onClick={() => { setFile(null); setInputColumns([]); setOutputColumns([]); setTestDone(false); setFullDone(false); }} className="text-xs text-red-500 hover:text-red-600">Remove</button>
                   </div>
-                  <div className="max-h-48 overflow-auto rounded-lg border border-zinc-200">
-                    <table className="min-w-full text-[11px]">
-                      <thead className="sticky top-0 bg-zinc-50"><tr>{file.columns.map((c) => <th key={c} className="whitespace-nowrap px-2.5 py-1.5 text-left font-medium text-zinc-600">{c}</th>)}</tr></thead>
-                      <tbody>{file.rows.slice(0, 6).map((r, i) => <tr key={i} className="border-t border-zinc-50">{file.columns.map((c) => <td key={c} className="max-w-[160px] truncate whitespace-nowrap px-2.5 py-1.5 text-zinc-500">{r[c]}</td>)}</tr>)}</tbody>
-                    </table>
+                  <div className="overflow-hidden rounded-lg border border-zinc-200">
+                    <div className="max-h-48 overflow-auto">
+                      <table className="min-w-full text-[11px]">
+                        <thead className="sticky top-0 bg-zinc-50"><tr>{file.columns.map((c) => <th key={c} className="whitespace-nowrap px-2.5 py-1.5 text-left font-medium text-zinc-600">{c}</th>)}</tr></thead>
+                        <tbody>{file.rows.slice(0, 6).map((r, i) => <tr key={i} className="border-t border-zinc-50">{file.columns.map((c) => <td key={c} className="max-w-[160px] truncate whitespace-nowrap px-2.5 py-1.5 text-zinc-500">{r[c]}</td>)}</tr>)}</tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               )}
             </SectionCard>
 
-            {/* --- 2. Describe Enrichment + Input Columns --- */}
+            {/* --- 2. Describe Enrichment + Input Columns + Output Columns (merged) --- */}
             <SectionCard className={!file ? "opacity-40 pointer-events-none" : ""}>
-              <StepHeader num={2} title="Describe what you want" subtitle="Tell us in plain English what data you need" done={!!(enrichmentDescription.trim() && inputColumns.length > 0)} active={!!file && !(enrichmentDescription.trim() && inputColumns.length > 0)} />
+              <StepHeader num={2} title="Describe what you want" subtitle="Tell us what data you need — we'll suggest the output columns" done={!!(enrichmentDescription.trim() && inputColumns.length > 0 && outputColumns.length > 0)} active={!!file && !(enrichmentDescription.trim() && inputColumns.length > 0 && outputColumns.length > 0)} />
 
               {file && (
                 <div className="mb-4">
@@ -351,48 +386,58 @@ export default function ToolPage() {
               <div>
                 <label className="mb-1.5 flex items-center text-xs font-medium text-zinc-600">
                   What do you want to find out?
-                  <InfoTooltip text="Describe your goal in plain English. The AI will use this to research each row and fill in the output columns you define below." />
+                  <InfoTooltip text="Describe your goal in plain English. When you click away, we'll auto-suggest output columns from your description. You can edit them below." />
                 </label>
                 <textarea
                   value={enrichmentDescription}
-                  onChange={(e) => setEnrichmentDescription(e.target.value)}
+                  onChange={(e) => { setEnrichmentDescription(e.target.value); if (autoDetected) { setAutoDetected(false); } }}
+                  onBlur={handleDescriptionBlur}
                   rows={3}
                   placeholder="e.g., Find the CEO name, total funding raised, employee count, and a brief company description for each company"
                   className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900/10 focus:outline-none"
                 />
               </div>
-            </SectionCard>
 
-            {/* --- 3. Output Columns --- */}
-            <SectionCard className={!file ? "opacity-40 pointer-events-none" : ""}>
-              <StepHeader num={3} title="Define output columns" subtitle="What new columns should appear in your enriched file?" done={outputColumns.length > 0} active={!!file && outputColumns.length === 0} />
+              {/* Output columns */}
+              <div className="mt-4 border-t border-zinc-100 pt-4">
+                <label className="mb-2 flex items-center text-xs font-medium text-zinc-600">
+                  Output columns
+                  <InfoTooltip text="These are the new columns that will be added to your file. Auto-detected from your description, or add your own." />
+                </label>
 
-              <div className="flex gap-2">
-                <input
-                  value={newColumnName}
-                  onChange={(e) => setNewColumnName(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addOutputColumn(); } }}
-                  placeholder="e.g., CEO Name"
-                  className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900/10 focus:outline-none"
-                />
-                <button onClick={addOutputColumn} disabled={!newColumnName.trim()}
-                  className="rounded-lg bg-zinc-900 px-4 py-2 text-xs font-medium text-white transition hover:bg-zinc-800 disabled:opacity-40">
-                  Add
-                </button>
-              </div>
+                {autoDetected && outputColumns.length > 0 && (
+                  <p className="mb-2 text-[11px] text-indigo-600">
+                    Auto-detected from your description. Edit or add more below.
+                  </p>
+                )}
 
-              {outputColumns.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {outputColumns.map((col) => (
-                    <span key={col.key} className="flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-700">
-                      {col.label}
-                      <button onClick={() => removeOutputColumn(col.key)} className="text-zinc-400 hover:text-red-500">
-                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                      </button>
-                    </span>
-                  ))}
+                {outputColumns.length > 0 && (
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    {outputColumns.map((col) => (
+                      <span key={col.key} className="flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-700">
+                        {col.label}
+                        <button onClick={() => removeOutputColumn(col.key)} className="text-zinc-400 hover:text-red-500">
+                          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <input
+                    value={newColumnName}
+                    onChange={(e) => setNewColumnName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addOutputColumn(); } }}
+                    placeholder="Add a column, e.g. CEO Name"
+                    className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900/10 focus:outline-none"
+                  />
+                  <button onClick={addOutputColumn} disabled={!newColumnName.trim()}
+                    className="rounded-lg bg-zinc-900 px-4 py-2 text-xs font-medium text-white transition hover:bg-zinc-800 disabled:opacity-40">
+                    Add
+                  </button>
                 </div>
-              )}
+              </div>
 
               {/* Advanced prompt editing */}
               <div className="mt-4 border-t border-zinc-100 pt-3">
@@ -415,23 +460,19 @@ export default function ToolPage() {
               </div>
             </SectionCard>
 
-            {/* --- 4. Provider + Model --- */}
+            {/* --- 3. Provider + Model --- */}
             <SectionCard className={!file ? "opacity-40 pointer-events-none" : ""}>
-              <StepHeader num={4} title="Choose provider & model" subtitle="Pick the AI provider and model for enrichment" done={!!modelId} active={!!file} />
+              <StepHeader num={3} title="Choose provider & model" subtitle="All models include live web search for accurate results" done={!!modelId} active={!!file} />
 
               {/* Provider tabs */}
-              <div className="mb-4 grid grid-cols-3 gap-2">
+              <div className="mb-4 grid grid-cols-2 gap-2">
                 <button onClick={() => { setProvider("anthropic"); setModelId("claude-sonnet-4-5-20250929"); setKeyValid(false); setApiKey(""); setKeyError(""); setKeyWarning(""); }}
                   className={`rounded-lg border-2 px-3 py-2 text-xs font-medium transition ${provider === "anthropic" ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-600 hover:border-zinc-300"}`}>
-                  Anthropic
+                  Anthropic (Claude)
                 </button>
                 <button onClick={() => { setProvider("gemini"); setModelId("gemini-2.5-pro"); setKeyValid(false); setApiKey(""); setKeyError(""); setKeyWarning(""); }}
                   className={`rounded-lg border-2 px-3 py-2 text-xs font-medium transition ${provider === "gemini" ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-600 hover:border-zinc-300"}`}>
-                  Google Gemini
-                </button>
-                <button onClick={() => { setProvider("openai"); setModelId("gpt-4o"); setKeyValid(false); setApiKey(""); setKeyError(""); setKeyWarning(""); }}
-                  className={`rounded-lg border-2 px-3 py-2 text-xs font-medium transition ${provider === "openai" ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-600 hover:border-zinc-300"}`}>
-                  OpenAI
+                  Google (Gemini)
                 </button>
               </div>
 
@@ -457,11 +498,7 @@ export default function ToolPage() {
                           <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${QUALITY_COLORS[guidance.quality]}`}>
                             {guidance.quality === "good" ? "Good" : guidance.quality === "great" ? "Great" : "Best"} quality
                           </span>
-                          {guidance.hasWebSearch ? (
-                            <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-600">Web search</span>
-                          ) : (
-                            <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium text-zinc-400">Training data only</span>
-                          )}
+                          <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-600">Web search</span>
                           <InfoTooltip text={guidance.bestFor} />
                         </div>
                       )}
@@ -471,11 +508,11 @@ export default function ToolPage() {
               </div>
             </SectionCard>
 
-            {/* --- 5. API Key (deferred) --- */}
+            {/* --- 4. API Key (deferred) --- */}
             <SectionCard className={!configReady ? "opacity-40 pointer-events-none" : ""}>
               <StepHeader
-                num={5}
-                title={`Connect your ${provider === "anthropic" ? "Anthropic" : provider === "gemini" ? "Google" : "OpenAI"} API key`}
+                num={4}
+                title={`Connect your ${provider === "anthropic" ? "Anthropic" : "Google"} API key`}
                 subtitle="Your key is never stored — it stays in browser memory only"
                 done={keyValid}
                 active={!!configReady && !keyValid}
@@ -484,7 +521,7 @@ export default function ToolPage() {
               {!keyValid ? (
                 <div className="space-y-3">
                   <input type="password" value={apiKey} onChange={(e) => { setApiKey(e.target.value); setKeyError(""); }}
-                    placeholder={provider === "anthropic" ? "sk-ant-..." : provider === "gemini" ? "AIza..." : "sk-..."}
+                    placeholder={provider === "anthropic" ? "sk-ant-..." : "AIza..."}
                     className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900/10 focus:outline-none"
                   />
                   {keyError && <p className="text-xs text-red-600">{keyError}</p>}
@@ -495,7 +532,6 @@ export default function ToolPage() {
                   <p className="text-center text-[11px] text-zinc-400">
                     {provider === "anthropic" && <a href="https://console.anthropic.com" target="_blank" rel="noopener noreferrer" className="text-zinc-600 underline">Get a key from Anthropic</a>}
                     {provider === "gemini" && <a href="https://aistudio.google.com" target="_blank" rel="noopener noreferrer" className="text-zinc-600 underline">Get a key from Google AI Studio</a>}
-                    {provider === "openai" && <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-zinc-600 underline">Get a key from OpenAI</a>}
                   </p>
                   <TrustBadge text="Your API key is never stored, logged, or sent to our servers. It goes directly from your browser to the AI provider." />
                 </div>
@@ -503,7 +539,7 @@ export default function ToolPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-2">
                     <span className="text-xs font-medium text-emerald-700">
-                      {provider === "anthropic" ? "Anthropic" : provider === "gemini" ? "Gemini" : "OpenAI"} connected
+                      {provider === "anthropic" ? "Anthropic" : "Gemini"} connected
                     </span>
                     <button onClick={() => { setKeyValid(false); setApiKey(""); setKeyWarning(""); }} className="text-xs text-red-500 hover:text-red-600">Disconnect</button>
                   </div>
@@ -512,9 +548,9 @@ export default function ToolPage() {
               )}
             </SectionCard>
 
-            {/* --- 6. Test Preview, Full Run & Download --- */}
+            {/* --- 5. Test Preview, Full Run & Download --- */}
             <SectionCard className={!runReady ? "opacity-40 pointer-events-none" : ""}>
-              <StepHeader num={6} title="Preview, run & download" subtitle="Test on 3 rows first, then run all" done={fullDone} active={!!runReady && !fullDone} />
+              <StepHeader num={5} title="Preview, run & download" subtitle="Test on 3 rows first, then run all" done={fullDone} active={!!runReady && !fullDone} />
 
               {/* Test button */}
               {!testDone && !testRunning && (
@@ -540,25 +576,27 @@ export default function ToolPage() {
                   </div>
 
                   {testResults.length > 0 && (
-                    <div className="max-h-72 overflow-auto rounded-lg border border-zinc-200">
-                      <table className="min-w-full text-[11px]">
-                        <thead className="sticky top-0 bg-zinc-50">
-                          <tr>
-                            {inputColumns.map((c) => <th key={c} className="whitespace-nowrap px-2 py-1.5 text-left font-medium text-zinc-500">{c}</th>)}
-                            {outputColumns.map((c) => <th key={c.key} className="whitespace-nowrap bg-emerald-50 px-2 py-1.5 text-left font-medium text-emerald-700">{c.label}</th>)}
-                            <th className="px-2 py-1.5 text-left font-medium text-zinc-400">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {testResults.map((r, i) => (
-                            <tr key={i} className="border-t border-zinc-50">
-                              {inputColumns.map((c) => <td key={c} className="max-w-[120px] truncate whitespace-nowrap px-2 py-1.5 text-zinc-500">{file?.rows[i]?.[c]}</td>)}
-                              {outputColumns.map((c) => <td key={c.key} className="max-w-[180px] truncate whitespace-nowrap bg-emerald-50/40 px-2 py-1.5 text-emerald-800">{r.data[c.key] || "-"}</td>)}
-                              <td className="px-2 py-1.5">{r.success ? <span className="font-medium text-emerald-600">OK</span> : <span className="font-medium text-red-500" title={r.error}>Err</span>}</td>
+                    <div className="overflow-hidden rounded-lg border border-zinc-200">
+                      <div className="max-h-72 overflow-auto">
+                        <table className="min-w-full text-[11px]">
+                          <thead className="sticky top-0 bg-zinc-50">
+                            <tr>
+                              {inputColumns.map((c) => <th key={c} className="whitespace-nowrap px-2 py-1.5 text-left font-medium text-zinc-500">{c}</th>)}
+                              {outputColumns.map((c) => <th key={c.key} className="whitespace-nowrap bg-emerald-50 px-2 py-1.5 text-left font-medium text-emerald-700">{c.label}</th>)}
+                              <th className="px-2 py-1.5 text-left font-medium text-zinc-400">Status</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {testResults.map((r, i) => (
+                              <tr key={i} className="border-t border-zinc-50">
+                                {inputColumns.map((c) => <td key={c} className="max-w-[120px] truncate whitespace-nowrap px-2 py-1.5 text-zinc-500">{file?.rows[i]?.[c]}</td>)}
+                                {outputColumns.map((c) => <td key={c.key} className="max-w-[180px] truncate whitespace-nowrap bg-emerald-50/40 px-2 py-1.5 text-emerald-800">{r.data[c.key] || "-"}</td>)}
+                                <td className="px-2 py-1.5">{r.success ? <span className="font-medium text-emerald-600">OK</span> : <span className="font-medium text-red-500" title={r.error}>Err</span>}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   )}
 

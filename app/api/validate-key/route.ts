@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import OpenAI from "openai";
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,14 +22,6 @@ export async function POST(req: NextRequest) {
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
       await model.generateContent("Hi");
-      return NextResponse.json({ valid: true });
-    } else if (provider === "openai") {
-      const client = new OpenAI({ apiKey });
-      await client.chat.completions.create({
-        model: "gpt-4o-mini",
-        max_tokens: 10,
-        messages: [{ role: "user", content: "Hi" }],
-      });
       return NextResponse.json({ valid: true });
     } else {
       return NextResponse.json({ valid: false, error: "Unknown provider" }, { status: 400 });

@@ -1,4 +1,4 @@
-export type Provider = "anthropic" | "gemini" | "openai";
+export type Provider = "anthropic" | "gemini";
 
 export type AnthropicModelId =
   | "claude-haiku-4-5-20251001"
@@ -10,12 +10,7 @@ export type GeminiModelId =
   | "gemini-2.5-flash"
   | "gemini-2.5-pro";
 
-export type OpenAIModelId =
-  | "gpt-4o"
-  | "gpt-4o-mini"
-  | "gpt-4.1";
-
-export type ModelId = AnthropicModelId | GeminiModelId | OpenAIModelId;
+export type ModelId = AnthropicModelId | GeminiModelId;
 
 export interface AnthropicModelConfig {
   name: string;
@@ -34,14 +29,6 @@ export interface GeminiModelConfig {
   outputPer1M: number;
   groundingPer1K: number;
   freeGroundingPerDay: number;
-  recommended: boolean;
-}
-
-export interface OpenAIModelConfig {
-  name: string;
-  label: string;
-  inputPer1M: number;
-  outputPer1M: number;
   recommended: boolean;
 }
 

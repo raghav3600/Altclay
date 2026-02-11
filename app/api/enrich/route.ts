@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import OpenAI from "openai";
 
 function extractJSON(text: string): Record<string, string> {
   const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -68,22 +67,6 @@ export async function POST(req: NextRequest) {
         data,
         inputTokens: usage?.promptTokenCount || 0,
         outputTokens: usage?.candidatesTokenCount || 0,
-      });
-    } else if (provider === "openai") {
-      const client = new OpenAI({ apiKey });
-      const response = await client.chat.completions.create({
-        model: modelId,
-        max_tokens: 1024,
-        messages: [{ role: "user", content: prompt }],
-      });
-
-      const text = response.choices[0]?.message?.content || "";
-      const data = extractJSON(text);
-
-      return NextResponse.json({
-        data,
-        inputTokens: response.usage?.prompt_tokens || 0,
-        outputTokens: response.usage?.completion_tokens || 0,
       });
     } else {
       return NextResponse.json({ error: "Unknown provider" }, { status: 400 });

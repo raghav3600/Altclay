@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 
 function extractJSON(text: string): Record<string, string> {
-  // Try to find JSON object in the response
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
     throw new Error("No JSON object found in response");
   }
   const parsed = JSON.parse(jsonMatch[0]);
-  // Convert all values to strings
   const result: Record<string, string> = {};
   for (const [key, value] of Object.entries(parsed)) {
     result[key] = String(value ?? "N/A");
@@ -40,7 +39,6 @@ export async function POST(req: NextRequest) {
         messages: [{ role: "user", content: prompt }],
       });
 
-      // Extract text from response
       let text = "";
       for (const block of response.content) {
         if (block.type === "text") {
@@ -70,6 +68,22 @@ export async function POST(req: NextRequest) {
         data,
         inputTokens: usage?.promptTokenCount || 0,
         outputTokens: usage?.candidatesTokenCount || 0,
+      });
+    } else if (provider === "openai") {
+      const client = new OpenAI({ apiKey });
+      const response = await client.chat.completions.create({
+        model: modelId,
+        max_tokens: 1024,
+        messages: [{ role: "user", content: prompt }],
+      });
+
+      const text = response.choices[0]?.message?.content || "";
+      const data = extractJSON(text);
+
+      return NextResponse.json({
+        data,
+        inputTokens: response.usage?.prompt_tokens || 0,
+        outputTokens: response.usage?.completion_tokens || 0,
       });
     } else {
       return NextResponse.json({ error: "Unknown provider" }, { status: 400 });

@@ -1,4 +1,4 @@
-export type Provider = "anthropic" | "gemini";
+export type Provider = "anthropic" | "gemini" | "openai";
 
 export type AnthropicModelId =
   | "claude-haiku-4-5-20251001"
@@ -10,7 +10,12 @@ export type GeminiModelId =
   | "gemini-2.5-flash"
   | "gemini-2.5-pro";
 
-export type ModelId = AnthropicModelId | GeminiModelId;
+export type OpenAIModelId =
+  | "gpt-4o"
+  | "gpt-4o-mini"
+  | "gpt-4.1";
+
+export type ModelId = AnthropicModelId | GeminiModelId | OpenAIModelId;
 
 export interface AnthropicModelConfig {
   name: string;
@@ -32,28 +37,27 @@ export interface GeminiModelConfig {
   recommended: boolean;
 }
 
-export type EnrichmentCategory =
-  | "companies"
-  | "universities"
-  | "people"
-  | "countries"
-  | "products"
-  | "research"
-  | "custom";
-
-export interface EnrichmentField {
-  key: string;
+export interface OpenAIModelConfig {
+  name: string;
   label: string;
-  description: string;
+  inputPer1M: number;
+  outputPer1M: number;
+  recommended: boolean;
 }
 
-export interface CategoryPreset {
-  id: EnrichmentCategory;
-  icon: string;
-  name: string;
-  description: string;
-  fields: EnrichmentField[];
-  contextLabel: string;
+export type SpeedTier = "fast" | "medium" | "slow";
+export type QualityTier = "good" | "great" | "best";
+
+export interface ModelGuidance {
+  speed: SpeedTier;
+  quality: QualityTier;
+  bestFor: string;
+  hasWebSearch: boolean;
+}
+
+export interface OutputColumn {
+  key: string;
+  label: string;
 }
 
 export interface ParsedFile {
@@ -84,10 +88,9 @@ export interface EnrichmentConfig {
   apiKey: string;
   modelId: ModelId;
   inputColumns: string[];
-  category: EnrichmentCategory;
-  selectedFields: EnrichmentField[];
+  outputColumns: OutputColumn[];
+  enrichmentDescription: string;
   customPrompt?: string;
-  useAdvancedMode: boolean;
 }
 
 export interface EnrichmentResult {
@@ -106,13 +109,3 @@ export interface RunProgress {
   results: EnrichmentResult[];
   actualCost: number;
 }
-
-export type WizardStep =
-  | "landing"
-  | "api-key"
-  | "upload"
-  | "configure"
-  | "estimate"
-  | "test"
-  | "run"
-  | "download";

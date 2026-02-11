@@ -60,6 +60,7 @@ export default function ToolPage() {
   const [keyValid, setKeyValid] = useState(false);
   const [validating, setValidating] = useState(false);
   const [keyError, setKeyError] = useState("");
+  const [keyWarning, setKeyWarning] = useState("");
 
   const [file, setFile] = useState<ParsedFile | null>(null);
   const [fileError, setFileError] = useState("");
@@ -116,11 +117,11 @@ export default function ToolPage() {
   /* ---- handlers ---- */
   const validateKey = async () => {
     if (!apiKey.trim()) { setKeyError("Please enter an API key"); return; }
-    setValidating(true); setKeyError("");
+    setValidating(true); setKeyError(""); setKeyWarning("");
     try {
       const res = await fetch("/api/validate-key", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ provider, apiKey: apiKey.trim() }) });
       const data = await res.json();
-      if (data.valid) { setKeyValid(true); } else { setKeyError(data.error || "Invalid API key"); }
+      if (data.valid) { setKeyValid(true); if (data.warning) setKeyWarning(data.warning); } else { setKeyError(data.error || "Invalid API key"); }
     } catch { setKeyError("Validation failed. Try again."); }
     finally { setValidating(false); }
   };
@@ -273,9 +274,12 @@ export default function ToolPage() {
                   </p>
                 </div>
               ) : (
-                <div className="flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-2">
-                  <span className="text-xs text-emerald-700">{provider === "anthropic" ? "Anthropic" : "Gemini"} connected</span>
-                  <button onClick={() => { setKeyValid(false); setApiKey(""); }} className="text-xs text-red-500 hover:text-red-600">Disconnect</button>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-2">
+                    <span className="text-xs text-emerald-700">{provider === "anthropic" ? "Anthropic" : "Gemini"} connected</span>
+                    <button onClick={() => { setKeyValid(false); setApiKey(""); setKeyWarning(""); }} className="text-xs text-red-500 hover:text-red-600">Disconnect</button>
+                  </div>
+                  {keyWarning && <p className="rounded-lg bg-amber-50 px-3 py-2 text-[11px] text-amber-700">{keyWarning}</p>}
                 </div>
               )}
             </SectionCard>

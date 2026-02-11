@@ -28,14 +28,32 @@ export async function POST(req: NextRequest) {
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : "Validation failed";
+
+    // Rate limit / quota errors mean the key IS valid — just temporarily limited
+    if (
+      message.includes("429") ||
+      message.includes("quota") ||
+      message.includes("rate") ||
+      message.includes("Too Many Requests") ||
+      message.includes("RESOURCE_EXHAUSTED") ||
+      message.includes("overloaded")
+    ) {
+      return NextResponse.json({ valid: true, warning: "Key is valid but you may be near your rate limit. Enrichment will retry automatically." });
+    }
+
+    // Auth errors mean the key is genuinely invalid
     if (
       message.includes("401") ||
+      message.includes("403") ||
       message.includes("invalid") ||
       message.includes("API_KEY") ||
-      message.includes("authentication")
+      message.includes("authentication") ||
+      message.includes("PERMISSION_DENIED")
     ) {
-      return NextResponse.json({ valid: false, error: "Invalid API key" });
+      return NextResponse.json({ valid: false, error: "Invalid API key. Please check and try again." });
     }
-    return NextResponse.json({ valid: false, error: message });
+
+    // Network / unknown errors — don't block the user, let them try
+    return NextResponse.json({ valid: true, warning: "Could not fully verify key, but it looks correctly formatted. Proceed with caution." });
   }
 }

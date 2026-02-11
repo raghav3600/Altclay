@@ -84,12 +84,13 @@ function CostCalculator() {
               </optgroup>
             </select>
             {guidance && (
-              <div className="mt-1.5 flex items-center gap-2 text-[11px]">
-                <span className="text-blue-400">Has web search</span>
-                <span className="text-zinc-600">|</span>
+              <div className="mt-1.5 text-[11px]">
+                <span className="text-blue-400">Includes web search</span>
+                <span className="text-zinc-600"> | </span>
                 <span className="text-zinc-500">{guidance.bestFor}</span>
               </div>
             )}
+            <p className="mt-1 text-[11px] text-zinc-600">Not sure? Claude Sonnet 4.5 or Gemini 2.5 Pro are great defaults.</p>
           </div>
         </div>
 
@@ -138,7 +139,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-8">
             <a href="#how" className="hidden text-sm text-zinc-400 transition hover:text-white sm:block">How It Works</a>
             <a href="#calculator" className="hidden text-sm text-zinc-400 transition hover:text-white sm:block">Calculator</a>
-            <a href="#about" className="hidden text-sm text-zinc-400 transition hover:text-white sm:block">About Me</a>
+            <a href="#about" className="hidden text-sm text-zinc-400 transition hover:text-white sm:block">About</a>
             <Link href="/tool" className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-[#09090b] transition hover:bg-zinc-200">
               Open App
             </Link>
@@ -161,6 +162,10 @@ export default function LandingPage() {
             Free data enrichment.<br />
             <span className="gradient-text">Powered by your API key.</span>
           </h1>
+
+          <p className="animate-fade-in-up delay-200 mx-auto mt-6 max-w-2xl text-lg text-zinc-400 sm:text-xl">
+            Enrich any spreadsheet with company data, contacts, and custom research — using AI and live web search. No database lookups, just intelligent research.
+          </p>
 
           <div className="animate-fade-in-up delay-300 mt-10">
             <Link href="/tool" className="animate-pulse-glow inline-flex items-center gap-2.5 rounded-xl bg-white px-8 py-4 text-base font-bold text-[#09090b] shadow-xl transition hover:bg-zinc-100">
@@ -196,24 +201,21 @@ export default function LandingPage() {
                     <th className="px-4 py-3 font-medium text-zinc-400">Domain</th>
                     <th className="border-l border-indigo-500/30 bg-indigo-500/5 px-4 py-3 font-medium text-indigo-300">Decision Maker</th>
                     <th className="bg-indigo-500/5 px-4 py-3 font-medium text-indigo-300">Open Roles</th>
-                    <th className="bg-indigo-500/5 px-4 py-3 font-medium text-indigo-300">Sustainability Initiatives</th>
                     <th className="bg-indigo-500/5 px-4 py-3 font-medium text-indigo-300">Recent News</th>
                   </tr>
                 </thead>
                 <tbody className="text-zinc-300">
                   {[
-                    { co: "Stripe", d: "stripe.com", dm: "Patrick Collison, CEO", roles: "14 engineering roles", sust: "100% renewable energy ops", news: "Launched Stripe Tax in 12 new markets" },
-                    { co: "Vercel", d: "vercel.com", dm: "Guillermo Rauch, CEO", roles: "8 open roles", sust: "Carbon-neutral hosting", news: "Announced Next.js 16 at VConf" },
-                    { co: "Linear", d: "linear.app", dm: "Karri Saarinen, CEO", roles: "3 engineering roles", sust: "Remote-first, low footprint", news: "Raised Series B at $400M valuation" },
-                    { co: "Notion", d: "notion.so", dm: "Ivan Zhao, CEO", roles: "22 open roles", sust: "LEED-certified offices", news: "Launched Notion Mail & Calendar" },
-                    { co: "Figma", d: "figma.com", dm: "Dylan Field, CEO", roles: "18 open roles", sust: "Green energy data centers", news: "Figma Slides GA release" },
+                    { co: "Stripe", d: "stripe.com", dm: "Patrick Collison, CEO", roles: "14 engineering roles", news: "Launched Stripe Tax in 12 new markets" },
+                    { co: "Vercel", d: "vercel.com", dm: "Guillermo Rauch, CEO", roles: "8 open roles", news: "Announced Next.js 16 at VConf" },
+                    { co: "Linear", d: "linear.app", dm: "Karri Saarinen, CEO", roles: "3 engineering roles", news: "Raised Series B at $400M valuation" },
+                    { co: "Notion", d: "notion.so", dm: "Ivan Zhao, CEO", roles: "22 open roles", news: "Launched Notion Mail & Calendar" },
                   ].map((r, i) => (
                     <tr key={i} className="border-b border-white/[0.03] transition hover:bg-white/[0.02]">
                       <td className="px-4 py-2.5 font-medium text-white">{r.co}</td>
                       <td className="px-4 py-2.5 text-zinc-500">{r.d}</td>
                       <td className="border-l border-indigo-500/30 bg-indigo-500/5 px-4 py-2.5 text-indigo-200">{r.dm}</td>
                       <td className="bg-indigo-500/5 px-4 py-2.5 text-indigo-200">{r.roles}</td>
-                      <td className="bg-indigo-500/5 px-4 py-2.5 text-indigo-200">{r.sust}</td>
                       <td className="bg-indigo-500/5 px-4 py-2.5 text-indigo-200">{r.news}</td>
                     </tr>
                   ))}
@@ -221,7 +223,7 @@ export default function LandingPage() {
               </table>
             </div>
             <div className="flex items-center justify-between border-t border-white/5 px-4 py-2.5">
-              <span className="text-xs text-zinc-500">5 of 500 rows enriched</span>
+              <span className="text-[11px] text-zinc-600">Illustrative example — results generated by AI + web search. Actual output may vary.</span>
               <div className="flex items-center gap-4 text-xs">
                 <span className="text-zinc-600">Your data</span>
                 <span className="flex items-center gap-1.5 text-indigo-400">
@@ -234,8 +236,68 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* WHAT FREECLAY CAN ENRICH */}
+      <section className="border-t border-white/5 bg-zinc-900/50 px-6 py-24 sm:py-32">
+        <div className="mx-auto max-w-5xl">
+          <R>
+            <p className="text-sm font-semibold uppercase tracking-widest text-indigo-400">What it does</p>
+            <h2 className="mt-4 text-3xl font-bold sm:text-5xl">AI-powered research for any dataset.</h2>
+            <p className="mt-5 max-w-3xl text-lg text-zinc-400">
+              FreeClay uses AI + live web search to research each row in your spreadsheet. It works for any type of data — not just companies.
+            </p>
+          </R>
+
+          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { title: "Companies", examples: "CEO name, funding raised, employee count, tech stack, recent news", icon: "M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" },
+              { title: "People", examples: "Current employer, job title, LinkedIn URL, published work, education", icon: "M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" },
+              { title: "Startups", examples: "Latest round, investors, product description, competitors, Crunchbase data", icon: "M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.58-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" },
+              { title: "Universities", examples: "Ranking, acceptance rate, tuition, notable alumni, research focus", icon: "M4.26 10.147a60.438 60.438 0 00-.491 6.347A48.62 48.62 0 0112 20.904a48.62 48.62 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.636 50.636 0 00-2.658-.813A59.906 59.906 0 0112 3.493a59.903 59.903 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" },
+              { title: "Products", examples: "Pricing, reviews, features, competitors, G2 rating", icon: "M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" },
+              { title: "Anything else", examples: "Countries, real estate, restaurants, research papers — just describe what you need", icon: "M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" },
+            ].map((item, i) => (
+              <R key={item.title} className={`delay-${(i + 1) * 100}`}>
+                <div className="rounded-2xl border border-white/5 bg-zinc-900 p-5">
+                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 text-indigo-400">
+                    <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d={item.icon} /></svg>
+                  </div>
+                  <h3 className="text-sm font-semibold text-white">{item.title}</h3>
+                  <p className="mt-1.5 text-[12px] leading-relaxed text-zinc-500">{item.examples}</p>
+                </div>
+              </R>
+            ))}
+          </div>
+
+          {/* Honest limitations */}
+          <R className="delay-400">
+            <div className="mx-auto mt-12 max-w-3xl rounded-2xl border border-amber-500/10 bg-amber-500/[0.03] p-6">
+              <h3 className="text-sm font-semibold text-amber-300">How is this different from Clay?</h3>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+                Clay connects to 150+ verified data providers (Apollo, ZoomInfo, Clearbit, etc.) for structured lookups.
+                FreeClay takes a different approach: it uses <strong className="text-zinc-300">AI + live web search</strong> to research
+                each row — more like Clay&apos;s Claygent feature. This means:
+              </p>
+              <ul className="mt-3 space-y-1.5 text-sm text-zinc-400">
+                <li className="flex items-start gap-2">
+                  <svg className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" /></svg>
+                  <span><strong className="text-zinc-300">Great for</strong> public info, news, general research, company overviews, anything Google can find</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <svg className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" /></svg>
+                  <span><strong className="text-zinc-300">Great for</strong> custom research questions that don&apos;t fit into rigid data provider schemas</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <svg className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" /></svg>
+                  <span><strong className="text-zinc-300">Not ideal for</strong> verified contact emails, phone numbers, or data that requires proprietary database access</span>
+                </li>
+              </ul>
+            </div>
+          </R>
+        </div>
+      </section>
+
       {/* HOW IT WORKS */}
-      <section id="how" className="border-t border-white/5 bg-zinc-900/50 px-6 py-24 sm:py-32">
+      <section id="how" className="px-6 py-24 sm:py-32">
         <div className="mx-auto max-w-5xl">
           <R>
             <p className="text-sm font-semibold uppercase tracking-widest text-indigo-400">How it works</p>
@@ -245,9 +307,9 @@ export default function LandingPage() {
           <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[
               { n: "01", t: "Upload your spreadsheet", d: "CSV or Excel. Parsed 100% in your browser. Nothing touches any server.", icon: "M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" },
-              { n: "02", t: "Describe what you need", d: "Type in plain English. We auto-detect the new columns to add to your file.", icon: "M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" },
-              { n: "03", t: "Pick a model", d: "Choose Claude or Gemini. See the estimated API usage before you start.", icon: "M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" },
-              { n: "04", t: "Add key, preview & run", d: "Test 3 rows free. Then run the full batch and download your enriched file.", icon: "M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" },
+              { n: "02", t: "Describe what you need", d: "Type in plain English — or pick a template. We auto-detect the new columns to add.", icon: "M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" },
+              { n: "03", t: "Pick a model & add key", d: "Choose Claude or Gemini. See the estimated API cost. Then connect your key.", icon: "M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" },
+              { n: "04", t: "Test 3 rows, then run all", d: "Preview results on 3 rows first. Happy? Run the full batch and download.", icon: "M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" },
             ].map((s, i) => (
               <R key={s.n} className={`delay-${(i + 1) * 100}`}>
                 <div className="group rounded-2xl border border-white/5 bg-zinc-900 p-6 transition hover:border-indigo-500/20 hover:bg-zinc-900/80">
@@ -265,7 +327,7 @@ export default function LandingPage() {
       </section>
 
       {/* ESTIMATE CALCULATOR */}
-      <section id="calculator" className="px-6 py-24 sm:py-32">
+      <section id="calculator" className="border-t border-white/5 bg-zinc-900/50 px-6 py-24 sm:py-32">
         <div className="mx-auto max-w-4xl">
           <R>
             <p className="text-sm font-semibold uppercase tracking-widest text-emerald-400">100% free platform</p>
@@ -282,28 +344,33 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* COMPARISON TABLE */}
-      <section id="compare" className="border-t border-white/5 bg-zinc-900/50 px-6 py-24 sm:py-32">
+      {/* COMPARISON TABLE — Reframed for AI research */}
+      <section id="compare" className="px-6 py-24 sm:py-32">
         <div className="mx-auto max-w-4xl">
           <R>
             <p className="text-sm font-semibold uppercase tracking-widest text-indigo-400">Why FreeClay</p>
             <h2 className="mt-4 text-3xl font-bold leading-tight sm:text-5xl">
-              Same enrichment. <span className="gradient-text">100% free.</span>
+              AI research enrichment. <span className="gradient-text">100% free.</span>
             </h2>
+            <p className="mt-4 text-lg text-zinc-500">
+              Comparing AI-powered research capabilities — FreeClay vs Clay&apos;s Claygent.
+            </p>
           </R>
 
           <R className="delay-200">
             <div className="mt-14 overflow-hidden rounded-2xl border border-white/10 bg-zinc-900">
               <div className="grid grid-cols-3 border-b border-white/5 text-sm">
                 <div className="px-6 py-4" />
-                <div className="border-l border-white/5 px-6 py-4 text-zinc-500">Clay</div>
+                <div className="border-l border-white/5 px-6 py-4 text-zinc-500">Clay (Claygent)</div>
                 <div className="border-l border-indigo-500/30 bg-indigo-500/5 px-6 py-4 font-semibold text-indigo-300">FreeClay</div>
               </div>
               {[
                 ["Platform fee", "$149 \u2013 $800/mo", "$0 forever"],
-                ["500 rows enriched", "Eats your credits", "~$2 \u2013 $10 in API usage"],
+                ["AI research per row", "Uses your Clay credits", "Pay AI provider directly"],
+                ["500 rows researched", "Eats credit quota", "~$2 \u2013 $10 in API usage"],
+                ["AI models available", "GPT-4o via Claygent", "Claude + Gemini (your choice)"],
+                ["Web search included", "Yes (via Claygent)", "Yes (built-in)"],
                 ["Your data", "On their servers", "Never leaves your browser"],
-                ["AI providers", "Their selection", "Claude or Gemini"],
                 ["Source code", "Proprietary", "Fully open source"],
                 ["Account required", "Yes + credit card", "No"],
               ].map(([feat, clay, free], i) => (
@@ -318,43 +385,18 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* BYOK — trimmed */}
-      <section id="byok" className="px-6 py-24 sm:py-32">
-        <div className="mx-auto max-w-5xl">
-          <R>
-            <p className="text-sm font-semibold uppercase tracking-widest text-emerald-400">Bring Your Own Key</p>
-            <h2 className="mt-4 text-3xl font-bold sm:text-5xl">Your key. Your usage.<br />We see nothing.</h2>
-          </R>
-
-          <div className="mt-14 grid gap-6 sm:grid-cols-3">
-            {[
-              { title: "No middleman", desc: "Your API key goes directly to the AI provider. We never see, store, or log it.", label: "Direct" },
-              { title: "No markup", desc: "You pay the provider's published rate. We add $0. Ever.", label: "$0 fee" },
-              { title: "Preview first", desc: "Test on 3 rows before running the full batch. No surprises.", label: "Safe" },
-            ].map((f, i) => (
-              <R key={f.title} className={`delay-${(i + 1) * 100}`}>
-                <div className="rounded-2xl border border-white/5 bg-zinc-900 p-6">
-                  <span className="inline-flex rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-400">{f.label}</span>
-                  <h3 className="mt-4 text-base font-semibold text-white">{f.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-zinc-500">{f.desc}</p>
-                </div>
-              </R>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* TRUST / PRIVACY */}
+      {/* PRIVACY & TRUST — Consolidated single section */}
       <section className="border-t border-white/5 bg-zinc-900/50 px-6 py-24 sm:py-32">
         <div className="mx-auto max-w-4xl">
           <R>
-            <p className="text-sm font-semibold uppercase tracking-widest text-indigo-400">Trust architecture</p>
+            <p className="text-sm font-semibold uppercase tracking-widest text-emerald-400">Privacy & trust</p>
             <h2 className="mt-4 text-3xl font-bold sm:text-5xl">We literally can&apos;t see your data.</h2>
             <p className="mt-5 max-w-2xl text-lg text-zinc-400">
-              No database. No cookies. No localStorage. Everything stays in your browser. Close the tab and it&apos;s all gone.
+              Your API key, your files, your results — everything stays in your browser. We&apos;re a CORS proxy. That&apos;s it.
             </p>
           </R>
 
+          {/* Architecture diagram */}
           <R className="delay-200">
             <div className="mt-14 flex flex-col items-center gap-0 sm:flex-row sm:justify-center sm:gap-0">
               <div className="animate-float rounded-xl border border-white/10 bg-zinc-900 px-8 py-5 text-center">
@@ -383,31 +425,34 @@ export default function LandingPage() {
                 <div className="text-xs text-zinc-500">Enriched file</div>
               </div>
             </div>
-            <p className="mt-6 text-center text-xs text-zinc-600">Our server is a CORS proxy only. Zero logging. Zero storage. Verify it yourself — we&apos;re open source.</p>
           </R>
-        </div>
-      </section>
 
-      {/* WORKS FOR ANYTHING */}
-      <section className="px-6 py-24 sm:py-32">
-        <div className="mx-auto max-w-4xl text-center">
-          <R>
-            <p className="text-sm font-semibold uppercase tracking-widest text-indigo-400">Universal</p>
-            <h2 className="mt-4 text-3xl font-bold sm:text-5xl">Works for any dataset.</h2>
-            <p className="mx-auto mt-5 max-w-2xl text-lg text-zinc-400">
-              Describe what you need in plain English. No rigid templates.
-            </p>
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-              {["Companies", "Universities", "People", "Countries", "Products", "Research", "Startups", "Restaurants", "Real Estate", "Anything"].map((t) => (
-                <span key={t} className="rounded-full border border-white/5 bg-zinc-900 px-4 py-2 text-sm text-zinc-400">{t}</span>
+          {/* Privacy checklist — compact */}
+          <R className="delay-300">
+            <div className="mx-auto mt-10 grid max-w-2xl grid-cols-2 gap-x-8 gap-y-2 text-sm sm:grid-cols-3">
+              {[
+                "No database",
+                "No cookies",
+                "No localStorage",
+                "No analytics",
+                "No tracking",
+                "Key in memory only",
+              ].map((item) => (
+                <div key={item} className="flex items-center gap-2 text-zinc-400">
+                  <svg className="h-4 w-4 shrink-0 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" /></svg>
+                  {item}
+                </div>
               ))}
             </div>
+            <p className="mt-6 text-center text-xs text-zinc-600">
+              Don&apos;t take our word for it — <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-zinc-400 underline hover:text-white">read the source code</a>. The entire codebase is open source.
+            </p>
           </R>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="relative overflow-hidden border-t border-white/5 bg-zinc-900/50 px-6 py-28 sm:py-36">
+      <section className="relative overflow-hidden px-6 py-28 sm:py-36">
         <div className="pointer-events-none absolute inset-0" style={{backgroundImage: "linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)", backgroundSize: "64px 64px"}} />
         <div className="pointer-events-none absolute top-1/2 left-1/2 h-[400px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-600/8 blur-[100px]" />
 

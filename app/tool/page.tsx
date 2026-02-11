@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import type {
   Provider,
@@ -76,6 +76,43 @@ function InfoTip({ text }: { text: string }) {
 const SPEED_COLORS = { fast: "bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20", medium: "bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/20", slow: "bg-red-500/10 text-red-400 ring-1 ring-red-500/20" };
 const QUALITY_COLORS = { good: "bg-zinc-500/10 text-zinc-400 ring-1 ring-zinc-500/20", great: "bg-blue-500/10 text-blue-400 ring-1 ring-blue-500/20", best: "bg-purple-500/10 text-purple-400 ring-1 ring-purple-500/20" };
 
+/* ------------------------------------------------------------------ */
+/*  Prompt templates                                                   */
+/* ------------------------------------------------------------------ */
+
+const PROMPT_TEMPLATES = [
+  { label: "Company research", description: "Find the CEO name, total funding raised, employee count, and a brief company description" },
+  { label: "Job postings", description: "Find the number of open job postings, most common roles being hired, and hiring page URL" },
+  { label: "Recent news", description: "Find the most recent news headline, news date, and a brief summary of the article" },
+  { label: "Tech stack", description: "Find the primary programming languages, cloud provider, and key technologies used" },
+  { label: "University info", description: "Find the university ranking, acceptance rate, annual tuition, and notable alumni" },
+];
+
+/* ------------------------------------------------------------------ */
+/*  Smart column detection                                             */
+/* ------------------------------------------------------------------ */
+
+/** Columns that are commonly useful as input identifiers */
+const SMART_COLUMN_PATTERNS = [
+  /^(company|organization|org|business|brand)[\s_-]*(name)?$/i,
+  /^(domain|website|url|site|web)[\s_-]*(name|url)?$/i,
+  /^(name|full[\s_-]*name|person[\s_-]*name)$/i,
+  /^(email|e-mail)[\s_-]*(address)?$/i,
+  /^(linkedin|twitter|x|github)[\s_-]*(url|link|profile)?$/i,
+  /^(ticker|symbol|stock)[\s_-]*(symbol)?$/i,
+  /^(university|school|college|institution)[\s_-]*(name)?$/i,
+  /^(country|city|state|location|address)$/i,
+  /^(product|app|service|tool)[\s_-]*(name)?$/i,
+];
+
+function detectSmartColumns(columns: string[]): string[] {
+  const matches = columns.filter((col) =>
+    SMART_COLUMN_PATTERNS.some((pattern) => pattern.test(col.trim()))
+  );
+  // If no smart matches, return first column as a sensible default
+  return matches.length > 0 ? matches : columns.length > 0 ? [columns[0]] : [];
+}
+
 /** Try to extract output column names from a free-text description */
 function detectOutputColumns(description: string): OutputColumn[] {
   if (!description.trim()) return [];
@@ -119,6 +156,8 @@ export default function ToolPage() {
   const [outputColumns, setOutputColumns] = useState<OutputColumn[]>([]);
   const [newColumnName, setNewColumnName] = useState("");
   const [autoDetected, setAutoDetected] = useState(false);
+  const [showAllColumns, setShowAllColumns] = useState(false);
+  const [columnsAutoSelected, setColumnsAutoSelected] = useState(false);
 
   const [provider, setProvider] = useState<Provider>("anthropic");
   const [modelId, setModelId] = useState<ModelId>("claude-sonnet-4-5-20250929");
@@ -159,6 +198,25 @@ export default function ToolPage() {
     return calculateCostEstimate(file.totalRows, inp, out, provider, modelId);
   }, [file, inputColumns, outputColumns, enrichmentDescription, customPrompt, advancedMode, provider, modelId]);
 
+  /* Smart columns: split into "recommended" and "other" */
+  const smartColumns = useMemo(() => {
+    if (!file) return { recommended: [] as string[], other: [] as string[] };
+    const rec = detectSmartColumns(file.columns);
+    const other = file.columns.filter((c) => !rec.includes(c));
+    return { recommended: rec, other };
+  }, [file]);
+
+  /* Auto-select smart columns when file is loaded */
+  useEffect(() => {
+    if (file && !columnsAutoSelected) {
+      const smart = detectSmartColumns(file.columns);
+      if (smart.length > 0) {
+        setInputColumns(smart);
+        setColumnsAutoSelected(true);
+      }
+    }
+  }, [file, columnsAutoSelected]);
+
   /* ---- handlers ---- */
   const validateKey = async () => {
     if (!apiKey.trim()) { setKeyError("Please enter an API key"); return; }
@@ -178,7 +236,8 @@ export default function ToolPage() {
       const parsed = await parseFile(f);
       if (parsed.totalRows === 0) { setFileError("File is empty."); return; }
       setFile(parsed);
-      setInputColumns([]); setOutputColumns([]); setAutoDetected(false);
+      setInputColumns([]); setOutputColumns([]); setAutoDetected(false); setColumnsAutoSelected(false);
+      setShowAllColumns(false);
       setTestDone(false); setTestResults([]); setFullDone(false); setFullResults([]);
     } catch (err) { setFileError((err as Error).message); }
   };
@@ -201,6 +260,12 @@ export default function ToolPage() {
       const detected = detectOutputColumns(enrichmentDescription);
       if (detected.length > 0) { setOutputColumns(detected); setAutoDetected(true); }
     }
+  };
+
+  const applyTemplate = (template: typeof PROMPT_TEMPLATES[0]) => {
+    setEnrichmentDescription(template.description);
+    const detected = detectOutputColumns(template.description);
+    if (detected.length > 0) { setOutputColumns(detected); setAutoDetected(true); }
   };
 
   const enrichSingleRow = useCallback(async (row: Record<string, string>, index: number): Promise<EnrichmentResult> => {
@@ -324,7 +389,7 @@ export default function ToolPage() {
                       <p className="text-xs font-medium text-white">{file.fileName}</p>
                       <p className="text-[11px] text-zinc-500">{file.totalRows} rows &middot; {file.columns.length} columns</p>
                     </div>
-                    <button onClick={() => { setFile(null); setInputColumns([]); setOutputColumns([]); setTestDone(false); setFullDone(false); }} className="text-xs text-red-400 hover:text-red-300">Remove</button>
+                    <button onClick={() => { setFile(null); setInputColumns([]); setOutputColumns([]); setTestDone(false); setFullDone(false); setColumnsAutoSelected(false); }} className="text-xs text-red-400 hover:text-red-300">Remove</button>
                   </div>
                   <div className="overflow-hidden rounded-lg border border-white/[0.06]">
                     <div className="max-h-48 overflow-auto">
@@ -362,19 +427,61 @@ export default function ToolPage() {
                 </div>
               )}
 
-              {/* A: Select input columns */}
+              {/* A: Select input columns — with smart detection */}
               {file && (
                 <div className="mb-5">
                   <label className="mb-2 flex items-center text-xs font-medium text-zinc-300">
                     Select the columns AI should use to look things up
                     <InfoTip text="Pick the columns that contain the data to search for. For example, if your file has company names, select that column." />
                   </label>
-                  <p className="mb-2.5 text-[11px] text-zinc-600">e.g. if enriching companies, select the column with company names</p>
+                  {columnsAutoSelected && inputColumns.length > 0 && (
+                    <p className="mb-2 text-[11px] text-indigo-400">Auto-selected based on your column names — adjust if needed</p>
+                  )}
+
+                  {/* Recommended columns (always visible) */}
                   <div className="flex flex-wrap gap-1.5">
-                    {file.columns.map((col) => (
+                    {smartColumns.recommended.map((col) => (
                       <button key={col} onClick={() => toggleColumn(col)}
                         className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${inputColumns.includes(col) ? "border-indigo-500/40 bg-indigo-500/10 text-indigo-300" : "border-white/10 text-zinc-500 hover:border-white/20 hover:text-zinc-400"}`}>
                         {col}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Other columns (collapsible) */}
+                  {smartColumns.other.length > 0 && (
+                    <div className="mt-2">
+                      {showAllColumns ? (
+                        <>
+                          <div className="flex flex-wrap gap-1.5">
+                            {smartColumns.other.map((col) => (
+                              <button key={col} onClick={() => toggleColumn(col)}
+                                className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${inputColumns.includes(col) ? "border-indigo-500/40 bg-indigo-500/10 text-indigo-300" : "border-white/10 text-zinc-500 hover:border-white/20 hover:text-zinc-400"}`}>
+                                {col}
+                              </button>
+                            ))}
+                          </div>
+                          <button onClick={() => setShowAllColumns(false)} className="mt-2 text-[11px] text-zinc-600 hover:text-zinc-400">Show less</button>
+                        </>
+                      ) : (
+                        <button onClick={() => setShowAllColumns(true)} className="mt-1 text-[11px] text-zinc-600 hover:text-zinc-400">
+                          + {smartColumns.other.length} more columns
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Prompt templates */}
+              {file && !enrichmentDescription && (
+                <div className="mb-4">
+                  <p className="mb-2 text-[11px] text-zinc-600">Quick start — pick a template or write your own below</p>
+                  <div className="flex flex-wrap gap-2">
+                    {PROMPT_TEMPLATES.map((t) => (
+                      <button key={t.label} onClick={() => applyTemplate(t)}
+                        className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-1.5 text-[11px] font-medium text-zinc-400 transition hover:border-indigo-500/30 hover:bg-indigo-500/5 hover:text-indigo-300">
+                        {t.label}
                       </button>
                     ))}
                   </div>
@@ -506,6 +613,7 @@ export default function ToolPage() {
                   );
                 })}
               </div>
+              <p className="mt-3 text-[11px] text-zinc-600">Not sure? The recommended model is a great default for most tasks.</p>
             </Card>
 
             {/* --- 4. API Key --- */}

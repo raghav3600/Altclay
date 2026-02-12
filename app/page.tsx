@@ -490,22 +490,15 @@ export default function LandingPage() {
             <p className="mx-auto mt-3 max-w-md text-sm text-zinc-500">
               OpenClay is built in the open. I&apos;d love to hear what&apos;s working, what&apos;s not, and what you&apos;d like to see next.
             </p>
-            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-              <a
-                href="mailto:raghav@openclay.io"
-                className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-5 py-3 text-sm font-medium text-zinc-700 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50"
-              >
-                <svg className="h-4 w-4 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>
-                raghav@openclay.io
-              </a>
+            <div className="mt-8">
               <a
                 href="https://www.linkedin.com/in/-raghav/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-5 py-3 text-sm font-medium text-zinc-700 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50"
+                className="inline-flex items-center gap-2.5 rounded-xl border border-zinc-200 bg-white px-6 py-3.5 text-sm font-medium text-zinc-700 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50"
               >
-                <svg className="h-4 w-4 text-zinc-500" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-                Connect on LinkedIn
+                <svg className="h-4.5 w-4.5 text-[#0A66C2]" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                Connect with Raghav on LinkedIn
               </a>
             </div>
           </R>
@@ -526,19 +519,21 @@ export default function LandingPage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="border-t border-zinc-100 px-6 py-8">
+      <footer className="border-t border-zinc-100 px-6 py-10">
         <div className="mx-auto max-w-5xl">
-          <div className="flex flex-col items-center justify-between gap-4 text-xs text-zinc-400 sm:flex-row">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
+            <div className="flex items-center gap-2 text-xs text-zinc-400">
               <div className="flex h-5 w-5 items-center justify-center rounded bg-zinc-900 text-[10px] font-black text-white">O</div>
               <span>OpenClay — 100% free, open-source data enrichment.</span>
             </div>
-            <div className="flex items-center gap-6">
-              <a href="mailto:raghav@openclay.io" className="text-zinc-400 transition hover:text-zinc-900">Feedback</a>
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-zinc-400 transition hover:text-zinc-900">Source on GitHub</a>
+            <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-zinc-400">
+              <Link href="/privacy" className="transition hover:text-zinc-900">Privacy</Link>
+              <Link href="/terms" className="transition hover:text-zinc-900">Terms</Link>
+              <Link href="/data" className="transition hover:text-zinc-900">Data Practices</Link>
+              <a href="https://www.linkedin.com/in/-raghav/" target="_blank" rel="noopener noreferrer" className="transition hover:text-zinc-900">LinkedIn</a>
             </div>
           </div>
-          <p className="mt-4 text-center text-[10px] leading-relaxed text-zinc-400">
+          <p className="mt-6 text-center text-[10px] leading-relaxed text-zinc-400">
             Disclaimer: OpenClay is provided as-is without warranty. AI-generated data may be inaccurate — always verify results. We are not responsible for the accuracy, completeness, or consequences of any enrichment output. Use at your own risk.
           </p>
         </div>

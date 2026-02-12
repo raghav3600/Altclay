@@ -1,38 +1,64 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#18181b"/>
-      <stop offset="100%" stop-color="#27272a"/>
+    <linearGradient id="pot-main" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0%" stop-color="#f0863a"/>
+      <stop offset="50%" stop-color="#e8732a"/>
+      <stop offset="100%" stop-color="#d4621e"/>
     </linearGradient>
-    <linearGradient id="glow" x1="0" y1="1" x2="0" y2="0">
-      <stop offset="0%" stop-color="#10b981"/>
-      <stop offset="100%" stop-color="#6ee7b7"/>
+    <linearGradient id="pot-shadow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#d4621e"/>
+      <stop offset="100%" stop-color="#b8511a"/>
+    </linearGradient>
+    <linearGradient id="lid-main" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0%" stop-color="#f0863a"/>
+      <stop offset="100%" stop-color="#d4621e"/>
+    </linearGradient>
+    <linearGradient id="highlight" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f9a85c" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#f0863a" stop-opacity="0"/>
     </linearGradient>
   </defs>
-  <!-- Background -->
-  <rect width="512" height="512" rx="108" fill="url(#bg)"/>
-  <!-- Spreadsheet grid — 2 data columns (gray) -->
-  <rect x="80" y="168" width="80" height="64" rx="8" fill="#3f3f46"/>
-  <rect x="172" y="168" width="80" height="64" rx="8" fill="#3f3f46"/>
-  <rect x="80" y="244" width="80" height="64" rx="8" fill="#3f3f46"/>
-  <rect x="172" y="244" width="80" height="64" rx="8" fill="#3f3f46"/>
-  <rect x="80" y="320" width="80" height="64" rx="8" fill="#3f3f46"/>
-  <rect x="172" y="320" width="80" height="64" rx="8" fill="#3f3f46"/>
-  <!-- Enriched column — emerald -->
-  <rect x="264" y="168" width="80" height="64" rx="8" fill="#10b981" opacity="0.3"/>
-  <rect x="264" y="244" width="80" height="64" rx="8" fill="#10b981" opacity="0.3"/>
-  <rect x="264" y="320" width="80" height="64" rx="8" fill="#10b981" opacity="0.3"/>
-  <!-- Checkmarks in enriched cells -->
-  <g fill="none" stroke="#34d399" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-    <polyline points="292,195 300,205 316,189"/>
-    <polyline points="292,271 300,281 316,265"/>
-    <polyline points="292,347 300,357 316,341"/>
-  </g>
-  <!-- AI sparkle — 4-point star, top right -->
-  <path d="M400,80 L408,130 L416,80 L408,130 Z" fill="url(#glow)"/>
-  <path d="M400,108 C400,108 408,80 408,80 C408,80 416,108 416,108 C416,108 408,136 408,136 C408,136 400,108 400,108 Z" fill="url(#glow)"/>
-  <path d="M378,108 C378,108 408,100 408,100 C408,100 438,108 438,108 C438,108 408,116 408,116 C408,116 378,108 378,108 Z" fill="url(#glow)"/>
-  <!-- Small sparkle -->
-  <path d="M356,158 C356,158 362,146 362,146 C362,146 368,158 368,158 C368,158 362,170 362,170 C362,170 356,158 356,158 Z" fill="#6ee7b7" opacity="0.6"/>
-  <path d="M350,158 C350,158 362,154 362,154 C362,154 374,158 374,158 C374,158 362,162 362,162 C362,162 350,158 350,158 Z" fill="#6ee7b7" opacity="0.6"/>
+
+  <!-- Lid - tilted ellipse, resting in front of pot -->
+  <ellipse cx="170" cy="420" rx="95" ry="28" fill="url(#pot-shadow)" transform="rotate(-12, 170, 420)"/>
+  <ellipse cx="170" cy="414" rx="90" ry="24" fill="url(#lid-main)" transform="rotate(-12, 170, 414)"/>
+  <ellipse cx="165" cy="411" rx="60" ry="14" fill="url(#highlight)" transform="rotate(-12, 165, 411)" opacity="0.5"/>
+
+  <!-- Pot body -->
+  <path d="
+    M155,130
+    C155,130 135,130 130,135
+    Q90,150 75,210
+    Q55,290 70,350
+    Q85,400 155,420
+    Q200,432 256,435
+    Q312,432 357,420
+    Q427,400 442,350
+    Q457,290 437,210
+    Q422,150 382,135
+    C377,130 357,130 357,130
+  " fill="url(#pot-main)"/>
+
+  <!-- Pot rim - wide top opening -->
+  <ellipse cx="256" cy="132" rx="105" ry="22" fill="url(#pot-shadow)"/>
+  <ellipse cx="256" cy="128" rx="105" ry="22" fill="#f5955e"/>
+  <ellipse cx="256" cy="128" rx="88" ry="16" fill="url(#pot-shadow)" opacity="0.4"/>
+
+  <!-- Pot body highlight/sheen -->
+  <path d="
+    M195,180
+    Q175,240 185,310
+    Q190,340 210,360
+  " fill="none" stroke="#f9a85c" stroke-width="14" stroke-linecap="round" opacity="0.45"/>
+
+  <!-- Pot right shadow for depth -->
+  <path d="
+    M357,130
+    Q422,150 437,210
+    Q457,290 442,350
+    Q427,400 357,420
+    Q400,395 415,345
+    Q435,280 420,210
+    Q405,155 357,135
+  " fill="#c45a1a" opacity="0.3"/>
 </svg>

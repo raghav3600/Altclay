@@ -187,7 +187,7 @@ export default function LandingPage() {
           </div>
 
           <div className="animate-fade-in delay-500 mt-14 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-zinc-400">
-            {["We charge $0 — always", "No data stored", "No tracking", "Open source"].map((t) => (
+            {["We charge $0 — always", "No data stored", "Open source"].map((t) => (
               <span key={t} className="flex items-center gap-1.5">
                 <svg className="h-4 w-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" /></svg>
                 {t}
@@ -446,9 +446,9 @@ export default function LandingPage() {
                 "No database",
                 "No cookies",
                 "No localStorage",
-                "No analytics",
-                "No tracking",
                 "Key in memory only",
+                "Files stay local",
+                "100% open source",
               ].map((item) => (
                 <div key={item} className="flex items-center gap-2 text-zinc-600">
                   <svg className="h-4 w-4 shrink-0 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" /></svg>
@@ -457,7 +457,7 @@ export default function LandingPage() {
               ))}
             </div>
             <p className="mt-6 text-center text-xs text-zinc-400">
-              Don&apos;t take our word for it — <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-zinc-600 underline hover:text-zinc-900">read the source code</a>. The entire codebase is open source.
+              Don&apos;t take our word for it — <a href="https://github.com/raghav3600/Altclay" target="_blank" rel="noopener noreferrer" className="text-zinc-600 underline hover:text-zinc-900">read the source code</a>. The entire codebase is open source.
             </p>
           </R>
         </div>
@@ -512,7 +512,7 @@ export default function LandingPage() {
             <p className="text-sm font-semibold uppercase tracking-widest text-zinc-400">Created by</p>
             <h2 className="mt-4 text-2xl font-bold text-zinc-900 sm:text-3xl">Raghav</h2>
             <p className="mx-auto mt-3 max-w-lg text-sm text-zinc-500">
-              Built OpenClay because data enrichment shouldn&apos;t cost $800/month. If you find it useful, I&apos;d love to hear from you.
+              Built OpenClay because data enrichment shouldn&apos;t cost $150/month. If you find it useful, I&apos;d love to hear from you.
             </p>
           </R>
         </div>
@@ -530,6 +530,7 @@ export default function LandingPage() {
               <Link href="/privacy" className="transition hover:text-zinc-900">Privacy</Link>
               <Link href="/terms" className="transition hover:text-zinc-900">Terms</Link>
               <Link href="/data" className="transition hover:text-zinc-900">Data Practices</Link>
+              <a href="https://github.com/raghav3600/Altclay" target="_blank" rel="noopener noreferrer" className="transition hover:text-zinc-900">GitHub</a>
               <a href="https://www.linkedin.com/in/-raghav/" target="_blank" rel="noopener noreferrer" className="transition hover:text-zinc-900">LinkedIn</a>
             </div>
           </div>

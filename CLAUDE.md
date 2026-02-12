@@ -29,10 +29,10 @@ OpenClay is a free, open-source web tool that lets users enrich spreadsheet data
 
 ## Privacy Rules (NON-NEGOTIABLE)
 - NEVER use localStorage or cookies for API keys
-- NEVER add analytics, tracking, or telemetry
 - NEVER log request bodies, API keys, or user data in server functions
 - ALWAYS show trust/privacy messaging on every step of the UI
 - API key stays in React useState() and nowhere else
+- Vercel Web Analytics is used for anonymous page views (no cookies, no personal data)
 
 ## Commands
 - `npm run dev` — Start development server

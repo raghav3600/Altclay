@@ -76,8 +76,8 @@ export default function DataPage() {
                     ["API key", "No", "React useState() only"],
                     ["Enrichment results", "No", "Browser memory only"],
                     ["Personal info", "No", "Never collected"],
-                    ["Usage analytics", "No", "None implemented"],
-                    ["Cookies", "No", "None set"],
+                    ["Usage analytics", "Vercel Analytics", "Anonymous page views only — no personal data"],
+                    ["Cookies", "No", "Vercel Analytics is cookie-free"],
                     ["IP address", "Vercel logs", "Standard hosting logs only"],
                   ].map(([type, stored, where], i) => (
                     <tr key={i} className="border-b border-zinc-50 last:border-0">

@@ -349,7 +349,7 @@ export default function ToolPage() {
       <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-zinc-900 text-xs font-bold text-white">O</div>
+            <img src="/icon.svg" alt="OpenClay" className="h-7 w-7 rounded-lg" />
             <span className="text-base font-bold">OpenClay</span>
           </Link>
           <div className="flex items-center gap-3">

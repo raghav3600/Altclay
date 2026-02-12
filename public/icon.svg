@@ -1,4 +1,38 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#18181b"/>
-  <text x="256" y="358" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif" font-weight="900" font-size="340" fill="white">O</text>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#18181b"/>
+      <stop offset="100%" stop-color="#27272a"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#6ee7b7"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="512" height="512" rx="108" fill="url(#bg)"/>
+  <!-- Spreadsheet grid — 2 data columns (gray) -->
+  <rect x="80" y="168" width="80" height="64" rx="8" fill="#3f3f46"/>
+  <rect x="172" y="168" width="80" height="64" rx="8" fill="#3f3f46"/>
+  <rect x="80" y="244" width="80" height="64" rx="8" fill="#3f3f46"/>
+  <rect x="172" y="244" width="80" height="64" rx="8" fill="#3f3f46"/>
+  <rect x="80" y="320" width="80" height="64" rx="8" fill="#3f3f46"/>
+  <rect x="172" y="320" width="80" height="64" rx="8" fill="#3f3f46"/>
+  <!-- Enriched column — emerald -->
+  <rect x="264" y="168" width="80" height="64" rx="8" fill="#10b981" opacity="0.3"/>
+  <rect x="264" y="244" width="80" height="64" rx="8" fill="#10b981" opacity="0.3"/>
+  <rect x="264" y="320" width="80" height="64" rx="8" fill="#10b981" opacity="0.3"/>
+  <!-- Checkmarks in enriched cells -->
+  <g fill="none" stroke="#34d399" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="292,195 300,205 316,189"/>
+    <polyline points="292,271 300,281 316,265"/>
+    <polyline points="292,347 300,357 316,341"/>
+  </g>
+  <!-- AI sparkle — 4-point star, top right -->
+  <path d="M400,80 L408,130 L416,80 L408,130 Z" fill="url(#glow)"/>
+  <path d="M400,108 C400,108 408,80 408,80 C408,80 416,108 416,108 C416,108 408,136 408,136 C408,136 400,108 400,108 Z" fill="url(#glow)"/>
+  <path d="M378,108 C378,108 408,100 408,100 C408,100 438,108 438,108 C438,108 408,116 408,116 C408,116 378,108 378,108 Z" fill="url(#glow)"/>
+  <!-- Small sparkle -->
+  <path d="M356,158 C356,158 362,146 362,146 C362,146 368,158 368,158 C368,158 362,170 362,170 C362,170 356,158 356,158 Z" fill="#6ee7b7" opacity="0.6"/>
+  <path d="M350,158 C350,158 362,154 362,154 C362,154 374,158 374,158 C374,158 362,162 362,162 C362,162 350,158 350,158 Z" fill="#6ee7b7" opacity="0.6"/>
 </svg>

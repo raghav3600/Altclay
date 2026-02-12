@@ -12,7 +12,7 @@ export default function DataPage() {
       <nav className="border-b border-zinc-100 bg-white/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900 text-sm font-black text-white">O</div>
+            <img src="/icon.svg" alt="OpenClay" className="h-8 w-8 rounded-lg" />
             <span className="text-base font-bold tracking-tight">OpenClay</span>
           </Link>
           <Link href="/tool" className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800">Open App</Link>

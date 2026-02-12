@@ -143,7 +143,7 @@ export default function LandingPage() {
       <nav className="fixed top-0 z-50 w-full border-b border-zinc-100 bg-white/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900 text-sm font-black text-white">O</div>
+            <img src="/icon.svg" alt="OpenClay" className="h-8 w-8 rounded-lg" />
             <span className="text-base font-bold tracking-tight">OpenClay</span>
           </div>
           <div className="flex items-center gap-8">

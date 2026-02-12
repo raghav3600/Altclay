@@ -1,7 +1,7 @@
-# CLAUDE.md — FreeClay
+# CLAUDE.md — OpenClay
 
 ## What is this?
-FreeClay is a free, open-source web tool that lets users enrich spreadsheet data using their own AI API keys (Claude or Gemini). No accounts, no storage, no cost to us. Universal — works for any dataset type (companies, universities, people, countries, etc.).
+OpenClay is a free, open-source web tool that lets users enrich spreadsheet data using their own AI API keys (Claude or Gemini). No accounts, no storage, no cost to us. Universal — works for any dataset type (companies, universities, people, countries, etc.).
 
 ## Stack
 - Next.js (App Router) with TypeScript

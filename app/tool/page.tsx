@@ -355,8 +355,8 @@ export default function ToolPage() {
       <header className="sticky top-0 z-40 border-b border-white/5 bg-[#09090b]/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-xs font-bold text-[#09090b]">F</div>
-            <span className="text-base font-bold">FreeClay</span>
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-xs font-bold text-[#09090b]">O</div>
+            <span className="text-base font-bold">OpenClay</span>
           </Link>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1 text-[11px] text-emerald-400">
@@ -784,7 +784,7 @@ export default function ToolPage() {
 
             {/* Disclaimer */}
             <p className="px-2 text-center text-[10px] leading-relaxed text-zinc-700">
-              Disclaimer: FreeClay is provided as-is. AI-generated data may be inaccurate — always verify results. We are not responsible for the accuracy or consequences of any output. Use at your own risk.
+              Disclaimer: OpenClay is provided as-is. AI-generated data may be inaccurate — always verify results. We are not responsible for the accuracy or consequences of any output. Use at your own risk.
             </p>
           </div>
 
@@ -805,7 +805,7 @@ export default function ToolPage() {
                       <div className="flex justify-between"><span className="text-zinc-500">New columns</span><span className="font-medium text-white">{outputColumns.length}</span></div>
                     </div>
                     <div className="border-t border-white/[0.06] pt-3 space-y-1.5 text-xs">
-                      <div className="flex justify-between"><span className="text-zinc-500">FreeClay platform fee</span><span className="font-semibold text-emerald-400">$0.00</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-500">OpenClay platform fee</span><span className="font-semibold text-emerald-400">$0.00</span></div>
                       <div className="flex justify-between"><span className="text-zinc-500">Input tokens</span><span className="text-zinc-300">${realCostEstimate.inputCost.toFixed(2)}</span></div>
                       <div className="flex justify-between"><span className="text-zinc-500">Output tokens</span><span className="text-zinc-300">${realCostEstimate.outputCost.toFixed(2)}</span></div>
                       {realCostEstimate.searchCost > 0 && (
@@ -829,7 +829,7 @@ export default function ToolPage() {
                       <div className="flex justify-between"><span className="text-zinc-500">New columns</span><span className="font-medium text-white">{outputColumns.length}</span></div>
                     </div>
                     <div className="border-t border-white/[0.06] pt-3 space-y-1.5 text-xs">
-                      <div className="flex justify-between"><span className="text-zinc-500">FreeClay platform fee</span><span className="font-semibold text-emerald-400">$0.00</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-500">OpenClay platform fee</span><span className="font-semibold text-emerald-400">$0.00</span></div>
                       <div className="flex justify-between"><span className="text-zinc-500">Input tokens</span><span className="text-zinc-300">${costRange.low.inputCost.toFixed(2)} – ${costRange.high.inputCost.toFixed(2)}</span></div>
                       <div className="flex justify-between"><span className="text-zinc-500">Output tokens</span><span className="text-zinc-300">${costRange.low.outputCost.toFixed(2)}</span></div>
                       {costRange.high.searchCost > 0 && (

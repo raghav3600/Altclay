@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "FreeClay — Free, Open-Source Clay Alternative",
+  title: "OpenClay — Free, Open-Source Data Enrichment",
   description:
-    "Enrich any spreadsheet with AI. Bring your own API key. Pay only for what you use. No accounts, no data storage, no tracking.",
+    "Enrich any spreadsheet with AI + web search. Bring your own API key. Pay only for what you use. No accounts, no data storage, no tracking.",
 };
 
 export default function RootLayout({

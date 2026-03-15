@@ -2,8 +2,10 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — OpenClay",
-  description: "OpenClay terms of service.",
+  title: "Terms of Service",
+  description:
+    "OpenClay terms of service. Free, open-source AI data enrichment tool — no warranty, BYOK model, your key and your costs.",
+  alternates: { canonical: "https://openclay.io/terms" },
 };
 
 export default function TermsPage() {

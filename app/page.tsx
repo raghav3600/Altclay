@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Provider, ModelId } from "@/lib/types";
 import { ANTHROPIC_MODELS, GEMINI_MODELS, MODEL_GUIDANCE } from "@/lib/pricing";
 import { estimateCostSimple } from "@/lib/costEstimator";
+import { FAQJsonLd } from "./structured-data";
 
 /* ------------------------------------------------------------------ */
 /*  Reveal on scroll                                                    */
@@ -149,6 +150,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-8">
             <a href="#how" className="hidden text-sm text-zinc-500 transition hover:text-zinc-900 sm:block">How It Works</a>
             <a href="#calculator" className="hidden text-sm text-zinc-500 transition hover:text-zinc-900 sm:block">Calculator</a>
+            <a href="#faq" className="hidden text-sm text-zinc-500 transition hover:text-zinc-900 sm:block">FAQ</a>
             <a href="#about" className="hidden text-sm text-zinc-500 transition hover:text-zinc-900 sm:block">About</a>
             <Link href="/tool" className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800">
               Open App
@@ -169,11 +171,11 @@ export default function LandingPage() {
           </div>
 
           <h1 className="animate-fade-in-up delay-100 text-[2.75rem] font-extrabold leading-[1.08] tracking-tight text-zinc-900 sm:text-7xl lg:text-[5.5rem]">
-            Open-source data<br />enrichment.
+            Free AI data<br />enrichment tool.
           </h1>
 
           <p className="animate-fade-in-up delay-200 mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-zinc-500 sm:text-xl">
-            Enrich any spreadsheet with company data, contacts, and custom research — using AI and live web search. Powered by your own API key.
+            The open-source alternative to Clay. Enrich any spreadsheet with company data, contacts, and custom research — using AI + live web search. Bring your own API key. No subscription needed.
           </p>
 
           <div className="animate-fade-in-up delay-300 mt-12 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
@@ -518,12 +520,71 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* FAQ — SEO + GEO */}
+      <section id="faq" className="border-t border-zinc-100 px-6 py-24 sm:py-32">
+        <div className="mx-auto max-w-3xl">
+          <FAQJsonLd />
+          <R>
+            <p className="text-sm font-semibold uppercase tracking-widest text-zinc-400">FAQ</p>
+            <h2 className="mt-4 text-3xl font-bold text-zinc-900 sm:text-5xl">Frequently asked questions</h2>
+          </R>
+          <div className="mt-12 space-y-6">
+            {[
+              {
+                q: "What is OpenClay?",
+                a: "OpenClay is a free, open-source alternative to Clay.com for AI-powered spreadsheet data enrichment. It uses AI models (Claude or Gemini) combined with live web search to research and enrich each row of your spreadsheet — finding company data, contacts, news, and any custom information you describe.",
+              },
+              {
+                q: "Is OpenClay really free?",
+                a: "Yes, OpenClay charges no platform fee — ever. The only cost is the AI provider's token usage (Anthropic or Google), which you pay directly at their published rates. For example, enriching 500 rows typically costs $2–$10 in API usage depending on the model chosen.",
+              },
+              {
+                q: "How is OpenClay different from Clay?",
+                a: "Clay connects to 150+ data providers (Apollo, ZoomInfo, etc.) for structured lookups and costs $149–$800/month. OpenClay uses AI + live web search to research each row — similar to Clay's Claygent feature. OpenClay is great for public information, news, company overviews, and custom research. It's not ideal for verified contact emails or data requiring proprietary database access.",
+              },
+              {
+                q: "Is my data safe with OpenClay?",
+                a: "Yes. OpenClay is privacy-first by design. Your files are parsed entirely in your browser — never uploaded to any server. Your API key is stored in browser memory only (React useState) and is never persisted. There is no database, no cookies, and no localStorage. The entire codebase is open source so you can verify these claims.",
+              },
+              {
+                q: "What AI models does OpenClay support?",
+                a: "OpenClay supports Anthropic Claude (Haiku 4.5, Sonnet 4.5, Opus 4.5) and Google Gemini (2.0 Flash, 2.5 Flash, 2.5 Pro). All models include live web search capability for up-to-date research results.",
+              },
+              {
+                q: "What file formats does OpenClay support?",
+                a: "OpenClay supports CSV (.csv), Excel (.xlsx), and legacy Excel (.xls) files up to 10MB. Files are parsed entirely in your browser using PapaParse and SheetJS — nothing is uploaded to any server.",
+              },
+              {
+                q: "Do I need to create an account?",
+                a: "No. OpenClay requires no account, no sign-up, and no credit card. Just open the app, upload a spreadsheet, add your AI API key, and start enriching. Your key stays in browser memory and is never stored.",
+              },
+              {
+                q: "What kind of data can I enrich?",
+                a: "Anything you can describe in plain English. Common use cases include company research (CEO, funding, employee count), lead enrichment (job title, LinkedIn, recent news), university data (ranking, tuition, acceptance rate), product research (pricing, reviews, competitors), and more. OpenClay works for any dataset — not just B2B sales.",
+              },
+            ].map((faq, i) => (
+              <R key={i} className={`delay-${(i % 4) * 100}`}>
+                <details className="group rounded-2xl border border-zinc-100 bg-white transition hover:border-zinc-200 open:border-zinc-200 open:shadow-sm">
+                  <summary className="flex cursor-pointer items-center justify-between px-6 py-5 text-sm font-semibold text-zinc-900 marker:[font-size:0]">
+                    {faq.q}
+                    <svg className="h-4 w-4 shrink-0 text-zinc-400 transition group-open:rotate-45" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                  </summary>
+                  <div className="border-t border-zinc-100 px-6 py-4 text-sm leading-relaxed text-zinc-500">
+                    {faq.a}
+                  </div>
+                </details>
+              </R>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* FOOTER */}
       <footer className="border-t border-zinc-100 px-6 py-10">
         <div className="mx-auto max-w-5xl">
           <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
             <div className="flex items-center gap-2 text-xs text-zinc-400">
-              <div className="flex h-5 w-5 items-center justify-center rounded bg-zinc-900 text-[10px] font-black text-white">O</div>
+              <img src="/icon.svg" alt="OpenClay" className="h-5 w-5 rounded" />
               <span>OpenClay — 100% free, open-source data enrichment.</span>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-zinc-400">

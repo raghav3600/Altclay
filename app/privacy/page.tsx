@@ -2,8 +2,10 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — OpenClay",
-  description: "OpenClay privacy policy. We don't collect, store, or process your data.",
+  title: "Privacy Policy",
+  description:
+    "OpenClay privacy policy. Your API key stays in browser memory, files are parsed client-side, and no personal data is collected or stored. Fully open source and verifiable.",
+  alternates: { canonical: "https://openclay.io/privacy" },
 };
 
 export default function PrivacyPage() {

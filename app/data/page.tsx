@@ -2,8 +2,10 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Data Practices — OpenClay",
-  description: "How OpenClay handles your data. Spoiler: we don't.",
+  title: "Data Practices",
+  description:
+    "How OpenClay handles your data: files parsed in-browser, API keys in memory only, no database, no cookies. A transparent look at our privacy-first architecture.",
+  alternates: { canonical: "https://openclay.io/data" },
 };
 
 export default function DataPage() {

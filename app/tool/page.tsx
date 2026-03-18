@@ -414,7 +414,7 @@ export default function ToolPage() {
 
             {/* --- 2. Tell us what to enrich --- */}
             <Card className={!file ? "opacity-30 pointer-events-none" : ""} glow={!!file && !describeReady}>
-              <StepHeader num={2} title="Tell us what to enrich" subtitle="Select your data, describe what you want, and we'll create new columns" done={!!describeReady} active={!!file && !describeReady} />
+              <StepHeader num={2} title="Tell us what to enrich" subtitle="Describe what you need, and we'll handle the rest" done={!!describeReady} active={!!file && !describeReady} />
 
               {/* Visual flow diagram */}
               {file && (
@@ -440,12 +440,9 @@ export default function ToolPage() {
               {file && (
                 <div className="mb-5">
                   <label className="mb-2 flex items-center text-xs font-medium text-zinc-700">
-                    Select the columns AI should use to look things up
-                    <InfoTip text="Pick the columns that contain the data to search for. For example, if your file has company names, select that column." />
+                    Columns to look up
+                    <InfoTip text="Select columns that contain the data AI should search for." />
                   </label>
-                  {columnsAutoSelected && inputColumns.length > 0 && (
-                    <p className="mb-2 text-[11px] text-blue-600">Auto-selected based on your column names — adjust if needed</p>
-                  )}
 
                   <div className="flex flex-wrap gap-1.5">
                     {smartColumns.recommended.map((col) => (
@@ -484,7 +481,7 @@ export default function ToolPage() {
               <div className="mb-5">
                 <label className="mb-2 flex items-center text-xs font-medium text-zinc-700">
                   What should AI find for each row?
-                  <InfoTip text="Describe in plain English. When you click away, we'll suggest the new columns to add. You can always edit them." />
+                  <InfoTip text="Describe in plain English. We'll auto-suggest output columns." />
                 </label>
                 <textarea
                   value={enrichmentDescription}
@@ -497,7 +494,7 @@ export default function ToolPage() {
 
                 {/* Prompt templates */}
                 <div className="mt-2.5">
-                  <p className="mb-1.5 text-[11px] text-zinc-400">{enrichmentDescription ? "Or try a template:" : "Quick start — click a template or write your own above"}</p>
+                  {!enrichmentDescription && <p className="mb-1.5 text-[11px] text-zinc-400">Or start from a template:</p>}
                   <div className="flex flex-wrap gap-2">
                     {PROMPT_TEMPLATES.map((t) => (
                       <button key={t.label} onClick={() => applyTemplate(t)}
@@ -506,25 +503,16 @@ export default function ToolPage() {
                       </button>
                     ))}
                   </div>
-                  <p className="mt-1.5 text-[10px] text-zinc-400">Works for any dataset — restaurants, universities, countries, people, you name it.</p>
                 </div>
               </div>
 
               {/* C: New columns to add */}
               <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-                <label className="mb-2 flex items-center text-xs font-medium text-zinc-700">
+                <label className="mb-3 flex items-center text-xs font-medium text-zinc-700">
                   <svg className="mr-1.5 h-3.5 w-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                  New columns to add to your file
-                  <InfoTip text="These columns will be added to your spreadsheet, filled with AI-generated data for each row." />
+                  New columns to add
+                  <InfoTip text="These columns will be filled with AI-generated data for each row." />
                 </label>
-                <p className="mb-3 text-[11px] text-zinc-400">These new columns will appear in your downloaded file with AI-generated data</p>
-
-                {autoDetected && outputColumns.length > 0 && (
-                  <div className="mb-3 flex items-center gap-1.5 text-[11px] text-blue-600">
-                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>
-                    Auto-detected from your description — edit or add more below
-                  </div>
-                )}
 
                 {outputColumns.length > 0 && (
                   <div className="mb-3 flex flex-wrap gap-2">
@@ -795,54 +783,52 @@ export default function ToolPage() {
                 </h3>
                 {realCostEstimate ? (
                   <div className="space-y-3">
-                    <div className="space-y-1.5 text-xs">
-                      <div className="flex justify-between"><span className="text-zinc-500">Rows</span><span className="font-medium text-zinc-900">{realCostEstimate.totalRows.toLocaleString()}</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-500">Model</span><span className="font-medium text-zinc-900">{realCostEstimate.modelName}</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-500">New columns</span><span className="font-medium text-zinc-900">{outputColumns.length}</span></div>
+                    {/* Total — hero treatment */}
+                    <div className="rounded-xl bg-zinc-50 px-4 py-3 text-center ring-1 ring-zinc-100">
+                      <span className="block text-[10px] font-medium uppercase tracking-wider text-zinc-400">Estimated Total</span>
+                      <span className="text-2xl font-bold text-zinc-900">~${realCostEstimate.totalCost.toFixed(2)}</span>
                     </div>
-                    <div className="border-t border-zinc-100 pt-3 space-y-1.5 text-xs">
-                      <div className="flex justify-between"><span className="text-zinc-500">OpenClay platform fee</span><span className="font-semibold text-emerald-600">$0.00</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-500">Input tokens</span><span className="text-zinc-700">${realCostEstimate.inputCost.toFixed(2)}</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-500">Output tokens</span><span className="text-zinc-700">${realCostEstimate.outputCost.toFixed(2)}</span></div>
+                    <div className="space-y-1.5 text-xs">
+                      <div className="flex justify-between"><span className="text-zinc-400">Rows</span><span className="font-medium text-zinc-700">{realCostEstimate.totalRows.toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-400">Model</span><span className="font-medium text-zinc-700">{realCostEstimate.modelName}</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-400">New columns</span><span className="font-medium text-zinc-700">{outputColumns.length}</span></div>
+                    </div>
+                    <div className="border-t border-zinc-100 pt-2.5 space-y-1.5 text-xs">
+                      <div className="flex justify-between"><span className="text-zinc-400">Platform fee</span><span className="font-semibold text-emerald-600">Free</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-400">Input tokens</span><span className="text-zinc-600">${realCostEstimate.inputCost.toFixed(2)}</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-400">Output tokens</span><span className="text-zinc-600">${realCostEstimate.outputCost.toFixed(2)}</span></div>
                       {realCostEstimate.searchCost > 0 && (
-                        <div className="flex justify-between"><span className="text-zinc-500">Web search</span><span className="text-zinc-700">${realCostEstimate.searchCost.toFixed(2)}</span></div>
+                        <div className="flex justify-between"><span className="text-zinc-400">Web search</span><span className="text-zinc-600">${realCostEstimate.searchCost.toFixed(2)}</span></div>
                       )}
                     </div>
                     {realCostEstimate.freeSearchNote && <p className="text-[11px] text-emerald-600">{realCostEstimate.freeSearchNote}</p>}
-                    <div className="border-t border-zinc-100 pt-3 flex justify-between">
-                      <span className="text-sm font-semibold text-zinc-900">Estimated Total</span>
-                      <span className="text-lg font-bold text-zinc-900">~${realCostEstimate.totalCost.toFixed(2)}</span>
-                    </div>
-                    <div className="rounded-lg bg-emerald-50 px-2.5 py-1.5 text-[10px] text-emerald-700 ring-1 ring-emerald-200">
-                      Based on real token usage from your test run
-                    </div>
+                    <p className="text-center text-[10px] text-emerald-600">Based on your test run</p>
                   </div>
                 ) : costRange ? (
                   <div className="space-y-3">
-                    <div className="space-y-1.5 text-xs">
-                      <div className="flex justify-between"><span className="text-zinc-500">Rows</span><span className="font-medium text-zinc-900">{costRange.low.totalRows.toLocaleString()}</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-500">Model</span><span className="font-medium text-zinc-900">{costRange.low.modelName}</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-500">New columns</span><span className="font-medium text-zinc-900">{outputColumns.length}</span></div>
+                    {/* Total range — hero treatment */}
+                    <div className="rounded-xl bg-zinc-50 px-4 py-3 text-center ring-1 ring-zinc-100">
+                      <span className="block text-[10px] font-medium uppercase tracking-wider text-zinc-400">Estimated Range</span>
+                      <span className="text-2xl font-bold text-zinc-900">${costRange.low.totalCost.toFixed(2)} – ${costRange.high.totalCost.toFixed(2)}</span>
                     </div>
-                    <div className="border-t border-zinc-100 pt-3 space-y-1.5 text-xs">
-                      <div className="flex justify-between"><span className="text-zinc-500">OpenClay platform fee</span><span className="font-semibold text-emerald-600">$0.00</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-500">Input tokens</span><span className="text-zinc-700">${costRange.low.inputCost.toFixed(2)} – ${costRange.high.inputCost.toFixed(2)}</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-500">Output tokens</span><span className="text-zinc-700">${costRange.low.outputCost.toFixed(2)}</span></div>
+                    <div className="space-y-1.5 text-xs">
+                      <div className="flex justify-between"><span className="text-zinc-400">Rows</span><span className="font-medium text-zinc-700">{costRange.low.totalRows.toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-400">Model</span><span className="font-medium text-zinc-700">{costRange.low.modelName}</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-400">New columns</span><span className="font-medium text-zinc-700">{outputColumns.length}</span></div>
+                    </div>
+                    <div className="border-t border-zinc-100 pt-2.5 space-y-1.5 text-xs">
+                      <div className="flex justify-between"><span className="text-zinc-400">Platform fee</span><span className="font-semibold text-emerald-600">Free</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-400">Input tokens</span><span className="text-zinc-600">${costRange.low.inputCost.toFixed(2)} – ${costRange.high.inputCost.toFixed(2)}</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-400">Output tokens</span><span className="text-zinc-600">${costRange.low.outputCost.toFixed(2)}</span></div>
                       {costRange.high.searchCost > 0 && (
-                        <div className="flex justify-between"><span className="text-zinc-500">Web search</span><span className="text-zinc-700">${costRange.low.searchCost.toFixed(2)}</span></div>
+                        <div className="flex justify-between"><span className="text-zinc-400">Web search</span><span className="text-zinc-600">${costRange.low.searchCost.toFixed(2)}</span></div>
                       )}
                     </div>
                     {costRange.low.freeSearchNote && <p className="text-[11px] text-emerald-600">{costRange.low.freeSearchNote}</p>}
-                    <div className="border-t border-zinc-100 pt-3 flex justify-between">
-                      <span className="text-sm font-semibold text-zinc-900">Estimated Range</span>
-                      <span className="text-lg font-bold text-zinc-900">${costRange.low.totalCost.toFixed(2)} – ${costRange.high.totalCost.toFixed(2)}</span>
-                    </div>
-                    <div className="rounded-lg bg-amber-50 px-2.5 py-1.5 text-[10px] text-amber-700 ring-1 ring-amber-200">
-                      {useWebSearch ? "Range accounts for web search token inflation. Run a test for a precise estimate." : "Web search disabled. Estimate based on prompt tokens only."}
-                    </div>
+                    <p className="text-center text-[10px] text-amber-600">{useWebSearch ? "Run a test for a precise estimate" : "Estimate based on prompt tokens"}</p>
                   </div>
                 ) : (
-                  <p className="text-xs text-zinc-400">Upload a file and configure enrichment to see your estimate. No API key needed.</p>
+                  <p className="text-xs text-zinc-400">Upload a file and describe your enrichment to see an estimate.</p>
                 )}
               </Card>
 

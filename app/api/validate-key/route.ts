@@ -23,6 +23,21 @@ export async function POST(req: NextRequest) {
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
       await model.generateContent("Hi");
       return NextResponse.json({ valid: true });
+    } else if (provider === "grok") {
+      const grokRes = await fetch("https://api.x.ai/v1/responses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: "grok-4-1-fast",
+          input: [{ role: "user", content: "Hi" }],
+          max_output_tokens: 10,
+        }),
+      });
+      if (!grokRes.ok) {
+        const errText = await grokRes.text();
+        throw new Error(`${grokRes.status} ${errText}`);
+      }
+      return NextResponse.json({ valid: true });
     } else {
       return NextResponse.json({ valid: false, error: "Unknown provider" }, { status: 400 });
     }

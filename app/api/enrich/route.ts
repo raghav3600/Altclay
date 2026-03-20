@@ -69,6 +69,42 @@ export async function POST(req: NextRequest) {
         inputTokens: usage?.promptTokenCount || 0,
         outputTokens: usage?.candidatesTokenCount || 0,
       });
+    } else if (provider === "grok") {
+      // xAI Responses API with web_search tool support
+      const tools = useWebSearch ? [{ type: "web_search" }] : [];
+      const grokRes = await fetch("https://api.x.ai/v1/responses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: modelId,
+          input: [{ role: "user", content: prompt }],
+          ...(tools.length > 0 ? { tools } : {}),
+        }),
+      });
+
+      if (!grokRes.ok) {
+        const errBody = await grokRes.text();
+        throw new Error(errBody || `Grok API error: ${grokRes.status}`);
+      }
+
+      const grokData = await grokRes.json();
+      let text = "";
+      if (Array.isArray(grokData.output)) {
+        for (const item of grokData.output) {
+          if (item.type === "message" && Array.isArray(item.content)) {
+            for (const block of item.content) {
+              if (block.type === "output_text") text += block.text;
+            }
+          }
+        }
+      }
+
+      const data = extractJSON(text);
+      return NextResponse.json({
+        data,
+        inputTokens: grokData.usage?.input_tokens || 0,
+        outputTokens: grokData.usage?.output_tokens || 0,
+      });
     } else {
       return NextResponse.json({ error: "Unknown provider" }, { status: 400 });
     }

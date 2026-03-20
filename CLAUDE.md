@@ -26,6 +26,7 @@ OpenClay is a free, open-source web tool that lets users enrich spreadsheet data
 ## Models Supported
 - Anthropic: Claude Haiku 4.5, Sonnet 4.5, Opus 4.5
 - Google: Gemini 2.0 Flash, 2.5 Flash, 2.5 Pro
+- xAI: Grok 4.1 Fast, Grok 4.20
 
 ## Privacy Rules (NON-NEGOTIABLE)
 - NEVER use localStorage or cookies for API keys

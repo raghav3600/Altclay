@@ -1,18 +1,21 @@
-// Last updated: February 2026
+// Last updated: March 2026
 // Sources:
 //   Anthropic: https://platform.claude.com/docs/en/about-claude/pricing
 //   Google: https://ai.google.dev/gemini-api/docs/pricing
+//   xAI: https://docs.x.ai/developers/models
 
 import type {
   AnthropicModelConfig,
   GeminiModelConfig,
+  GrokModelConfig,
   AnthropicModelId,
   GeminiModelId,
+  GrokModelId,
   ModelId,
   ModelGuidance,
 } from "./types";
 
-export const PRICING_LAST_UPDATED = "February 2026";
+export const PRICING_LAST_UPDATED = "March 2026";
 
 export const ANTHROPIC_MODELS: Record<AnthropicModelId, AnthropicModelConfig> = {
   "claude-haiku-4-5-20251001": {
@@ -74,6 +77,25 @@ export const GEMINI_MODELS: Record<GeminiModelId, GeminiModelConfig> = {
   },
 };
 
+export const GROK_MODELS: Record<GrokModelId, GrokModelConfig> = {
+  "grok-4-1-fast": {
+    name: "Grok 4.1 Fast",
+    label: "Fastest & Cheapest",
+    inputPer1M: 0.20,
+    outputPer1M: 0.50,
+    webSearchPer1K: 5.0,
+    recommended: false,
+  },
+  "grok-4-0320": {
+    name: "Grok 4.20",
+    label: "Most Capable",
+    inputPer1M: 2.0,
+    outputPer1M: 6.0,
+    webSearchPer1K: 5.0,
+    recommended: true,
+  },
+};
+
 export const MODEL_GUIDANCE: Record<ModelId, ModelGuidance> = {
   "claude-haiku-4-5-20251001": {
     speed: "fast",
@@ -111,7 +133,20 @@ export const MODEL_GUIDANCE: Record<ModelId, ModelGuidance> = {
     bestFor: "Google's most capable model with web search",
     hasWebSearch: true,
   },
+  "grok-4-1-fast": {
+    speed: "fast",
+    quality: "good",
+    bestFor: "Ultra-cheap enrichment with web search — great for high-volume lookups",
+    hasWebSearch: true,
+  },
+  "grok-4-0320": {
+    speed: "medium",
+    quality: "best",
+    bestFor: "xAI's flagship model with strong reasoning and web search",
+    hasWebSearch: true,
+  },
 };
 
 export const ANTHROPIC_PRICING_URL = "https://claude.com/pricing";
 export const GEMINI_PRICING_URL = "https://ai.google.dev/gemini-api/docs/pricing";
+export const GROK_PRICING_URL = "https://docs.x.ai/developers/models";

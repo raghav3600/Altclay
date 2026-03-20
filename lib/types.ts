@@ -1,4 +1,4 @@
-export type Provider = "anthropic" | "gemini";
+export type Provider = "anthropic" | "gemini" | "grok";
 
 export type AnthropicModelId =
   | "claude-haiku-4-5-20251001"
@@ -10,7 +10,11 @@ export type GeminiModelId =
   | "gemini-2.5-flash"
   | "gemini-2.5-pro";
 
-export type ModelId = AnthropicModelId | GeminiModelId;
+export type GrokModelId =
+  | "grok-4-1-fast"
+  | "grok-4-0320";
+
+export type ModelId = AnthropicModelId | GeminiModelId | GrokModelId;
 
 export interface AnthropicModelConfig {
   name: string;
@@ -29,6 +33,15 @@ export interface GeminiModelConfig {
   outputPer1M: number;
   groundingPer1K: number;
   freeGroundingPerDay: number;
+  recommended: boolean;
+}
+
+export interface GrokModelConfig {
+  name: string;
+  label: string;
+  inputPer1M: number;
+  outputPer1M: number;
+  webSearchPer1K: number;
   recommended: boolean;
 }
 

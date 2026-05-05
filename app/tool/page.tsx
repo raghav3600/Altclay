@@ -161,7 +161,7 @@ export default function ToolPage() {
   const [columnsAutoSelected, setColumnsAutoSelected] = useState(false);
 
   const [provider, setProvider] = useState<Provider>("gemini");
-  const [modelId, setModelId] = useState<ModelId>("gemini-2.5-pro");
+  const [modelId, setModelId] = useState<ModelId>("gemini-3.1-pro-preview");
 
   const [apiKey, setApiKey] = useState("");
   const [keyValid, setKeyValid] = useState(false);
@@ -574,7 +574,7 @@ export default function ToolPage() {
               <StepHeader num={3} title="Choose provider & model" subtitle="All models include live web search" done={!!modelId} active={!!file} />
 
               <div className="mb-4 grid grid-cols-3 gap-2">
-                <button onClick={() => { setProvider("gemini"); setModelId("gemini-2.5-pro"); setKeyValid(false); setApiKey(""); setKeyError(""); setKeyWarning(""); setRealCostEstimate(null); }}
+                <button onClick={() => { setProvider("gemini"); setModelId("gemini-3.1-pro-preview"); setKeyValid(false); setApiKey(""); setKeyError(""); setKeyWarning(""); setRealCostEstimate(null); }}
                   className={`rounded-lg border-2 px-3 py-2.5 text-xs font-medium transition ${provider === "gemini" ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-500 hover:border-zinc-300"}`}>
                   Google (Gemini)
                 </button>

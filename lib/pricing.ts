@@ -15,7 +15,7 @@ import type {
   ModelGuidance,
 } from "./types";
 
-export const PRICING_LAST_UPDATED = "March 2026";
+export const PRICING_LAST_UPDATED = "May 2026";
 
 export const ANTHROPIC_MODELS: Record<AnthropicModelId, AnthropicModelConfig> = {
   "claude-haiku-4-5-20251001": {
@@ -60,17 +60,53 @@ export const GEMINI_MODELS: Record<GeminiModelId, GeminiModelConfig> = {
   "gemini-2.5-flash": {
     name: "Gemini 2.5 Flash",
     label: "Fast with Reasoning",
-    inputPer1M: 0.15,
-    outputPer1M: 0.6,
+    inputPer1M: 0.30,
+    outputPer1M: 2.50,
+    groundingPer1K: 35.0,
+    freeGroundingPerDay: 1500,
+    recommended: false,
+  },
+  "gemini-2.5-flash-lite": {
+    name: "Gemini 2.5 Flash Lite",
+    label: "Budget Reasoning",
+    inputPer1M: 0.10,
+    outputPer1M: 0.40,
     groundingPer1K: 35.0,
     freeGroundingPerDay: 1500,
     recommended: false,
   },
   "gemini-2.5-pro": {
     name: "Gemini 2.5 Pro",
-    label: "Most Capable",
+    label: "Strong Reasoning",
     inputPer1M: 1.25,
     outputPer1M: 10.0,
+    groundingPer1K: 35.0,
+    freeGroundingPerDay: 1500,
+    recommended: false,
+  },
+  "gemini-3-flash-preview": {
+    name: "Gemini 3 Flash",
+    label: "Next-Gen Fast",
+    inputPer1M: 0.50,
+    outputPer1M: 3.00,
+    groundingPer1K: 35.0,
+    freeGroundingPerDay: 1500,
+    recommended: false,
+  },
+  "gemini-3.1-flash-lite-preview": {
+    name: "Gemini 3.1 Flash Lite",
+    label: "Next-Gen Budget",
+    inputPer1M: 0.25,
+    outputPer1M: 1.50,
+    groundingPer1K: 35.0,
+    freeGroundingPerDay: 1500,
+    recommended: false,
+  },
+  "gemini-3.1-pro-preview": {
+    name: "Gemini 3.1 Pro",
+    label: "Most Capable",
+    inputPer1M: 2.00,
+    outputPer1M: 12.00,
     groundingPer1K: 35.0,
     freeGroundingPerDay: 1500,
     recommended: true,
@@ -127,10 +163,34 @@ export const MODEL_GUIDANCE: Record<ModelId, ModelGuidance> = {
     bestFor: "Fast reasoning with web grounding at low cost",
     hasWebSearch: true,
   },
+  "gemini-2.5-flash-lite": {
+    speed: "fast",
+    quality: "good",
+    bestFor: "Budget reasoning model — cheapest Gemini with thinking",
+    hasWebSearch: true,
+  },
   "gemini-2.5-pro": {
     speed: "medium",
     quality: "best",
-    bestFor: "Google's most capable model with web search",
+    bestFor: "Strong reasoning with web search at competitive cost",
+    hasWebSearch: true,
+  },
+  "gemini-3-flash-preview": {
+    speed: "fast",
+    quality: "great",
+    bestFor: "Next-gen speed and quality for most enrichment tasks",
+    hasWebSearch: true,
+  },
+  "gemini-3.1-flash-lite-preview": {
+    speed: "fast",
+    quality: "good",
+    bestFor: "Next-gen budget option for high-volume lookups",
+    hasWebSearch: true,
+  },
+  "gemini-3.1-pro-preview": {
+    speed: "medium",
+    quality: "best",
+    bestFor: "Google's most capable model — best for complex research",
     hasWebSearch: true,
   },
   "grok-4-1-fast": {

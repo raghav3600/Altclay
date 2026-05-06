@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
         body: JSON.stringify({
-          model: "gpt-4.1-nano",
+          model: "gpt-5.4-mini",
           input: [{ role: "user", content: "Hi" }],
           max_output_tokens: 10,
         }),

@@ -105,6 +105,41 @@ export async function POST(req: NextRequest) {
         inputTokens: grokData.usage?.input_tokens || 0,
         outputTokens: grokData.usage?.output_tokens || 0,
       });
+    } else if (provider === "openai") {
+      const tools = useWebSearch ? [{ type: "web_search" }] : [];
+      const openaiRes = await fetch("https://api.openai.com/v1/responses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: modelId,
+          input: [{ role: "user", content: prompt }],
+          ...(tools.length > 0 ? { tools } : {}),
+        }),
+      });
+
+      if (!openaiRes.ok) {
+        const errBody = await openaiRes.text();
+        throw new Error(errBody || `OpenAI API error: ${openaiRes.status}`);
+      }
+
+      const openaiData = await openaiRes.json();
+      let text = "";
+      if (Array.isArray(openaiData.output)) {
+        for (const item of openaiData.output) {
+          if (item.type === "message" && Array.isArray(item.content)) {
+            for (const block of item.content) {
+              if (block.type === "output_text") text += block.text;
+            }
+          }
+        }
+      }
+
+      const data = extractJSON(text);
+      return NextResponse.json({
+        data,
+        inputTokens: openaiData.usage?.input_tokens || 0,
+        outputTokens: openaiData.usage?.output_tokens || 0,
+      });
     } else {
       return NextResponse.json({ error: "Unknown provider" }, { status: 400 });
     }

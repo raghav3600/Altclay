@@ -11,16 +11,19 @@ import type {
   AnthropicModelId,
   GeminiModelId,
   GrokModelId,
+  OpenAIModelId,
 } from "@/lib/types";
 import {
   ANTHROPIC_MODELS,
   GEMINI_MODELS,
   GROK_MODELS,
+  OPENAI_MODELS,
   MODEL_GUIDANCE,
   PRICING_LAST_UPDATED,
   ANTHROPIC_PRICING_URL,
   GEMINI_PRICING_URL,
   GROK_PRICING_URL,
+  OPENAI_PRICING_URL,
 } from "@/lib/pricing";
 import { buildPrompt } from "@/lib/promptTemplates";
 import { estimateInputTokensPerRow, estimateOutputTokensPerRow, calculateCostRange, calculateCostFromActualTokens } from "@/lib/costEstimator";
@@ -28,6 +31,7 @@ import { parseFile, exportToFile } from "@/lib/fileParser";
 import { enrichRowAnthropic } from "@/lib/anthropic";
 import { enrichRowGemini } from "@/lib/gemini";
 import { enrichRowGrok } from "@/lib/grok";
+import { enrichRowOpenAI } from "@/lib/openai";
 
 /* ------------------------------------------------------------------ */
 /*  Light-themed Helpers                                                */
@@ -188,7 +192,7 @@ export default function ToolPage() {
   const [customPrompt, setCustomPrompt] = useState("");
 
   /* ---- derived ---- */
-  const models = provider === "anthropic" ? Object.entries(ANTHROPIC_MODELS) : provider === "grok" ? Object.entries(GROK_MODELS) : Object.entries(GEMINI_MODELS);
+  const models = provider === "anthropic" ? Object.entries(ANTHROPIC_MODELS) : provider === "grok" ? Object.entries(GROK_MODELS) : provider === "openai" ? Object.entries(OPENAI_MODELS) : Object.entries(GEMINI_MODELS);
   const describeReady = file && enrichmentDescription.trim().length > 0 && inputColumns.length > 0 && outputColumns.length > 0;
   const generatedPrompt = file && inputColumns.length > 0 && outputColumns.length > 0 ? buildPrompt(inputColumns, file.rows[0], outputColumns, enrichmentDescription, undefined, useWebSearch) : "";
   const configReady = describeReady && (!advancedMode || customPrompt.trim().length > 0);
@@ -278,6 +282,8 @@ export default function ToolPage() {
           ? await enrichRowAnthropic(apiKey, modelId as AnthropicModelId, prompt, useWebSearch)
           : provider === "grok"
           ? await enrichRowGrok(apiKey, modelId as GrokModelId, prompt, useWebSearch)
+          : provider === "openai"
+          ? await enrichRowOpenAI(apiKey, modelId as OpenAIModelId, prompt, useWebSearch)
           : await enrichRowGemini(apiKey, modelId as GeminiModelId, prompt, useWebSearch);
         return { rowIndex: index, success: true, data: result.data, inputTokens: result.inputTokens, outputTokens: result.outputTokens };
       } catch (err) {
@@ -346,7 +352,7 @@ export default function ToolPage() {
     document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
   };
 
-  const providerPricingUrl = provider === "anthropic" ? ANTHROPIC_PRICING_URL : provider === "grok" ? GROK_PRICING_URL : GEMINI_PRICING_URL;
+  const providerPricingUrl = provider === "anthropic" ? ANTHROPIC_PRICING_URL : provider === "grok" ? GROK_PRICING_URL : provider === "openai" ? OPENAI_PRICING_URL : GEMINI_PRICING_URL;
 
   /* ---- render ---- */
   return (
@@ -573,10 +579,14 @@ export default function ToolPage() {
             <Card className={!file ? "opacity-30 pointer-events-none" : ""}>
               <StepHeader num={3} title="Choose provider & model" subtitle="All models include live web search" done={!!modelId} active={!!file} />
 
-              <div className="mb-4 grid grid-cols-3 gap-2">
+              <div className="mb-4 grid grid-cols-4 gap-2">
                 <button onClick={() => { setProvider("gemini"); setModelId("gemini-3.1-pro-preview"); setKeyValid(false); setApiKey(""); setKeyError(""); setKeyWarning(""); setRealCostEstimate(null); }}
                   className={`rounded-lg border-2 px-3 py-2.5 text-xs font-medium transition ${provider === "gemini" ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-500 hover:border-zinc-300"}`}>
                   Google (Gemini)
+                </button>
+                <button onClick={() => { setProvider("openai"); setModelId("gpt-5.4-mini"); setKeyValid(false); setApiKey(""); setKeyError(""); setKeyWarning(""); setRealCostEstimate(null); }}
+                  className={`rounded-lg border-2 px-3 py-2.5 text-xs font-medium transition ${provider === "openai" ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-500 hover:border-zinc-300"}`}>
+                  OpenAI (GPT)
                 </button>
                 <button onClick={() => { setProvider("anthropic"); setModelId("claude-sonnet-4-5-20250929"); setKeyValid(false); setApiKey(""); setKeyError(""); setKeyWarning(""); setRealCostEstimate(null); }}
                   className={`rounded-lg border-2 px-3 py-2.5 text-xs font-medium transition ${provider === "anthropic" ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-500 hover:border-zinc-300"}`}>
@@ -638,7 +648,7 @@ export default function ToolPage() {
             <Card className={!configReady ? "opacity-30 pointer-events-none" : ""} glow={!!configReady && !keyValid}>
               <StepHeader
                 num={4}
-                title={`Connect your ${provider === "anthropic" ? "Anthropic" : provider === "grok" ? "xAI" : "Google"} API key`}
+                title={`Connect your ${provider === "anthropic" ? "Anthropic" : provider === "grok" ? "xAI" : provider === "openai" ? "OpenAI" : "Google"} API key`}
                 subtitle="Your key is never stored — it stays in browser memory only"
                 done={keyValid}
                 active={!!configReady && !keyValid}
@@ -647,7 +657,7 @@ export default function ToolPage() {
               {!keyValid ? (
                 <div className="space-y-3">
                   <input type="password" value={apiKey} onChange={(e) => { setApiKey(e.target.value); setKeyError(""); }}
-                    placeholder={provider === "anthropic" ? "sk-ant-..." : provider === "grok" ? "xai-..." : "AIza..."}
+                    placeholder={provider === "anthropic" ? "sk-ant-..." : provider === "grok" ? "xai-..." : provider === "openai" ? "sk-..." : "AIza..."}
                     className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-1 focus:ring-zinc-300 focus:outline-none"
                   />
                   {keyError && <p className="text-xs text-red-600">{keyError}</p>}
@@ -658,6 +668,7 @@ export default function ToolPage() {
                   <p className="text-center text-[11px] text-zinc-400">
                     {provider === "anthropic" && <a href="https://console.anthropic.com" target="_blank" rel="noopener noreferrer" className="text-zinc-600 underline hover:text-zinc-900">Get a key from Anthropic</a>}
                     {provider === "gemini" && <a href="https://aistudio.google.com" target="_blank" rel="noopener noreferrer" className="text-zinc-600 underline hover:text-zinc-900">Get a key from Google AI Studio</a>}
+                    {provider === "openai" && <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-zinc-600 underline hover:text-zinc-900">Get a key from OpenAI</a>}
                     {provider === "grok" && <a href="https://console.x.ai" target="_blank" rel="noopener noreferrer" className="text-zinc-600 underline hover:text-zinc-900">Get a key from xAI Console</a>}
                   </p>
                   <TrustBadge text="Your API key is never stored, logged, or sent to our servers. It goes directly from your browser to the AI provider." />

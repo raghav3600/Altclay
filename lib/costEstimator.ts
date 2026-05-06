@@ -1,9 +1,10 @@
-import { ANTHROPIC_MODELS, GEMINI_MODELS, GROK_MODELS } from "./pricing";
+import { ANTHROPIC_MODELS, GEMINI_MODELS, GROK_MODELS, OPENAI_MODELS } from "./pricing";
 import type {
   ModelId,
   AnthropicModelId,
   GeminiModelId,
   GrokModelId,
+  OpenAIModelId,
   CostEstimate,
   OutputColumn,
   Provider,
@@ -98,8 +99,30 @@ export function calculateCostEstimate(
           ? `All ${totalRows} searches are within the free daily limit of ${model.freeGroundingPerDay}. Search cost: $0.`
           : `First ${model.freeGroundingPerDay} searches/day are free. ${paidSearches} searches will be charged.`,
     };
-  } else {
+  } else if (provider === "grok") {
     const model = GROK_MODELS[modelId as GrokModelId];
+    if (!model) throw new Error(`Unknown model: ${modelId}`);
+
+    const inputCost = (totalInputTokens / 1_000_000) * model.inputPer1M;
+    const outputCost = (totalOutputTokens / 1_000_000) * model.outputPer1M;
+    const searchCostPerRow = useWebSearch ? model.webSearchPer1K / 1000 : 0;
+    const searchCost = searchCostPerRow * totalRows;
+
+    return {
+      totalRows,
+      modelName: model.name,
+      inputTokensPerRow,
+      outputTokensPerRow,
+      totalInputTokens,
+      totalOutputTokens,
+      inputCost,
+      outputCost,
+      searchCost,
+      totalCost: inputCost + outputCost + searchCost,
+      searchCostPerRow,
+    };
+  } else {
+    const model = OPENAI_MODELS[modelId as OpenAIModelId];
     if (!model) throw new Error(`Unknown model: ${modelId}`);
 
     const inputCost = (totalInputTokens / 1_000_000) * model.inputPer1M;

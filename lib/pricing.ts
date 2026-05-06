@@ -1,16 +1,19 @@
-// Last updated: March 2026
+// Last updated: May 2026
 // Sources:
 //   Anthropic: https://platform.claude.com/docs/en/about-claude/pricing
 //   Google: https://ai.google.dev/gemini-api/docs/pricing
 //   xAI: https://docs.x.ai/developers/models
+//   OpenAI: https://developers.openai.com/api/docs/pricing
 
 import type {
   AnthropicModelConfig,
   GeminiModelConfig,
   GrokModelConfig,
+  OpenAIModelConfig,
   AnthropicModelId,
   GeminiModelId,
   GrokModelId,
+  OpenAIModelId,
   ModelId,
   ModelGuidance,
 } from "./types";
@@ -132,6 +135,41 @@ export const GROK_MODELS: Record<GrokModelId, GrokModelConfig> = {
   },
 };
 
+export const OPENAI_MODELS: Record<OpenAIModelId, OpenAIModelConfig> = {
+  "gpt-4.1-nano": {
+    name: "GPT-4.1 Nano",
+    label: "Cheapest",
+    inputPer1M: 0.10,
+    outputPer1M: 0.40,
+    webSearchPer1K: 25.0,
+    recommended: false,
+  },
+  "gpt-5.4-nano": {
+    name: "GPT-5.4 Nano",
+    label: "Budget",
+    inputPer1M: 0.20,
+    outputPer1M: 1.25,
+    webSearchPer1K: 10.0,
+    recommended: false,
+  },
+  "gpt-5.4-mini": {
+    name: "GPT-5.4 Mini",
+    label: "Best Balance",
+    inputPer1M: 0.75,
+    outputPer1M: 4.50,
+    webSearchPer1K: 10.0,
+    recommended: true,
+  },
+  "gpt-5.4": {
+    name: "GPT-5.4",
+    label: "Most Capable",
+    inputPer1M: 2.50,
+    outputPer1M: 15.00,
+    webSearchPer1K: 10.0,
+    recommended: false,
+  },
+};
+
 export const MODEL_GUIDANCE: Record<ModelId, ModelGuidance> = {
   "claude-haiku-4-5-20251001": {
     speed: "fast",
@@ -205,8 +243,33 @@ export const MODEL_GUIDANCE: Record<ModelId, ModelGuidance> = {
     bestFor: "xAI's flagship model with strong reasoning and web search",
     hasWebSearch: true,
   },
+  "gpt-4.1-nano": {
+    speed: "fast",
+    quality: "good",
+    bestFor: "Ultra-cheap option — great for simple lookups at high volume",
+    hasWebSearch: true,
+  },
+  "gpt-5.4-nano": {
+    speed: "fast",
+    quality: "good",
+    bestFor: "Budget-friendly GPT-5.4 for fast, simple enrichment",
+    hasWebSearch: true,
+  },
+  "gpt-5.4-mini": {
+    speed: "fast",
+    quality: "great",
+    bestFor: "Best balance of cost and quality in the OpenAI lineup",
+    hasWebSearch: true,
+  },
+  "gpt-5.4": {
+    speed: "medium",
+    quality: "best",
+    bestFor: "OpenAI's most capable model with web search",
+    hasWebSearch: true,
+  },
 };
 
 export const ANTHROPIC_PRICING_URL = "https://claude.com/pricing";
 export const GEMINI_PRICING_URL = "https://ai.google.dev/gemini-api/docs/pricing";
 export const GROK_PRICING_URL = "https://docs.x.ai/developers/models";
+export const OPENAI_PRICING_URL = "https://openai.com/api/pricing/";

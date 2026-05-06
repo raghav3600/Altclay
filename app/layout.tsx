@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     template: "%s | OpenClay",
   },
   description:
-    "Free, open-source alternative to Clay.com for AI-powered spreadsheet data enrichment. Use Claude or Gemini with your own API key. Enrich company data, find contacts, research leads — no subscription, no account needed.",
+    "Free, open-source alternative to Clay.com for AI-powered spreadsheet data enrichment. Use GPT, Claude, Gemini, or Grok with your own API key. Enrich company data, find contacts, research leads — no subscription, no account needed.",
   keywords: [
     "data enrichment",
     "spreadsheet enrichment",
@@ -28,6 +28,8 @@ export const metadata: Metadata = {
     "AI web research",
     "Claude API tool",
     "Gemini API tool",
+    "GPT API tool",
+    "OpenAI data enrichment",
     "CSV enrichment",
     "Excel enrichment",
     "open source data tool",

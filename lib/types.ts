@@ -1,4 +1,4 @@
-export type Provider = "anthropic" | "gemini" | "grok";
+export type Provider = "anthropic" | "gemini" | "grok" | "openai";
 
 export type AnthropicModelId =
   | "claude-haiku-4-5-20251001"
@@ -18,7 +18,13 @@ export type GrokModelId =
   | "grok-4-1-fast"
   | "grok-4-0320";
 
-export type ModelId = AnthropicModelId | GeminiModelId | GrokModelId;
+export type OpenAIModelId =
+  | "gpt-5.4"
+  | "gpt-5.4-mini"
+  | "gpt-5.4-nano"
+  | "gpt-4.1-nano";
+
+export type ModelId = AnthropicModelId | GeminiModelId | GrokModelId | OpenAIModelId;
 
 export interface AnthropicModelConfig {
   name: string;
@@ -41,6 +47,15 @@ export interface GeminiModelConfig {
 }
 
 export interface GrokModelConfig {
+  name: string;
+  label: string;
+  inputPer1M: number;
+  outputPer1M: number;
+  webSearchPer1K: number;
+  recommended: boolean;
+}
+
+export interface OpenAIModelConfig {
   name: string;
   label: string;
   inputPer1M: number;

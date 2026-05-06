@@ -38,6 +38,21 @@ export async function POST(req: NextRequest) {
         throw new Error(`${grokRes.status} ${errText}`);
       }
       return NextResponse.json({ valid: true });
+    } else if (provider === "openai") {
+      const openaiRes = await fetch("https://api.openai.com/v1/responses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: "gpt-4.1-nano",
+          input: [{ role: "user", content: "Hi" }],
+          max_output_tokens: 10,
+        }),
+      });
+      if (!openaiRes.ok) {
+        const errText = await openaiRes.text();
+        throw new Error(`${openaiRes.status} ${errText}`);
+      }
+      return NextResponse.json({ valid: true });
     } else {
       return NextResponse.json({ valid: false, error: "Unknown provider" }, { status: 400 });
     }

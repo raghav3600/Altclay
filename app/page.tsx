@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import Link from "next/link";
 import type { Provider, ModelId } from "@/lib/types";
-import { ANTHROPIC_MODELS, GEMINI_MODELS, GROK_MODELS, MODEL_GUIDANCE } from "@/lib/pricing";
+import { ANTHROPIC_MODELS, GEMINI_MODELS, GROK_MODELS, OPENAI_MODELS, MODEL_GUIDANCE } from "@/lib/pricing";
 import { estimateCostSimple } from "@/lib/costEstimator";
 import { FAQJsonLd } from "./structured-data";
 
@@ -38,6 +38,7 @@ function R({ children, className = "" }: { children: React.ReactNode; className?
 const ALL_MODELS: { id: ModelId; name: string; provider: Provider }[] = [
   ...Object.entries(GEMINI_MODELS).map(([id, m]) => ({ id: id as ModelId, name: m.name, provider: "gemini" as Provider })),
   ...Object.entries(ANTHROPIC_MODELS).map(([id, m]) => ({ id: id as ModelId, name: m.name, provider: "anthropic" as Provider })),
+  ...Object.entries(OPENAI_MODELS).map(([id, m]) => ({ id: id as ModelId, name: m.name, provider: "openai" as Provider })),
   ...Object.entries(GROK_MODELS).map(([id, m]) => ({ id: id as ModelId, name: m.name, provider: "grok" as Provider })),
 ];
 
@@ -86,6 +87,9 @@ function CostCalculator() {
               className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-900 focus:border-zinc-400 focus:ring-1 focus:ring-zinc-300 focus:outline-none">
               <optgroup label="Google (Gemini)">
                 {ALL_MODELS.filter((m) => m.provider === "gemini").map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </optgroup>
+              <optgroup label="OpenAI (GPT)">
+                {ALL_MODELS.filter((m) => m.provider === "openai").map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
               </optgroup>
               <optgroup label="Anthropic (Claude)">
                 {ALL_MODELS.filter((m) => m.provider === "anthropic").map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
@@ -326,7 +330,7 @@ export default function LandingPage() {
             {[
               { n: "01", t: "Upload your spreadsheet", d: "CSV or Excel. Parsed 100% in your browser. Nothing touches any server.", icon: "M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" },
               { n: "02", t: "Describe what you need", d: "Type in plain English — or pick a template. We auto-detect the new columns to add.", icon: "M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" },
-              { n: "03", t: "Pick a model & add key", d: "Choose Claude, Gemini, or Grok. See the estimated API cost. Then connect your key.", icon: "M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" },
+              { n: "03", t: "Pick a model & add key", d: "Choose GPT, Claude, Gemini, or Grok. See the estimated API cost. Then connect your key.", icon: "M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" },
               { n: "04", t: "Test 3 rows, then run all", d: "Preview results on 3 rows first. Happy? Run the full batch and download.", icon: "M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" },
             ].map((s, i) => (
               <R key={s.n} className={`delay-${(i + 1) * 100}`}>
@@ -386,7 +390,7 @@ export default function LandingPage() {
                 ["Platform fee", "$149 – $800/mo", "$0 forever"],
                 ["AI research per row", "Uses your Clay credits", "Pay AI provider directly"],
                 ["500 rows researched", "Eats credit quota", "~$2 – $10 in API usage"],
-                ["AI models available", "GPT-4o via Claygent", "Claude + Gemini + Grok (your choice)"],
+                ["AI models available", "GPT-4o via Claygent", "GPT + Claude + Gemini + Grok"],
                 ["Web search included", "Yes (via Claygent)", "Yes (built-in)"],
                 ["Your data", "On their servers", "Never leaves your browser"],
                 ["Source code", "Proprietary", "Fully open source"],
@@ -429,7 +433,7 @@ export default function LandingPage() {
               </div>
               <div className="rounded-xl border border-zinc-200 bg-white px-8 py-5 text-center shadow-sm">
                 <div className="text-3xl">{"\u{1F916}"}</div>
-                <div className="mt-2 text-sm font-semibold text-zinc-900">Claude / Gemini / Grok</div>
+                <div className="mt-2 text-sm font-semibold text-zinc-900">GPT / Claude / Gemini / Grok</div>
                 <div className="text-xs text-zinc-500">AI + Web search</div>
               </div>
               <div className="flex flex-col items-center py-2 sm:flex-row sm:py-0 sm:px-2">
@@ -536,11 +540,11 @@ export default function LandingPage() {
             {[
               {
                 q: "What is OpenClay?",
-                a: "OpenClay is a free, open-source alternative to Clay.com for AI-powered spreadsheet data enrichment. It uses AI models (Claude, Gemini, or Grok) combined with live web search to research and enrich each row of your spreadsheet — finding company data, contacts, news, and any custom information you describe.",
+                a: "OpenClay is a free, open-source alternative to Clay.com for AI-powered spreadsheet data enrichment. It uses AI models (GPT, Claude, Gemini, or Grok) combined with live web search to research and enrich each row of your spreadsheet — finding company data, contacts, news, and any custom information you describe.",
               },
               {
                 q: "Is OpenClay really free?",
-                a: "Yes, OpenClay charges no platform fee — ever. The only cost is the AI provider's token usage (Anthropic, Google, or xAI), which you pay directly at their published rates. For example, enriching 500 rows typically costs $2–$10 in API usage depending on the model chosen.",
+                a: "Yes, OpenClay charges no platform fee — ever. The only cost is the AI provider's token usage (OpenAI, Anthropic, Google, or xAI), which you pay directly at their published rates. For example, enriching 500 rows typically costs $2–$10 in API usage depending on the model chosen.",
               },
               {
                 q: "How is OpenClay different from Clay?",
@@ -552,7 +556,7 @@ export default function LandingPage() {
               },
               {
                 q: "What AI models does OpenClay support?",
-                a: "OpenClay supports Anthropic Claude (Haiku 4.5, Sonnet 4.5, Opus 4.5), Google Gemini (2.0 Flash, 2.5 Flash, 2.5 Flash Lite, 2.5 Pro, 3 Flash, 3.1 Flash Lite, 3.1 Pro), and xAI Grok (4.1 Fast, 4.20). All models include live web search capability for up-to-date research results.",
+                a: "OpenClay supports OpenAI GPT (4.1 Nano, 5.4 Nano, 5.4 Mini, 5.4), Anthropic Claude (Haiku 4.5, Sonnet 4.5, Opus 4.5), Google Gemini (2.0 Flash, 2.5 Flash, 2.5 Flash Lite, 2.5 Pro, 3 Flash, 3.1 Flash Lite, 3.1 Pro), and xAI Grok (4.1 Fast, 4.20). All models include live web search capability for up-to-date research results.",
               },
               {
                 q: "What file formats does OpenClay support?",

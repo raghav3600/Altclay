@@ -24,6 +24,7 @@ OpenClay is a free, open-source web tool that lets users enrich spreadsheet data
 - API key lives in React state only — never localStorage, never cookies
 
 ## Models Supported
+- OpenAI: GPT-4.1 Nano, GPT-5.4 Nano, GPT-5.4 Mini, GPT-5.4
 - Anthropic: Claude Haiku 4.5, Sonnet 4.5, Opus 4.5
 - Google: Gemini 2.0 Flash, 2.5 Flash, 2.5 Flash Lite, 2.5 Pro, 3 Flash, 3.1 Flash Lite, 3.1 Pro
 - xAI: Grok 4.1 Fast, Grok 4.20

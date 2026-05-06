@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({
           model: "gpt-5.4-mini",
           input: [{ role: "user", content: "Hi" }],
-          max_output_tokens: 10,
+          max_output_tokens: 16,
         }),
       });
       if (!openaiRes.ok) {

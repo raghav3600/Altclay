@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { JWT } from "google-auth-library";
+
+async function getVertexAccessToken(serviceAccountJson: string): Promise<{ token: string; projectId: string }> {
+  const creds = JSON.parse(serviceAccountJson);
+  const client = new JWT({
+    email: creds.client_email,
+    key: creds.private_key,
+    scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+  });
+  const tokenRes = await client.getAccessToken();
+  if (!tokenRes.token) throw new Error("Failed to get access token from service account");
+  return { token: tokenRes.token, projectId: creds.project_id };
+}
 
 function extractJSON(text: string): Record<string, string> {
   const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -139,6 +152,42 @@ export async function POST(req: NextRequest) {
         data,
         inputTokens: openaiData.usage?.input_tokens || 0,
         outputTokens: openaiData.usage?.output_tokens || 0,
+      });
+    } else if (provider === "vertex") {
+      const { token, projectId } = await getVertexAccessToken(apiKey);
+      const location = "us-central1";
+      const action = useWebSearch ? "generateContent" : "generateContent";
+      const url = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:${action}`;
+
+      const tools = useWebSearch ? [{ googleSearch: {} }] : [];
+      const vertexRes = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          ...(tools.length > 0 ? { tools } : {}),
+        }),
+      });
+
+      if (!vertexRes.ok) {
+        const errBody = await vertexRes.text();
+        throw new Error(errBody || `Vertex AI error: ${vertexRes.status}`);
+      }
+
+      const vertexData = await vertexRes.json();
+      let text = "";
+      if (vertexData.candidates?.[0]?.content?.parts) {
+        for (const part of vertexData.candidates[0].content.parts) {
+          if (part.text) text += part.text;
+        }
+      }
+
+      const data = extractJSON(text);
+      const usage = vertexData.usageMetadata;
+      return NextResponse.json({
+        data,
+        inputTokens: usage?.promptTokenCount || 0,
+        outputTokens: usage?.candidatesTokenCount || 0,
       });
     } else {
       return NextResponse.json({ error: "Unknown provider" }, { status: 400 });

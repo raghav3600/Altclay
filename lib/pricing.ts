@@ -273,3 +273,4 @@ export const ANTHROPIC_PRICING_URL = "https://claude.com/pricing";
 export const GEMINI_PRICING_URL = "https://ai.google.dev/gemini-api/docs/pricing";
 export const GROK_PRICING_URL = "https://docs.x.ai/developers/models";
 export const OPENAI_PRICING_URL = "https://openai.com/api/pricing/";
+export const VERTEX_PRICING_URL = "https://cloud.google.com/vertex-ai/generative-ai/pricing";

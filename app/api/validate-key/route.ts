@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { JWT } from "google-auth-library";
 
 export async function POST(req: NextRequest) {
   try {
@@ -51,6 +52,30 @@ export async function POST(req: NextRequest) {
       if (!openaiRes.ok) {
         const errText = await openaiRes.text();
         throw new Error(`${openaiRes.status} ${errText}`);
+      }
+      return NextResponse.json({ valid: true });
+    } else if (provider === "vertex") {
+      const creds = JSON.parse(apiKey);
+      const client = new JWT({
+        email: creds.client_email,
+        key: creds.private_key,
+        scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+      });
+      const tokenRes = await client.getAccessToken();
+      if (!tokenRes.token) throw new Error("Failed to get access token");
+
+      const location = "us-central1";
+      const url = `https://${location}-aiplatform.googleapis.com/v1/projects/${creds.project_id}/locations/${location}/publishers/google/models/gemini-2.0-flash:generateContent`;
+      const vertexRes = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${tokenRes.token}` },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: "Hi" }] }],
+        }),
+      });
+      if (!vertexRes.ok) {
+        const errText = await vertexRes.text();
+        throw new Error(`${vertexRes.status} ${errText}`);
       }
       return NextResponse.json({ valid: true });
     } else {

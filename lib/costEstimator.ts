@@ -71,7 +71,7 @@ export function calculateCostEstimate(
       totalCost: inputCost + outputCost + searchCost,
       searchCostPerRow,
     };
-  } else if (provider === "gemini") {
+  } else if (provider === "gemini" || provider === "vertex") {
     const model = GEMINI_MODELS[modelId as GeminiModelId];
     if (!model) throw new Error(`Unknown model: ${modelId}`);
 

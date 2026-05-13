@@ -24,6 +24,7 @@ import {
   GEMINI_PRICING_URL,
   GROK_PRICING_URL,
   OPENAI_PRICING_URL,
+  VERTEX_PRICING_URL,
 } from "@/lib/pricing";
 import { buildPrompt } from "@/lib/promptTemplates";
 import { estimateInputTokensPerRow, estimateOutputTokensPerRow, calculateCostRange, calculateCostFromActualTokens } from "@/lib/costEstimator";
@@ -32,6 +33,7 @@ import { enrichRowAnthropic } from "@/lib/anthropic";
 import { enrichRowGemini } from "@/lib/gemini";
 import { enrichRowGrok } from "@/lib/grok";
 import { enrichRowOpenAI } from "@/lib/openai";
+import { enrichRowVertex } from "@/lib/vertex";
 
 /* ------------------------------------------------------------------ */
 /*  Light-themed Helpers                                                */
@@ -284,6 +286,8 @@ export default function ToolPage() {
           ? await enrichRowGrok(apiKey, modelId as GrokModelId, prompt, useWebSearch)
           : provider === "openai"
           ? await enrichRowOpenAI(apiKey, modelId as OpenAIModelId, prompt, useWebSearch)
+          : provider === "vertex"
+          ? await enrichRowVertex(apiKey, modelId as GeminiModelId, prompt, useWebSearch)
           : await enrichRowGemini(apiKey, modelId as GeminiModelId, prompt, useWebSearch);
         return { rowIndex: index, success: true, data: result.data, inputTokens: result.inputTokens, outputTokens: result.outputTokens };
       } catch (err) {
@@ -352,7 +356,7 @@ export default function ToolPage() {
     document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
   };
 
-  const providerPricingUrl = provider === "anthropic" ? ANTHROPIC_PRICING_URL : provider === "grok" ? GROK_PRICING_URL : provider === "openai" ? OPENAI_PRICING_URL : GEMINI_PRICING_URL;
+  const providerPricingUrl = provider === "anthropic" ? ANTHROPIC_PRICING_URL : provider === "grok" ? GROK_PRICING_URL : provider === "openai" ? OPENAI_PRICING_URL : provider === "vertex" ? VERTEX_PRICING_URL : GEMINI_PRICING_URL;
 
   /* ---- render ---- */
   return (
@@ -579,23 +583,19 @@ export default function ToolPage() {
             <Card className={!file ? "opacity-30 pointer-events-none" : ""}>
               <StepHeader num={3} title="Choose provider & model" subtitle="All models include live web search" done={!!modelId} active={!!file} />
 
-              <div className="mb-4 grid grid-cols-4 gap-2">
-                <button onClick={() => { setProvider("gemini"); setModelId("gemini-3.1-pro-preview"); setKeyValid(false); setApiKey(""); setKeyError(""); setKeyWarning(""); setRealCostEstimate(null); }}
-                  className={`rounded-lg border-2 px-3 py-2.5 text-xs font-medium transition ${provider === "gemini" ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-500 hover:border-zinc-300"}`}>
-                  Google (Gemini)
-                </button>
-                <button onClick={() => { setProvider("openai"); setModelId("gpt-5.4-mini"); setKeyValid(false); setApiKey(""); setKeyError(""); setKeyWarning(""); setRealCostEstimate(null); }}
-                  className={`rounded-lg border-2 px-3 py-2.5 text-xs font-medium transition ${provider === "openai" ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-500 hover:border-zinc-300"}`}>
-                  OpenAI (GPT)
-                </button>
-                <button onClick={() => { setProvider("anthropic"); setModelId("claude-sonnet-4-5-20250929"); setKeyValid(false); setApiKey(""); setKeyError(""); setKeyWarning(""); setRealCostEstimate(null); }}
-                  className={`rounded-lg border-2 px-3 py-2.5 text-xs font-medium transition ${provider === "anthropic" ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-500 hover:border-zinc-300"}`}>
-                  Anthropic (Claude)
-                </button>
-                <button onClick={() => { setProvider("grok"); setModelId("grok-4-0320"); setKeyValid(false); setApiKey(""); setKeyError(""); setKeyWarning(""); setRealCostEstimate(null); }}
-                  className={`rounded-lg border-2 px-3 py-2.5 text-xs font-medium transition ${provider === "grok" ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-500 hover:border-zinc-300"}`}>
-                  xAI (Grok)
-                </button>
+              <div className="mb-4 flex flex-wrap gap-2">
+                {([
+                  { p: "gemini" as Provider, label: "Gemini", model: "gemini-3.1-pro-preview" as ModelId },
+                  { p: "vertex" as Provider, label: "Vertex AI", model: "gemini-3.1-pro-preview" as ModelId },
+                  { p: "openai" as Provider, label: "OpenAI", model: "gpt-5.4-mini" as ModelId },
+                  { p: "anthropic" as Provider, label: "Claude", model: "claude-sonnet-4-5-20250929" as ModelId },
+                  { p: "grok" as Provider, label: "Grok", model: "grok-4-0320" as ModelId },
+                ] as const).map(({ p, label, model }) => (
+                  <button key={p} onClick={() => { setProvider(p); setModelId(model); setKeyValid(false); setApiKey(""); setKeyError(""); setKeyWarning(""); setRealCostEstimate(null); }}
+                    className={`rounded-lg border-2 px-3 py-2.5 text-xs font-medium transition ${provider === p ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-500 hover:border-zinc-300"}`}>
+                    {label}
+                  </button>
+                ))}
               </div>
 
               <div className="space-y-2">
@@ -648,7 +648,7 @@ export default function ToolPage() {
             <Card className={!configReady ? "opacity-30 pointer-events-none" : ""} glow={!!configReady && !keyValid}>
               <StepHeader
                 num={4}
-                title={`Connect your ${provider === "anthropic" ? "Anthropic" : provider === "grok" ? "xAI" : provider === "openai" ? "OpenAI" : "Google"} API key`}
+                title={`Connect your ${provider === "anthropic" ? "Anthropic" : provider === "grok" ? "xAI" : provider === "openai" ? "OpenAI" : provider === "vertex" ? "Vertex AI" : "Google"} API key`}
                 subtitle="Your key is never stored — it stays in browser memory only"
                 done={keyValid}
                 active={!!configReady && !keyValid}
@@ -656,10 +656,18 @@ export default function ToolPage() {
 
               {!keyValid ? (
                 <div className="space-y-3">
-                  <input type="password" value={apiKey} onChange={(e) => { setApiKey(e.target.value); setKeyError(""); }}
-                    placeholder={provider === "anthropic" ? "sk-ant-..." : provider === "grok" ? "xai-..." : provider === "openai" ? "sk-..." : "AIza..."}
-                    className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-1 focus:ring-zinc-300 focus:outline-none"
-                  />
+                  {provider === "vertex" ? (
+                    <textarea value={apiKey} onChange={(e) => { setApiKey(e.target.value); setKeyError(""); }}
+                      placeholder={'Paste your service account JSON here:\n{"type": "service_account", "project_id": "...", ...}'}
+                      rows={4}
+                      className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-xs font-mono text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-1 focus:ring-zinc-300 focus:outline-none"
+                    />
+                  ) : (
+                    <input type="password" value={apiKey} onChange={(e) => { setApiKey(e.target.value); setKeyError(""); }}
+                      placeholder={provider === "anthropic" ? "sk-ant-..." : provider === "grok" ? "xai-..." : provider === "openai" ? "sk-..." : "AIza..."}
+                      className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-1 focus:ring-zinc-300 focus:outline-none"
+                    />
+                  )}
                   {keyError && <p className="text-xs text-red-600">{keyError}</p>}
                   <button onClick={validateKey} disabled={validating || !apiKey.trim()}
                     className="w-full rounded-lg bg-zinc-900 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-50">
@@ -668,6 +676,7 @@ export default function ToolPage() {
                   <p className="text-center text-[11px] text-zinc-400">
                     {provider === "anthropic" && <a href="https://console.anthropic.com" target="_blank" rel="noopener noreferrer" className="text-zinc-600 underline hover:text-zinc-900">Get a key from Anthropic</a>}
                     {provider === "gemini" && <a href="https://aistudio.google.com" target="_blank" rel="noopener noreferrer" className="text-zinc-600 underline hover:text-zinc-900">Get a key from Google AI Studio</a>}
+                    {provider === "vertex" && <a href="https://console.cloud.google.com/iam-admin/serviceaccounts" target="_blank" rel="noopener noreferrer" className="text-zinc-600 underline hover:text-zinc-900">Create a service account in Google Cloud</a>}
                     {provider === "openai" && <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-zinc-600 underline hover:text-zinc-900">Get a key from OpenAI</a>}
                     {provider === "grok" && <a href="https://console.x.ai" target="_blank" rel="noopener noreferrer" className="text-zinc-600 underline hover:text-zinc-900">Get a key from xAI Console</a>}
                   </p>
@@ -677,7 +686,7 @@ export default function ToolPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-2 ring-1 ring-emerald-200">
                     <span className="text-xs font-medium text-emerald-700">
-                      {provider === "anthropic" ? "Anthropic" : provider === "grok" ? "Grok" : "Gemini"} connected
+                      {provider === "anthropic" ? "Anthropic" : provider === "grok" ? "Grok" : provider === "openai" ? "OpenAI" : provider === "vertex" ? "Vertex AI" : "Gemini"} connected
                     </span>
                     <button onClick={() => { setKeyValid(false); setApiKey(""); setKeyWarning(""); }} className="text-xs text-red-500 hover:text-red-700">Disconnect</button>
                   </div>

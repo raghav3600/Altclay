@@ -15,6 +15,25 @@ async function getVertexAccessToken(serviceAccountJson: string): Promise<{ token
   return { token: tokenRes.token, projectId: creds.project_id };
 }
 
+const VERTEX_MODEL_MAP: Record<string, string> = {
+  "gemini-3.1-pro-preview": "gemini-3.1-pro",
+  "gemini-3-flash-preview": "gemini-3-flash",
+  "gemini-3.1-flash-lite-preview": "gemini-3.1-flash-lite",
+};
+
+function getVertexModelId(modelId: string): string {
+  return VERTEX_MODEL_MAP[modelId] || modelId;
+}
+
+function getVertexEndpoint(modelId: string, projectId: string): string {
+  const vertexModelId = getVertexModelId(modelId);
+  const needsGlobal = vertexModelId.startsWith("gemini-3");
+  if (needsGlobal) {
+    return `https://aiplatform.googleapis.com/v1/projects/${projectId}/locations/global/publishers/google/models/${vertexModelId}:generateContent`;
+  }
+  return `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/${vertexModelId}:generateContent`;
+}
+
 function extractJSON(text: string): Record<string, string> {
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
@@ -155,9 +174,7 @@ export async function POST(req: NextRequest) {
       });
     } else if (provider === "vertex") {
       const { token, projectId } = await getVertexAccessToken(apiKey);
-      const location = "us-central1";
-      const action = useWebSearch ? "generateContent" : "generateContent";
-      const url = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:${action}`;
+      const url = getVertexEndpoint(modelId, projectId);
 
       const tools = useWebSearch ? [{ googleSearch: {} }] : [];
       const vertexRes = await fetch(url, {

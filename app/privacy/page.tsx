@@ -23,15 +23,15 @@ export default function PrivacyPage() {
 
       <main className="mx-auto max-w-3xl px-6 py-16">
         <h1 className="text-3xl font-bold">Privacy Policy</h1>
-        <p className="mt-2 text-sm text-zinc-500">Last updated: February 2026</p>
+        <p className="mt-2 text-sm text-zinc-500">Last updated: May 2026</p>
 
         <div className="mt-10 space-y-8 text-[15px] leading-relaxed text-zinc-600">
           <section>
             <h2 className="text-lg font-semibold text-zinc-900">The short version</h2>
             <p className="mt-2">
-              OpenClay does not collect, store, or process any personal data. We have no database, no user accounts,
-              no cookies, and no localStorage. Your API keys and spreadsheet data never leave your browser
-              except to make direct API calls to your chosen AI provider (Anthropic or Google).
+              OpenClay does not collect, store, or process any personal data on our servers. We have no database, no user accounts,
+              and no cookies. Your API keys and spreadsheet data never leave your browser
+              except to make direct API calls to your chosen AI provider (OpenAI, Anthropic, Google, or xAI).
             </p>
           </section>
 
@@ -40,11 +40,23 @@ export default function PrivacyPage() {
             <p className="mt-2">We collect minimal, anonymized usage data. Specifically:</p>
             <ul className="mt-3 list-disc space-y-1.5 pl-5">
               <li>We do not collect personal information</li>
-              <li>We do not use cookies or localStorage</li>
+              <li>We do not use cookies</li>
               <li>We do not log API requests, API keys, or user data on our servers</li>
-              <li>We do not store uploaded files — they are parsed entirely in your browser</li>
+              <li>We do not store uploaded files on any server — they are parsed entirely in your browser</li>
               <li>We use <strong className="text-zinc-900">Vercel Web Analytics</strong> to collect anonymous, aggregated page view data (no cookies, no personal data)</li>
             </ul>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-zinc-900">Session recovery (local only)</h2>
+            <p className="mt-2">
+              So you don&apos;t lose hours of work if you accidentally reload or close the tab, OpenClay saves your
+              in-progress session — your uploaded data, settings, and enrichment results — to your browser&apos;s
+              <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-sm">localStorage</code>. This data stays entirely
+              on your own device, is never sent to us or anyone else, and you can clear it any time with the
+              &ldquo;Start fresh&rdquo; button. Your <strong className="text-zinc-900">API key is the one thing that is never
+              saved</strong> — you re-enter it each session.
+            </p>
           </section>
 
           <section>
@@ -72,8 +84,10 @@ export default function PrivacyPage() {
               When you use OpenClay, your data is sent to the AI provider you choose:
             </p>
             <ul className="mt-3 list-disc space-y-1.5 pl-5">
+              <li><strong className="text-zinc-900">OpenAI (GPT)</strong> — subject to <a href="https://openai.com/policies/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-zinc-900 underline">OpenAI&apos;s Privacy Policy</a></li>
               <li><strong className="text-zinc-900">Anthropic (Claude)</strong> — subject to <a href="https://www.anthropic.com/privacy" target="_blank" rel="noopener noreferrer" className="text-zinc-900 underline">Anthropic&apos;s Privacy Policy</a></li>
-              <li><strong className="text-zinc-900">Google (Gemini)</strong> — subject to <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-zinc-900 underline">Google&apos;s Privacy Policy</a></li>
+              <li><strong className="text-zinc-900">Google (Gemini / Vertex AI)</strong> — subject to <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-zinc-900 underline">Google&apos;s Privacy Policy</a></li>
+              <li><strong className="text-zinc-900">xAI (Grok)</strong> — subject to <a href="https://x.ai/legal/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-zinc-900 underline">xAI&apos;s Privacy Policy</a></li>
               <li><strong className="text-zinc-900">Vercel Web Analytics</strong> — collects anonymous page view data without cookies. See <a href="https://vercel.com/docs/analytics/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-zinc-900 underline">Vercel Analytics Privacy</a></li>
             </ul>
             <p className="mt-3">

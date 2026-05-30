@@ -35,6 +35,7 @@ OpenClay is a free, open-source web tool that lets users enrich spreadsheet data
 - ALWAYS show trust/privacy messaging on every step of the UI
 - API key stays in React useState() and nowhere else
 - Vercel Web Analytics is used for anonymous page views (no cookies, no personal data)
+- Session recovery (lib/sessionStore.ts) persists the in-progress session (file, settings, results) to localStorage on the user's own device so work survives a reload/tab-close. The API key is NEVER part of the saved session. This local-only storage is disclosed on the privacy page and clearable via "Start fresh".
 
 ## Commands
 - `npm run dev` — Start development server

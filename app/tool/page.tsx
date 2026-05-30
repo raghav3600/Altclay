@@ -33,6 +33,7 @@ import { enrichRowAnthropic } from "@/lib/anthropic";
 import { enrichRowGemini } from "@/lib/gemini";
 import { enrichRowGrok } from "@/lib/grok";
 import { enrichRowOpenAI } from "@/lib/openai";
+import { saveSession, loadSession, clearSession, hasMeaningfulWork, timeAgo, type SavedSession } from "@/lib/sessionStore";
 import { enrichRowVertex } from "@/lib/vertex";
 
 /* ------------------------------------------------------------------ */
@@ -193,12 +194,19 @@ export default function ToolPage() {
   const [advancedMode, setAdvancedMode] = useState(false);
   const [customPrompt, setCustomPrompt] = useState("");
 
+  // Session persistence (survives reload + tab close). API key is never saved.
+  const [restoredNotice, setRestoredNotice] = useState<{ at: number; fileName: string; done: number; total: number } | null>(null);
+  const [saveWarning, setSaveWarning] = useState(false);
+  const hydratedRef = useRef(false);
+
   /* ---- derived ---- */
   const models = provider === "anthropic" ? Object.entries(ANTHROPIC_MODELS) : provider === "grok" ? Object.entries(GROK_MODELS) : provider === "openai" ? Object.entries(OPENAI_MODELS) : Object.entries(GEMINI_MODELS);
   const describeReady = file && enrichmentDescription.trim().length > 0 && inputColumns.length > 0 && outputColumns.length > 0;
   const generatedPrompt = file && inputColumns.length > 0 && outputColumns.length > 0 ? buildPrompt(inputColumns, file.rows[0], outputColumns, enrichmentDescription, undefined, useWebSearch) : "";
   const configReady = describeReady && (!advancedMode || customPrompt.trim().length > 0);
   const runReady = configReady && keyValid;
+  const hasPartialRun = fullResults.length > 0 && !fullRunning && !fullDone;
+  const remainingRows = file ? Math.max(0, file.totalRows - fullResults.filter((r) => r.success).length) : 0;
 
   const costRange = useMemo(() => {
     if (!file || inputColumns.length === 0 || outputColumns.length === 0) return null;
@@ -225,6 +233,86 @@ export default function ToolPage() {
     }
   }, [file, columnsAutoSelected]);
 
+  /* ---- session restore (on mount) ---- */
+  useEffect(() => {
+    const s: SavedSession | null = loadSession();
+    if (s && hasMeaningfulWork(s)) {
+      setFile(s.file);
+      setEnrichmentDescription(s.enrichmentDescription);
+      setInputColumns(s.inputColumns);
+      setOutputColumns(s.outputColumns);
+      setColumnsAutoSelected(true); // don't re-run auto-select over restored choices
+      setProvider(s.provider);
+      setModelId(s.modelId);
+      setUseWebSearch(s.useWebSearch);
+      setAdvancedMode(s.advancedMode);
+      setCustomPrompt(s.customPrompt);
+      setTestResults(s.testResults);
+      setTestDone(s.testDone);
+      setFullResults(s.fullResults);
+      setFullCompleted(s.fullCompleted);
+      setFullFailed(s.fullFailed);
+      setFullDone(s.fullDone);
+      setRestoredNotice({
+        at: s.savedAt,
+        fileName: s.file?.fileName || "your data",
+        done: s.fullResults.length,
+        total: s.file?.totalRows || 0,
+      });
+    }
+    hydratedRef.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* ---- session auto-save (debounced) ---- */
+  useEffect(() => {
+    if (!hydratedRef.current) return; // don't overwrite before the restore runs
+    const handle = setTimeout(() => {
+      const res = saveSession({
+        file,
+        enrichmentDescription,
+        inputColumns,
+        outputColumns,
+        provider,
+        modelId,
+        useWebSearch,
+        advancedMode,
+        customPrompt,
+        testResults,
+        testDone,
+        fullResults,
+        fullCompleted,
+        fullFailed,
+        fullDone,
+      });
+      setSaveWarning(res.quotaExceeded === true);
+    }, 600);
+    return () => clearTimeout(handle);
+  }, [file, enrichmentDescription, inputColumns, outputColumns, provider, modelId, useWebSearch, advancedMode, customPrompt, testResults, testDone, fullResults, fullCompleted, fullFailed, fullDone]);
+
+  /* ---- warn before leaving while a run is active ---- */
+  useEffect(() => {
+    const active = testRunning || fullRunning;
+    if (!active) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [testRunning, fullRunning]);
+
+  const startFresh = () => {
+    clearSession();
+    setRestoredNotice(null);
+    setFile(null); setFileError(""); setEnrichmentDescription("");
+    setInputColumns([]); setOutputColumns([]); setAutoDetected(false);
+    setColumnsAutoSelected(false); setShowAllColumns(false);
+    setTestResults([]); setTestDone(false);
+    setFullResults([]); setFullCompleted(0); setFullFailed(0); setFullDone(false);
+    setRealCostEstimate(null); setAdvancedMode(false); setCustomPrompt("");
+  };
+
   /* ---- handlers ---- */
   const validateKey = async () => {
     if (!apiKey.trim()) { setKeyError("Please enter an API key"); return; }
@@ -247,6 +335,7 @@ export default function ToolPage() {
       setInputColumns([]); setOutputColumns([]); setAutoDetected(false); setColumnsAutoSelected(false);
       setShowAllColumns(false);
       setTestDone(false); setTestResults([]); setFullDone(false); setFullResults([]);
+      setFullCompleted(0); setFullFailed(0); setRestoredNotice(null);
     } catch (err) { setFileError((err as Error).message); }
   };
 
@@ -318,18 +407,35 @@ export default function ToolPage() {
     setTestDone(true); setTestRunning(false);
   };
 
-  const runFull = async () => {
+  const runFull = async (resume = false) => {
     if (!file) return;
-    setFullRunning(true); setFullDone(false); setFullCompleted(0); setFullFailed(0); setFullResults([]);
+    setRestoredNotice(null);
+    setFullRunning(true); setFullDone(false);
     stopRef.current = false; pauseRef.current = false; setFullPaused(false);
+
+    // Pre-populate from existing results when resuming, so already-enriched rows are skipped.
     const all: EnrichmentResult[] = new Array(file.rows.length);
-    let done = 0, fail = 0, nextIdx = 0;
+    let done = 0, fail = 0;
+    if (resume) {
+      for (const r of fullResults) {
+        if (r.rowIndex >= 0 && r.rowIndex < all.length) {
+          all[r.rowIndex] = r;
+          r.success ? done++ : fail++;
+        }
+      }
+    } else {
+      setFullResults([]);
+    }
+    setFullCompleted(done); setFullFailed(fail);
+
+    let nextIdx = 0;
     const worker = async () => {
       while (nextIdx < file.rows.length) {
         if (stopRef.current) return;
         while (pauseRef.current) { await new Promise((r) => setTimeout(r, 200)); if (stopRef.current) return; }
         const idx = nextIdx++;
         if (idx >= file.rows.length) return;
+        if (all[idx]?.success) continue; // already enriched — skip on resume
         const r = await enrichSingleRow(file.rows[idx], idx);
         all[idx] = r;
         r.success ? done++ : fail++;
@@ -383,6 +489,31 @@ export default function ToolPage() {
       </header>
 
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+        {/* Restored-session banner */}
+        {restoredNotice && (
+          <div className="mb-5 flex flex-col gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-2.5">
+              <svg className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <div className="text-xs text-blue-800">
+                <span className="font-semibold">Session restored</span> from {timeAgo(restoredNotice.at)} — {restoredNotice.fileName}
+                {restoredNotice.done > 0 && <> ({restoredNotice.done}/{restoredNotice.total} rows enriched)</>}.
+                {restoredNotice.done > 0 && !keyValid && <span className="text-blue-600"> Re-enter your API key to resume.</span>}
+              </div>
+            </div>
+            <div className="flex shrink-0 gap-2">
+              <button onClick={() => setRestoredNotice(null)} className="rounded-lg border border-blue-200 bg-white px-3 py-1.5 text-[11px] font-medium text-blue-700 hover:bg-blue-100">Dismiss</button>
+              <button onClick={startFresh} className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-[11px] font-medium text-zinc-600 hover:bg-zinc-50">Start fresh</button>
+            </div>
+          </div>
+        )}
+
+        {/* Auto-save quota warning */}
+        {saveWarning && (
+          <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+            <span className="font-semibold">Heads up:</span> this dataset is too large to auto-save in your browser. Use <span className="font-medium">&ldquo;Download results so far&rdquo;</span> periodically so you don&apos;t lose progress.
+          </div>
+        )}
+
         <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
 
           {/* ============ LEFT COLUMN ============ */}
@@ -751,7 +882,7 @@ export default function ToolPage() {
                         className="flex-1 rounded-lg border border-zinc-200 py-2.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50">
                         Adjust & re-test
                       </button>
-                      <button onClick={runFull}
+                      <button onClick={() => runFull(false)}
                         className="flex-1 rounded-lg bg-emerald-600 py-2.5 text-xs font-semibold text-white transition hover:bg-emerald-500">
                         Looks good — Run all {file?.totalRows} rows
                       </button>
@@ -760,7 +891,7 @@ export default function ToolPage() {
                 </div>
               )}
 
-              {(fullRunning || fullDone) && (
+              {(fullRunning || fullDone || hasPartialRun) && (
                 <div className="mt-4 space-y-3 border-t border-zinc-200 pt-4">
                   <div className="flex items-center justify-between text-xs text-zinc-500">
                     <span>{fullCompleted + fullFailed} / {file?.totalRows} processed</span>
@@ -770,15 +901,42 @@ export default function ToolPage() {
                     <div className={`h-full rounded-full transition-all ${fullDone ? "bg-emerald-500" : "bg-zinc-900"}`} style={{ width: `${((fullCompleted + fullFailed) / (file?.totalRows || 1)) * 100}%` }} />
                   </div>
 
-                  {fullRunning && (
-                    <div className="flex gap-2">
-                      <button onClick={() => { pauseRef.current = !pauseRef.current; setFullPaused(!fullPaused); }}
-                        className="flex-1 rounded-lg border border-zinc-200 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-50">
-                        {fullPaused ? "Resume" : "Pause"}
-                      </button>
-                      <button onClick={() => { stopRef.current = true; pauseRef.current = false; setFullRunning(false); setFullDone(true); }}
-                        className="flex-1 rounded-lg border border-red-200 py-2 text-xs font-medium text-red-600 hover:bg-red-50">Stop</button>
+                  {/* Partial run interrupted (e.g. after a reload) — offer to resume */}
+                  {hasPartialRun && (
+                    <div className="space-y-3">
+                      <div className="rounded-lg bg-amber-50 px-4 py-3 ring-1 ring-amber-200">
+                        <p className="text-sm font-semibold text-amber-800">Run interrupted</p>
+                        <p className="mt-0.5 text-xs text-amber-700">{fullResults.filter((r) => r.success).length} rows already enriched. Resume to finish the remaining {remainingRows}.</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => runFull(true)} disabled={!keyValid}
+                          className="flex-1 rounded-lg bg-emerald-600 py-2.5 text-xs font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-50">
+                          Resume — {remainingRows} rows left
+                        </button>
+                        <button onClick={handleDownload}
+                          className="flex-1 rounded-lg border border-zinc-200 py-2.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50">
+                          Download results so far
+                        </button>
+                      </div>
+                      {!keyValid && <p className="text-[11px] text-amber-600">Re-enter your API key in step 4 to resume.</p>}
                     </div>
+                  )}
+
+                  {fullRunning && (
+                    <>
+                      <div className="flex gap-2">
+                        <button onClick={() => { pauseRef.current = !pauseRef.current; setFullPaused(!fullPaused); }}
+                          className="flex-1 rounded-lg border border-zinc-200 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-50">
+                          {fullPaused ? "Resume" : "Pause"}
+                        </button>
+                        <button onClick={() => { stopRef.current = true; pauseRef.current = false; setFullRunning(false); setFullDone(true); }}
+                          className="flex-1 rounded-lg border border-red-200 py-2 text-xs font-medium text-red-600 hover:bg-red-50">Stop</button>
+                      </div>
+                      <button onClick={handleDownload}
+                        className="w-full rounded-lg border border-zinc-200 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-50">
+                        Download results so far
+                      </button>
+                    </>
                   )}
 
                   {fullDone && (

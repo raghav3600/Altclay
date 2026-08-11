@@ -4,96 +4,220 @@ import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import type {
   Provider,
-  ModelId,
   OutputColumn,
   ParsedFile,
   EnrichmentResult,
-  AnthropicModelId,
-  GeminiModelId,
-  GrokModelId,
+  CostEstimate,
+  RunStats,
 } from "@/lib/types";
+import { emptyRunStats } from "@/lib/types";
 import {
-  ANTHROPIC_MODELS,
-  GEMINI_MODELS,
-  GROK_MODELS,
-  MODEL_GUIDANCE,
+  PROVIDER_META,
   PRICING_LAST_UPDATED,
-  ANTHROPIC_PRICING_URL,
-  GEMINI_PRICING_URL,
-  GROK_PRICING_URL,
+  defaultModelFor,
+  requireModel,
+  isValidModelFor,
 } from "@/lib/pricing";
-import { buildPrompt } from "@/lib/promptTemplates";
-import { estimateInputTokensPerRow, estimateOutputTokensPerRow, calculateCostRange, calculateCostFromActualTokens } from "@/lib/costEstimator";
+import { buildPrompt, buildPromptTemplate, validateTemplate } from "@/lib/promptTemplates";
+import {
+  estimateInputTokensPerRow,
+  estimateOutputTokensPerRow,
+  calculateCostRange,
+  calculateCostFromActualTokens,
+  calculateActualSpend,
+} from "@/lib/costEstimator";
 import { parseFile, exportToFile } from "@/lib/fileParser";
-import { enrichRowAnthropic } from "@/lib/anthropic";
-import { enrichRowGemini } from "@/lib/gemini";
-import { enrichRowGrok } from "@/lib/grok";
+import { enrichRowWithRetry, validateApiKey } from "@/lib/enrichClient";
+import {
+  TokenRateTracker,
+  countMissingCells,
+  estimateRemainingMs,
+  formatDuration,
+  formatFinishTime,
+  formatTokens,
+} from "@/lib/runStats";
+import { ModelPicker } from "@/app/components/ModelPicker";
+import {
+  ProviderLogo,
+  CheckIcon,
+  LockIcon,
+  UploadIcon,
+  CloseIcon,
+  PlusIcon,
+  DownloadIcon,
+  RefreshIcon,
+  TrashIcon,
+  GlobeIcon,
+  InfoIcon,
+  AlertIcon,
+  PauseIcon,
+  PlayIcon,
+  StopIcon,
+  LinkedInIcon,
+} from "@/app/components/icons";
+
+/** CLAUDE.md: users always test 5 rows before committing to the full batch. */
+const TEST_ROW_COUNT = 5;
+const DEFAULT_CONCURRENCY = 3;
+const MAX_CONCURRENCY = 12;
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
 /* ------------------------------------------------------------------ */
-/*  Light-themed Helpers                                                */
+/*  Primitives                                                         */
 /* ------------------------------------------------------------------ */
 
-function Card({ children, className = "", glow = false }: { children: React.ReactNode; className?: string; glow?: boolean }) {
+function Panel({
+  children,
+  className = "",
+  muted = false,
+  active = false,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  muted?: boolean;
+  active?: boolean;
+}) {
   return (
-    <div className={`rounded-2xl border bg-white p-5 shadow-sm transition-all ${glow ? "border-zinc-300 shadow-md" : "border-zinc-200"} ${className}`}>
+    <section
+      aria-disabled={muted || undefined}
+      className={`rounded border bg-surface transition-opacity ${
+        active ? "border-line-strong" : "border-line"
+      } ${muted ? "pointer-events-none opacity-45" : ""} ${className}`}
+    >
       {children}
-    </div>
+    </section>
   );
 }
 
-function StepHeader({ num, title, subtitle, done, active }: { num: number; title: string; subtitle?: string; done: boolean; active: boolean }) {
+function StepHeader({
+  num,
+  title,
+  hint,
+  done,
+  active,
+  aside,
+}: {
+  num: number;
+  title: string;
+  hint?: string;
+  done: boolean;
+  active: boolean;
+  aside?: React.ReactNode;
+}) {
   return (
-    <div className="mb-4 flex items-start gap-3">
-      <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-all ${done ? "bg-emerald-500 text-white shadow-sm" : active ? "bg-zinc-900 text-white shadow-sm" : "bg-zinc-100 text-zinc-400"}`}>
-        {done ? (
-          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-        ) : num}
+    <header className="flex items-start gap-3 border-b border-line px-4 py-3">
+      <span
+        aria-hidden="true"
+        className={`mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-sm font-mono text-[10px] font-bold ${
+          done
+            ? "bg-data text-paper"
+            : active
+              ? "bg-accent text-on-accent"
+              : "border border-line text-ink-3"
+        }`}
+      >
+        {done ? <CheckIcon className="h-3 w-3" /> : num}
+      </span>
+      <div className="min-w-0 flex-1">
+        <h2 className="text-sm font-semibold tracking-tight text-ink">{title}</h2>
+        {hint && <p className="mt-0.5 text-[11px] leading-snug text-ink-2">{hint}</p>}
       </div>
-      <div>
-        <h3 className="text-sm font-semibold text-zinc-900">{title}</h3>
-        {subtitle && <p className="text-[11px] text-zinc-500">{subtitle}</p>}
-      </div>
-    </div>
+      {aside}
+    </header>
   );
 }
 
-function TrustBadge({ text }: { text: string }) {
+function Tip({ text }: { text: string }) {
   return (
-    <div className="mt-3 flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
-      <svg className="mt-0.5 h-3 w-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
-      {text}
-    </div>
-  );
-}
-
-function InfoTip({ text }: { text: string }) {
-  return (
-    <span className="group relative ml-1 inline-flex cursor-help">
-      <svg className="h-3.5 w-3.5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" /></svg>
-      <span className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 w-56 -translate-x-1/2 rounded-lg bg-zinc-900 px-3 py-2 text-[11px] leading-relaxed text-zinc-100 opacity-0 shadow-xl transition-opacity group-hover:opacity-100">
+    <span className="group relative ml-1 inline-flex align-middle">
+      <InfoIcon className="h-3.5 w-3.5 cursor-help text-ink-3" />
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 w-56 -translate-x-1/2 rounded border border-line-strong bg-ink px-2.5 py-1.5 text-[11px] leading-snug text-paper opacity-0 shadow-lg transition-opacity group-hover:opacity-100"
+      >
         {text}
       </span>
     </span>
   );
 }
 
-const SPEED_COLORS = { fast: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200", medium: "bg-amber-50 text-amber-700 ring-1 ring-amber-200", slow: "bg-red-50 text-red-700 ring-1 ring-red-200" };
-const QUALITY_COLORS = { good: "bg-zinc-50 text-zinc-600 ring-1 ring-zinc-200", great: "bg-blue-50 text-blue-700 ring-1 ring-blue-200", best: "bg-purple-50 text-purple-700 ring-1 ring-purple-200" };
+function Callout({
+  tone,
+  children,
+  icon,
+}: {
+  tone: "data" | "warn" | "danger" | "neutral";
+  children: React.ReactNode;
+  icon?: React.ReactNode;
+}) {
+  const tones = {
+    data: "border-data-line bg-data-soft text-data",
+    warn: "border-warn-line bg-warn-soft text-warn",
+    danger: "border-danger-line bg-danger-soft text-danger",
+    neutral: "border-line bg-surface-2 text-ink-2",
+  };
+  return (
+    <div className={`flex items-start gap-2 rounded border px-2.5 py-2 text-[11px] leading-snug ${tones[tone]}`}>
+      {icon && <span className="mt-px shrink-0">{icon}</span>}
+      <span className="min-w-0">{children}</span>
+    </div>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  sub,
+  tone = "ink",
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  tone?: "ink" | "accent" | "data" | "warn";
+}) {
+  const tones = { ink: "text-ink", accent: "text-accent", data: "text-data", warn: "text-warn" };
+  return (
+    <div className="border-l border-line px-2.5 py-1.5 first:border-l-0 first:pl-0">
+      <div className="eyebrow">{label}</div>
+      <div className={`mt-0.5 font-mono text-[13px] font-semibold tnum ${tones[tone]}`}>{value}</div>
+      {sub && <div className="font-mono text-[10px] text-ink-3 tnum">{sub}</div>}
+    </div>
+  );
+}
+
+function Button({
+  children,
+  onClick,
+  variant = "secondary",
+  disabled,
+  className = "",
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  variant?: "primary" | "secondary" | "danger" | "ghost";
+  disabled?: boolean;
+  className?: string;
+}) {
+  const variants = {
+    primary: "bg-accent text-on-accent hover:bg-accent-hover border-transparent",
+    secondary: "bg-surface text-ink border-line-strong hover:bg-surface-2",
+    danger: "bg-surface text-danger border-danger-line hover:bg-danger-soft",
+    ghost: "bg-transparent text-ink-2 border-transparent hover:text-ink hover:bg-surface-2",
+  };
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`inline-flex items-center justify-center gap-1.5 rounded border px-3 py-2 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${variants[variant]} ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
 
 /* ------------------------------------------------------------------ */
-/*  Prompt templates                                                   */
-/* ------------------------------------------------------------------ */
-
-const PROMPT_TEMPLATES = [
-  { label: "Company research", description: "Find the CEO name, total funding raised, employee count, and a brief company description" },
-  { label: "Job postings", description: "Find the number of open job postings, most common roles being hired, and hiring page URL" },
-  { label: "Recent news", description: "Find the most recent news headline, news date, and a brief summary of the article" },
-  { label: "Tech stack", description: "Find the primary programming languages, cloud provider, and key technologies used" },
-  { label: "University info", description: "Find the university ranking, acceptance rate, annual tuition, and notable alumni" },
-];
-
-/* ------------------------------------------------------------------ */
-/*  Smart column detection                                             */
+/*  Column heuristics                                                  */
 /* ------------------------------------------------------------------ */
 
 const SMART_COLUMN_PATTERNS = [
@@ -109,9 +233,7 @@ const SMART_COLUMN_PATTERNS = [
 ];
 
 function detectSmartColumns(columns: string[]): string[] {
-  const matches = columns.filter((col) =>
-    SMART_COLUMN_PATTERNS.some((pattern) => pattern.test(col.trim()))
-  );
+  const matches = columns.filter((c) => SMART_COLUMN_PATTERNS.some((p) => p.test(c.trim())));
   return matches.length > 0 ? matches : columns.length > 0 ? [columns[0]] : [];
 }
 
@@ -133,82 +255,162 @@ function detectOutputColumns(description: string): OutputColumn[] {
     .map((p) => p.replace(/^(the|their|its|a|an)\s+/i, "").trim())
     .filter((p) => p.length > 1 && p.length < 60 && !p.includes("."));
 
-  if (parts.length === 0) return [];
-
-  return parts.map((label) => {
-    const key = label.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
-    return { key, label };
-  }).filter((c) => c.key.length > 0);
+  return parts
+    .map((label) => ({
+      key: label.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""),
+      label,
+    }))
+    .filter((c) => c.key.length > 0);
 }
 
+const TEMPLATES = [
+  {
+    label: "Company research",
+    description: "Find the CEO name, total funding raised, employee count, and a brief company description",
+  },
+  {
+    label: "Hiring signals",
+    description: "Find the number of open job postings, most common roles being hired, and hiring page URL",
+  },
+  {
+    label: "Recent news",
+    description: "Find the most recent news headline, news date, and a brief summary of the article",
+  },
+  {
+    label: "Tech stack",
+    description: "Find the primary programming languages, cloud provider, and key technologies used",
+  },
+  {
+    label: "University info",
+    description: "Find the university ranking, acceptance rate, annual tuition, and notable alumni",
+  },
+];
+
 /* ------------------------------------------------------------------ */
-/*  Main page                                                          */
+/*  Page                                                               */
 /* ------------------------------------------------------------------ */
 
 export default function ToolPage() {
-  /* ---- state ---- */
+  /* ---- file ---- */
   const [file, setFile] = useState<ParsedFile | null>(null);
   const [fileError, setFileError] = useState("");
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [enrichmentDescription, setEnrichmentDescription] = useState("");
+  /* ---- enrichment definition ---- */
+  const [description, setDescription] = useState("");
   const [inputColumns, setInputColumns] = useState<string[]>([]);
   const [outputColumns, setOutputColumns] = useState<OutputColumn[]>([]);
   const [newColumnName, setNewColumnName] = useState("");
-  const [autoDetected, setAutoDetected] = useState(false);
   const [showAllColumns, setShowAllColumns] = useState(false);
   const [columnsAutoSelected, setColumnsAutoSelected] = useState(false);
+  const [advancedMode, setAdvancedMode] = useState(false);
+  const [customTemplate, setCustomTemplate] = useState("");
 
+  /* ---- model ---- */
   const [provider, setProvider] = useState<Provider>("gemini");
-  const [modelId, setModelId] = useState<ModelId>("gemini-2.5-pro");
+  const [modelId, setModelId] = useState<string>(defaultModelFor("gemini").id);
+  const [useWebSearch, setUseWebSearch] = useState(true);
+  const [concurrency, setConcurrency] = useState(DEFAULT_CONCURRENCY);
 
+  /* ---- key ---- */
   const [apiKey, setApiKey] = useState("");
   const [keyValid, setKeyValid] = useState(false);
   const [validating, setValidating] = useState(false);
   const [keyError, setKeyError] = useState("");
   const [keyWarning, setKeyWarning] = useState("");
 
+  /* ---- run ---- */
   const [testRunning, setTestRunning] = useState(false);
   const [testResults, setTestResults] = useState<EnrichmentResult[]>([]);
   const [testDone, setTestDone] = useState(false);
   const [fullRunning, setFullRunning] = useState(false);
   const [fullPaused, setFullPaused] = useState(false);
-  const [fullCompleted, setFullCompleted] = useState(0);
-  const [fullFailed, setFullFailed] = useState(0);
   const [fullResults, setFullResults] = useState<EnrichmentResult[]>([]);
   const [fullDone, setFullDone] = useState(false);
+  const [stats, setStats] = useState<RunStats>(emptyRunStats());
+  const [throttleNotice, setThrottleNotice] = useState("");
+  const [preciseEstimate, setPreciseEstimate] = useState<CostEstimate | null>(null);
+  const [tick, setTick] = useState(0);
+
   const pauseRef = useRef(false);
-  const stopRef = useRef(false);
-
-  const [useWebSearch, setUseWebSearch] = useState(true);
-  const [realCostEstimate, setRealCostEstimate] = useState<import("@/lib/types").CostEstimate | null>(null);
-
-  const [advancedMode, setAdvancedMode] = useState(false);
-  const [customPrompt, setCustomPrompt] = useState("");
+  const abortRef = useRef({ aborted: false });
+  const rateRef = useRef(new TokenRateTracker());
 
   /* ---- derived ---- */
-  const models = provider === "anthropic" ? Object.entries(ANTHROPIC_MODELS) : provider === "grok" ? Object.entries(GROK_MODELS) : Object.entries(GEMINI_MODELS);
-  const describeReady = file && enrichmentDescription.trim().length > 0 && inputColumns.length > 0 && outputColumns.length > 0;
-  const generatedPrompt = file && inputColumns.length > 0 && outputColumns.length > 0 ? buildPrompt(inputColumns, file.rows[0], outputColumns, enrichmentDescription, undefined, useWebSearch) : "";
-  const configReady = describeReady && (!advancedMode || customPrompt.trim().length > 0);
+  const model = useMemo(() => requireModel(modelId), [modelId]);
+  const providerMeta = PROVIDER_META[provider];
+
+  const generatedTemplate = useMemo(
+    () =>
+      inputColumns.length > 0 && outputColumns.length > 0
+        ? buildPromptTemplate(inputColumns, outputColumns, description, useWebSearch)
+        : "",
+    [inputColumns, outputColumns, description, useWebSearch]
+  );
+
+  const activeTemplate = advancedMode && customTemplate ? customTemplate : generatedTemplate;
+
+  /** Preview is generated separately from the template — conflating the two was the bug. */
+  const previewPrompt = useMemo(
+    () =>
+      file && file.rows.length > 0 && activeTemplate
+        ? buildPrompt(
+            inputColumns,
+            file.rows[0],
+            outputColumns,
+            description,
+            advancedMode ? customTemplate || undefined : undefined,
+            useWebSearch
+          )
+        : "",
+    [file, inputColumns, outputColumns, description, advancedMode, customTemplate, useWebSearch]
+  );
+
+  const templateWarnings = useMemo(
+    () =>
+      advancedMode && customTemplate
+        ? validateTemplate(customTemplate, inputColumns, outputColumns)
+        : [],
+    [advancedMode, customTemplate, inputColumns, outputColumns]
+  );
+  const templateBlocked = templateWarnings.some((w) => w.level === "error");
+
+  const defineReady =
+    !!file && description.trim().length > 0 && inputColumns.length > 0 && outputColumns.length > 0;
+  const configReady = defineReady && !templateBlocked && (!advancedMode || customTemplate.trim().length > 0);
   const runReady = configReady && keyValid;
 
+  const completed = fullResults.length;
+  const failed = fullResults.filter((r) => !r.success).length;
+  const succeeded = completed - failed;
+  const totalRows = file?.totalRows ?? 0;
+
   const costRange = useMemo(() => {
-    if (!file || inputColumns.length === 0 || outputColumns.length === 0) return null;
-    const sample = buildPrompt(inputColumns, file.rows[0], outputColumns, enrichmentDescription, advancedMode ? customPrompt : undefined, useWebSearch);
-    const inp = estimateInputTokensPerRow(sample, provider, modelId);
+    if (!file || inputColumns.length === 0 || outputColumns.length === 0 || !previewPrompt) return null;
+    const inp = estimateInputTokensPerRow(previewPrompt, modelId);
     const out = estimateOutputTokensPerRow(outputColumns);
-    return calculateCostRange(file.totalRows, inp, out, provider, modelId, useWebSearch);
-  }, [file, inputColumns, outputColumns, enrichmentDescription, customPrompt, advancedMode, provider, modelId, useWebSearch]);
+    return calculateCostRange(file.totalRows, inp, out, modelId, useWebSearch);
+  }, [file, inputColumns, outputColumns, previewPrompt, modelId, useWebSearch]);
+
+  const spentSoFar = useMemo(
+    () => calculateActualSpend(modelId, stats.inputTokens, stats.outputTokens, succeeded, useWebSearch),
+    [modelId, stats.inputTokens, stats.outputTokens, succeeded, useWebSearch]
+  );
+
+  const etaMs = useMemo(() => {
+    void tick; // recompute on the ticker so the estimate stays live between rows
+    if (!fullRunning || fullPaused) return null;
+    return estimateRemainingMs(completed, totalRows, stats.startedAt);
+  }, [tick, fullRunning, fullPaused, completed, totalRows, stats.startedAt]);
 
   const smartColumns = useMemo(() => {
     if (!file) return { recommended: [] as string[], other: [] as string[] };
     const rec = detectSmartColumns(file.columns);
-    const other = file.columns.filter((c) => !rec.includes(c));
-    return { recommended: rec, other };
+    return { recommended: rec, other: file.columns.filter((c) => !rec.includes(c)) };
   }, [file]);
 
+  /* ---- effects ---- */
   useEffect(() => {
     if (file && !columnsAutoSelected) {
       const smart = detectSmartColumns(file.columns);
@@ -219,688 +421,1442 @@ export default function ToolPage() {
     }
   }, [file, columnsAutoSelected]);
 
+  // Drives the live ETA and the rolling tokens-per-minute readout.
+  useEffect(() => {
+    if (!fullRunning) return;
+    const id = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [fullRunning]);
+
+  // Keep the model valid when the provider changes.
+  useEffect(() => {
+    if (!isValidModelFor(provider, modelId)) setModelId(defaultModelFor(provider).id);
+  }, [provider, modelId]);
+
   /* ---- handlers ---- */
-  const validateKey = async () => {
-    if (!apiKey.trim()) { setKeyError("Please enter an API key"); return; }
-    setValidating(true); setKeyError(""); setKeyWarning("");
-    try {
-      const res = await fetch("/api/validate-key", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ provider, apiKey: apiKey.trim() }) });
-      const data = await res.json();
-      if (data.valid) { setKeyValid(true); if (data.warning) setKeyWarning(data.warning); } else { setKeyError(data.error || "Invalid API key"); }
-    } catch { setKeyError("Validation failed. Try again."); }
-    finally { setValidating(false); }
+  const handleProviderChange = (p: Provider) => {
+    setProvider(p);
+    setModelId(defaultModelFor(p).id);
+    setKeyValid(false);
+    setApiKey("");
+    setKeyError("");
+    setKeyWarning("");
+    setPreciseEstimate(null);
   };
 
   const handleFile = async (f: File) => {
     setFileError("");
-    if (f.size > 10 * 1024 * 1024) { setFileError("File exceeds 10MB limit."); return; }
+    if (f.size > MAX_FILE_BYTES) {
+      setFileError("File exceeds the 10 MB limit.");
+      return;
+    }
     try {
       const parsed = await parseFile(f);
-      if (parsed.totalRows === 0) { setFileError("File is empty."); return; }
+      if (parsed.totalRows === 0) {
+        setFileError("That file has no data rows.");
+        return;
+      }
       setFile(parsed);
-      setInputColumns([]); setOutputColumns([]); setAutoDetected(false); setColumnsAutoSelected(false);
+      setInputColumns([]);
+      setOutputColumns([]);
+      setColumnsAutoSelected(false);
       setShowAllColumns(false);
-      setTestDone(false); setTestResults([]); setFullDone(false); setFullResults([]);
-    } catch (err) { setFileError((err as Error).message); }
+      clearResults();
+    } catch (err) {
+      setFileError((err as Error).message);
+    }
   };
-
-  const toggleColumn = (col: string) => setInputColumns((p) => p.includes(col) ? p.filter((c) => c !== col) : [...p, col]);
 
   const addOutputColumn = () => {
     const name = newColumnName.trim();
     if (!name) return;
     const key = name.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
-    if (outputColumns.some((c) => c.key === key)) return;
+    if (!key || outputColumns.some((c) => c.key === key)) return;
     setOutputColumns((p) => [...p, { key, label: name }]);
     setNewColumnName("");
   };
 
-  const removeOutputColumn = (key: string) => setOutputColumns((p) => p.filter((c) => c.key !== key));
+  const applyTemplate = (t: (typeof TEMPLATES)[number]) => {
+    setDescription(t.description);
+    const detected = detectOutputColumns(t.description);
+    if (detected.length > 0) setOutputColumns(detected);
+  };
 
-  const handleDescriptionBlur = () => {
-    if (outputColumns.length === 0 && enrichmentDescription.trim()) {
-      const detected = detectOutputColumns(enrichmentDescription);
-      if (detected.length > 0) { setOutputColumns(detected); setAutoDetected(true); }
+  const validateKey = async () => {
+    if (!apiKey.trim()) {
+      setKeyError("Enter an API key first.");
+      return;
     }
-  };
-
-  const applyTemplate = (template: typeof PROMPT_TEMPLATES[0]) => {
-    setEnrichmentDescription(template.description);
-    const detected = detectOutputColumns(template.description);
-    if (detected.length > 0) { setOutputColumns(detected); setAutoDetected(true); }
-  };
-
-  const enrichSingleRow = useCallback(async (row: Record<string, string>, index: number): Promise<EnrichmentResult> => {
-    const prompt = buildPrompt(inputColumns, row, outputColumns, enrichmentDescription, advancedMode ? customPrompt : undefined, useWebSearch);
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        const result = provider === "anthropic"
-          ? await enrichRowAnthropic(apiKey, modelId as AnthropicModelId, prompt, useWebSearch)
-          : provider === "grok"
-          ? await enrichRowGrok(apiKey, modelId as GrokModelId, prompt, useWebSearch)
-          : await enrichRowGemini(apiKey, modelId as GeminiModelId, prompt, useWebSearch);
-        return { rowIndex: index, success: true, data: result.data, inputTokens: result.inputTokens, outputTokens: result.outputTokens };
-      } catch (err) {
-        if (attempt === 2) return { rowIndex: index, success: false, data: {}, error: (err as Error).message };
-        await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt)));
+    setValidating(true);
+    setKeyError("");
+    setKeyWarning("");
+    try {
+      const data = await validateApiKey(provider, apiKey.trim());
+      if (data.valid) {
+        setKeyValid(true);
+        if (data.warning) setKeyWarning(data.warning);
+      } else {
+        setKeyError(data.error || "That key was rejected.");
       }
+    } catch {
+      setKeyError("Could not reach the validation endpoint. Check your connection.");
+    } finally {
+      setValidating(false);
     }
-    return { rowIndex: index, success: false, data: {}, error: "Max retries" };
-  }, [inputColumns, outputColumns, enrichmentDescription, advancedMode, customPrompt, provider, apiKey, modelId, useWebSearch]);
+  };
+
+  /** Clear results but keep the file, columns, prompt, model and key. */
+  const clearResults = useCallback(() => {
+    abortRef.current.aborted = true;
+    pauseRef.current = false;
+    rateRef.current.reset();
+    setTestResults([]);
+    setTestDone(false);
+    setTestRunning(false);
+    setFullResults([]);
+    setFullDone(false);
+    setFullRunning(false);
+    setFullPaused(false);
+    setStats(emptyRunStats());
+    setThrottleNotice("");
+    setPreciseEstimate(null);
+  }, []);
+
+  const startOver = () => {
+    clearResults();
+    setFile(null);
+    setDescription("");
+    setInputColumns([]);
+    setOutputColumns([]);
+    setColumnsAutoSelected(false);
+    setAdvancedMode(false);
+    setCustomTemplate("");
+  };
+
+  const enrichRow = useCallback(
+    async (row: Record<string, string>, index: number): Promise<EnrichmentResult> => {
+      const prompt = buildPrompt(
+        inputColumns,
+        row,
+        outputColumns,
+        description,
+        advancedMode ? customTemplate : undefined,
+        useWebSearch
+      );
+      const startedAt = Date.now();
+      try {
+        const r = await enrichRowWithRetry(provider, apiKey, modelId, prompt, useWebSearch, {
+          signal: abortRef.current,
+          onRetry: ({ attempt, delayMs, error }) =>
+            setThrottleNotice(
+              error.isRateLimit
+                ? `Rate limited — backing off ${(delayMs / 1000).toFixed(1)}s (attempt ${attempt})`
+                : `Retrying after error — waiting ${(delayMs / 1000).toFixed(1)}s (attempt ${attempt})`
+            ),
+        });
+        return {
+          rowIndex: index,
+          success: true,
+          data: r.data,
+          inputTokens: r.inputTokens,
+          outputTokens: r.outputTokens,
+          durationMs: Date.now() - startedAt,
+          naCount: countMissingCells(r.data, outputColumns),
+          retries: r.retries,
+        };
+      } catch (err) {
+        return {
+          rowIndex: index,
+          success: false,
+          data: {},
+          error: (err as Error).message,
+          durationMs: Date.now() - startedAt,
+          retries: 0,
+        };
+      }
+    },
+    [inputColumns, outputColumns, description, advancedMode, customTemplate, provider, apiKey, modelId, useWebSearch]
+  );
 
   const runTest = async () => {
     if (!file) return;
-    setTestRunning(true); setTestResults([]); setTestDone(false); setRealCostEstimate(null);
-    const rows = file.rows.slice(0, 3);
-    const results: EnrichmentResult[] = [];
+    abortRef.current = { aborted: false };
+    rateRef.current.reset();
+    setTestRunning(true);
+    setTestResults([]);
+    setTestDone(false);
+    setPreciseEstimate(null);
+    setThrottleNotice("");
+
+    const rows = file.rows.slice(0, TEST_ROW_COUNT);
+    const collected: EnrichmentResult[] = [];
     for (let i = 0; i < rows.length; i++) {
-      const r = await enrichSingleRow(rows[i], i);
-      results.push(r);
-      setTestResults([...results]);
+      if (abortRef.current.aborted) break;
+      const r = await enrichRow(rows[i], i);
+      collected.push(r);
+      setTestResults([...collected]);
     }
-    const successResults = results.filter((r) => r.success && r.inputTokens && r.outputTokens);
-    if (successResults.length > 0) {
-      const avgInput = Math.round(successResults.reduce((s, r) => s + (r.inputTokens || 0), 0) / successResults.length);
-      const avgOutput = Math.round(successResults.reduce((s, r) => s + (r.outputTokens || 0), 0) / successResults.length);
-      const precise = calculateCostFromActualTokens(file.totalRows, avgInput, avgOutput, provider, modelId, useWebSearch);
-      setRealCostEstimate(precise);
+
+    const ok = collected.filter((r) => r.success && r.inputTokens && r.outputTokens);
+    if (ok.length > 0) {
+      const avgIn = Math.round(ok.reduce((s, r) => s + (r.inputTokens || 0), 0) / ok.length);
+      const avgOut = Math.round(ok.reduce((s, r) => s + (r.outputTokens || 0), 0) / ok.length);
+      setPreciseEstimate(
+        calculateCostFromActualTokens(file.totalRows, avgIn, avgOut, modelId, useWebSearch)
+      );
     }
-    setTestDone(true); setTestRunning(false);
+    setTestDone(true);
+    setTestRunning(false);
+    setThrottleNotice("");
   };
 
-  const runFull = async () => {
+  /** Run every row, or just the given indices when retrying failures. */
+  const runBatch = async (indices: number[], keepExisting: boolean) => {
     if (!file) return;
-    setFullRunning(true); setFullDone(false); setFullCompleted(0); setFullFailed(0); setFullResults([]);
-    stopRef.current = false; pauseRef.current = false; setFullPaused(false);
-    const all: EnrichmentResult[] = new Array(file.rows.length);
-    let done = 0, fail = 0, nextIdx = 0;
+    abortRef.current = { aborted: false };
+    pauseRef.current = false;
+    if (!keepExisting) rateRef.current.reset();
+
+    setFullRunning(true);
+    setFullDone(false);
+    setFullPaused(false);
+    setThrottleNotice("");
+
+    const results = new Map<number, EnrichmentResult>(
+      keepExisting ? fullResults.filter((r) => r.success).map((r) => [r.rowIndex, r]) : []
+    );
+
+    const base = keepExisting ? stats : emptyRunStats();
+    const running: RunStats = { ...base, startedAt: Date.now(), finishedAt: null };
+    setStats(running);
+
+    let cursor = 0;
     const worker = async () => {
-      while (nextIdx < file.rows.length) {
-        if (stopRef.current) return;
-        while (pauseRef.current) { await new Promise((r) => setTimeout(r, 200)); if (stopRef.current) return; }
-        const idx = nextIdx++;
-        if (idx >= file.rows.length) return;
-        const r = await enrichSingleRow(file.rows[idx], idx);
-        all[idx] = r;
-        r.success ? done++ : fail++;
-        setFullCompleted(done); setFullFailed(fail); setFullResults([...all.filter(Boolean)]);
+      while (cursor < indices.length) {
+        if (abortRef.current.aborted) return;
+        while (pauseRef.current) {
+          await new Promise((r) => setTimeout(r, 200));
+          if (abortRef.current.aborted) return;
+        }
+        const idx = indices[cursor++];
+        if (idx === undefined) return;
+
+        const r = await enrichRow(file.rows[idx], idx);
+        results.set(idx, r);
+
+        const tokens = (r.inputTokens ?? 0) + (r.outputTokens ?? 0);
+        const rate = rateRef.current.add(tokens);
+
+        running.inputTokens += r.inputTokens ?? 0;
+        running.outputTokens += r.outputTokens ?? 0;
+        running.peakTokensPerMinute = rate.peak;
+        running.retries += r.retries ?? 0;
+        if ((r.retries ?? 0) > 0) running.rateLimited += 1;
+        if (r.success) {
+          running.naCells += r.naCount ?? 0;
+          running.totalCells += outputColumns.length;
+        }
+
+        setStats({ ...running });
+        setFullResults([...results.values()].sort((a, b) => a.rowIndex - b.rowIndex));
       }
     };
-    await Promise.all(Array.from({ length: 3 }, () => worker()));
-    setFullRunning(false); setFullDone(true);
+
+    await Promise.all(Array.from({ length: Math.max(1, concurrency) }, worker));
+
+    running.finishedAt = Date.now();
+    setStats({ ...running });
+    setFullRunning(false);
+    setFullDone(true);
+    setThrottleNotice("");
+  };
+
+  const runFull = () => runBatch(Array.from({ length: totalRows }, (_, i) => i), false);
+
+  const retryFailed = () => {
+    const failedIndices = fullResults.filter((r) => !r.success).map((r) => r.rowIndex);
+    if (failedIndices.length > 0) runBatch(failedIndices, true);
+  };
+
+  const stopRun = () => {
+    abortRef.current.aborted = true;
+    pauseRef.current = false;
+    setFullPaused(false);
+    setFullRunning(false);
+    setFullDone(true);
   };
 
   const handleDownload = () => {
     if (!file) return;
+    const byIndex = new Map(fullResults.map((r) => [r.rowIndex, r]));
+    const anyFailures = fullResults.some((r) => !r.success);
+
     const enriched = file.rows.map((_, i) => {
-      const r = fullResults.find((x) => x.rowIndex === i);
-      if (r?.success) return r.data;
-      const empty: Record<string, string> = {};
-      for (const c of outputColumns) empty[c.key] = r ? `Error: ${r.error || "Failed"}` : "";
-      return empty;
+      const r = byIndex.get(i);
+      const row: Record<string, string> = {};
+      for (const c of outputColumns) row[c.key] = r?.success ? (r.data[c.key] ?? "") : "";
+      // Errors go in their own column rather than into every data cell, so the
+      // enriched columns stay clean enough to sort, filter and pivot on.
+      if (anyFailures) {
+        row.enrichment_status = !r ? "not processed" : r.success ? "ok" : `failed: ${r.error ?? "unknown"}`;
+      }
+      return row;
     });
-    const blob = exportToFile(file, enriched, outputColumns.map((c) => c.key));
+
+    const columnKeys = outputColumns.map((c) => c.key);
+    if (anyFailures) columnKeys.push("enrichment_status");
+
+    const blob = exportToFile(file, enriched, columnKeys);
     const ext = file.fileType === "csv" ? "csv" : "xlsx";
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = `${file.fileName.replace(/\.[^.]+$/, "")}_enriched.${ext}`;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${file.fileName.replace(/\.[^.]+$/, "")}_enriched.${ext}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
-  const providerPricingUrl = provider === "anthropic" ? ANTHROPIC_PRICING_URL : provider === "grok" ? GROK_PRICING_URL : GEMINI_PRICING_URL;
+  const estimate = preciseEstimate ?? costRange?.low ?? null;
+  const fillRate = stats.totalCells > 0 ? 1 - stats.naCells / stats.totalCells : null;
 
-  /* ---- render ---- */
+  /* ------------------------------------------------------------------ */
+
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900">
-      {/* Top bar */}
-      <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+    <div className="min-h-screen bg-paper text-ink">
+      {/* ---------- Header ---------- */}
+      <header className="sticky top-0 z-40 border-b border-line bg-paper/90 backdrop-blur-md">
+        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-4 py-2.5 sm:px-6">
           <Link href="/" className="flex items-center gap-2">
-            <img src="/icon.svg" alt="OpenClay" className="h-7 w-7 rounded-lg" />
-            <span className="text-base font-bold">OpenClay</span>
+            <img src="/icon.svg" alt="" className="h-6 w-6" />
+            <span className="text-sm font-bold tracking-tight">OpenClay</span>
+            <span className="eyebrow hidden sm:inline">enrich</span>
           </Link>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] text-emerald-700">
-              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
-              Your data stays in your browser
-            </div>
-            <span className="hidden rounded-full bg-zinc-100 px-3 py-1 text-[11px] font-medium text-zinc-600 ring-1 ring-zinc-200 sm:inline-flex">100% free</span>
-            <a href="https://www.linkedin.com/in/-raghav/" target="_blank" rel="noopener noreferrer" className="hidden items-center gap-1.5 rounded-full border border-zinc-200 px-3 py-1 text-[11px] text-zinc-500 transition hover:border-zinc-300 hover:text-zinc-900 sm:inline-flex" title="Feedback? Connect with the creator">
-              <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+
+          <div className="flex items-center gap-2">
+            <span className="hidden items-center gap-1.5 rounded border border-data-line bg-data-soft px-2 py-1 font-mono text-[10px] text-data md:inline-flex">
+              <LockIcon className="h-3 w-3" />
+              Runs in your browser
+            </span>
+            <a
+              href="https://www.linkedin.com/in/-raghav/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded border border-line px-2 py-1 font-mono text-[10px] text-ink-2 transition-colors hover:border-line-strong hover:text-ink"
+            >
+              <LinkedInIcon className="h-3 w-3" />
               Feedback
             </a>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-        <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
+      <div className="mx-auto max-w-[1400px] px-4 py-5 pb-28 sm:px-6 lg:pb-5">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+          {/* ================= LEFT ================= */}
+          <div className="min-w-0 space-y-4">
+            {/* ---------- 1. Upload ---------- */}
+            <Panel active={!file}>
+              <StepHeader
+                num={1}
+                title="Load your spreadsheet"
+                hint="CSV, XLS or XLSX up to 10 MB. Parsed locally — never uploaded."
+                done={!!file}
+                active={!file}
+                aside={
+                  file ? (
+                    <Button variant="ghost" onClick={startOver} className="shrink-0">
+                      <TrashIcon className="h-3.5 w-3.5" />
+                      Start over
+                    </Button>
+                  ) : undefined
+                }
+              />
 
-          {/* ============ LEFT COLUMN ============ */}
-          <div className="min-w-0 space-y-5">
-
-            {/* --- 1. Upload File --- */}
-            <Card glow={!file}>
-              <StepHeader num={1} title="Upload your spreadsheet" subtitle="CSV, XLS, or XLSX — max 10MB" done={!!file} active={!file} />
-              {!file ? (
-                <div>
-                  <div
-                    onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-                    onDragLeave={() => setDragging(false)}
-                    onDrop={(e) => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-12 transition ${dragging ? "border-zinc-400 bg-zinc-100" : "border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50"}`}>
-                    <svg className="mb-3 h-10 w-10 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
-                    <p className="text-sm font-medium text-zinc-700">Drop your file here or click to browse</p>
-                    <p className="mt-1 text-xs text-zinc-400">.xlsx, .xls, or .csv</p>
-                    <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} className="hidden" />
-                  </div>
-                  {fileError && <p className="mt-2 text-xs text-red-600">{fileError}</p>}
-                  <TrustBadge text="Files are parsed in your browser. Nothing is uploaded to any server." />
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between rounded-lg bg-zinc-50 px-3 py-2 ring-1 ring-zinc-200">
-                    <div>
-                      <p className="text-xs font-medium text-zinc-900">{file.fileName}</p>
-                      <p className="text-[11px] text-zinc-500">{file.totalRows} rows &middot; {file.columns.length} columns</p>
+              <div className="p-4">
+                {!file ? (
+                  <>
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setDragging(true);
+                      }}
+                      onDragLeave={() => setDragging(false)}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        setDragging(false);
+                        const f = e.dataTransfer.files[0];
+                        if (f) handleFile(f);
+                      }}
+                      onClick={() => fileInputRef.current?.click()}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click();
+                      }}
+                      className={`blueprint-grid flex cursor-pointer flex-col items-center justify-center rounded border border-dashed px-4 py-12 text-center transition-colors ${
+                        dragging ? "border-accent bg-accent-soft" : "border-line-strong hover:border-accent"
+                      }`}
+                    >
+                      <UploadIcon className="mb-2.5 h-7 w-7 text-ink-3" />
+                      <p className="text-sm font-medium text-ink">Drop a file, or click to browse</p>
+                      <p className="mt-1 font-mono text-[10px] text-ink-3">.csv &middot; .xls &middot; .xlsx</p>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".xlsx,.xls,.csv"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) handleFile(f);
+                        }}
+                        className="hidden"
+                      />
                     </div>
-                    <button onClick={() => { setFile(null); setInputColumns([]); setOutputColumns([]); setTestDone(false); setFullDone(false); setColumnsAutoSelected(false); }} className="text-xs text-red-500 hover:text-red-700">Remove</button>
-                  </div>
-                  <div className="overflow-hidden rounded-lg border border-zinc-200">
-                    <div className="max-h-48 overflow-auto">
-                      <table className="min-w-full text-[11px]">
-                        <thead className="sticky top-0 bg-zinc-50"><tr>{file.columns.map((c) => <th key={c} className="whitespace-nowrap px-2.5 py-1.5 text-left font-medium text-zinc-600">{c}</th>)}</tr></thead>
-                        <tbody>{file.rows.slice(0, 6).map((r, i) => <tr key={i} className="border-t border-zinc-100">{file.columns.map((c) => <td key={c} className="max-w-[160px] truncate whitespace-nowrap px-2.5 py-1.5 text-zinc-500">{r[c]}</td>)}</tr>)}</tbody>
+                    {fileError && (
+                      <div className="mt-2.5">
+                        <Callout tone="danger" icon={<AlertIcon className="h-3.5 w-3.5" />}>
+                          {fileError}
+                        </Callout>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1">
+                      <span className="font-mono text-xs font-medium text-ink">{file.fileName}</span>
+                      <span className="font-mono text-[11px] text-ink-2 tnum">
+                        {file.totalRows.toLocaleString()} rows &middot; {file.columns.length} columns
+                      </span>
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="ml-auto font-mono text-[11px] text-ink-2 underline decoration-line-strong underline-offset-2 hover:text-accent"
+                      >
+                        Replace
+                      </button>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".xlsx,.xls,.csv"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) handleFile(f);
+                        }}
+                        className="hidden"
+                      />
+                    </div>
+                    <div className="thin-scroll max-h-44 overflow-auto rounded border border-line">
+                      <table className="min-w-full border-collapse font-mono text-[11px]">
+                        <thead className="sticky top-0 bg-surface-2">
+                          <tr>
+                            {file.columns.map((c) => (
+                              <th
+                                key={c}
+                                className="whitespace-nowrap border-b border-line px-2 py-1.5 text-left font-medium text-ink-2"
+                              >
+                                {c}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {file.rows.slice(0, 5).map((r, i) => (
+                            <tr key={i} className="border-b border-line last:border-0">
+                              {file.columns.map((c) => (
+                                <td
+                                  key={c}
+                                  className="max-w-[180px] truncate whitespace-nowrap px-2 py-1 text-ink-2"
+                                >
+                                  {r[c]}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
                       </table>
                     </div>
-                  </div>
-                </div>
-              )}
-            </Card>
+                  </>
+                )}
+              </div>
+            </Panel>
 
-            {/* --- 2. Tell us what to enrich --- */}
-            <Card className={!file ? "opacity-30 pointer-events-none" : ""} glow={!!file && !describeReady}>
-              <StepHeader num={2} title="Tell us what to enrich" subtitle="Describe what you need, and we'll handle the rest" done={!!describeReady} active={!!file && !describeReady} />
+            {/* ---------- 2. Define ---------- */}
+            <Panel muted={!file} active={!!file && !defineReady}>
+              <StepHeader
+                num={2}
+                title="Describe what to look up"
+                hint="Plain English. OpenClay turns it into a prompt and runs it once per row."
+                done={defineReady}
+                active={!!file && !defineReady}
+              />
 
-              {/* Visual flow diagram */}
-              {file && (
-                <div className="mb-5 flex items-center justify-center gap-3 rounded-xl bg-zinc-50 px-4 py-3 text-[11px] ring-1 ring-zinc-100">
-                  <div className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 ring-1 ring-zinc-200">
-                    <svg className="h-3 w-3 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-7.5A1.125 1.125 0 0112 18.375m9.75-12.75c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125m19.5 0v1.5c0 .621-.504 1.125-1.125 1.125M2.25 5.625v1.5c0 .621.504 1.125 1.125 1.125m0 0h17.25m-17.25 0h7.5c.621 0 1.125.504 1.125 1.125M3.375 8.25c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m17.25-3.75h-7.5c-.621 0-1.125.504-1.125 1.125m8.625-1.125c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h7.5m-7.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125M12 10.875v-1.5m0 1.5c0 .621-.504 1.125-1.125 1.125M12 10.875c0 .621.504 1.125 1.125 1.125m-2.25 0c.621 0 1.125.504 1.125 1.125M13.125 12h7.5m-7.5 0c-.621 0-1.125.504-1.125 1.125M20.625 12c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h7.5M12 14.625v-1.5m0 1.5c0 .621-.504 1.125-1.125 1.125M12 14.625c0 .621.504 1.125 1.125 1.125m-2.25 0c.621 0 1.125.504 1.125 1.125m0 0v.375" /></svg>
-                    <span className="text-zinc-500">Your columns</span>
-                  </div>
-                  <svg className="h-3.5 w-3.5 shrink-0 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
-                  <div className="flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5 ring-1 ring-blue-200">
-                    <svg className="h-3 w-3 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" /></svg>
-                    <span className="text-blue-700">AI + Web Search</span>
-                  </div>
-                  <svg className="h-3.5 w-3.5 shrink-0 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
-                  <div className="flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-1.5 ring-1 ring-emerald-200">
-                    <svg className="h-3 w-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                    <span className="text-emerald-700">New columns added</span>
-                  </div>
-                </div>
-              )}
-
-              {/* A: Select input columns */}
-              {file && (
-                <div className="mb-5">
-                  <label className="mb-2 flex items-center text-xs font-medium text-zinc-700">
-                    Columns to look up
-                    <InfoTip text="Select columns that contain the data AI should search for." />
+              <div className="space-y-5 p-4">
+                {/* Input columns */}
+                <div>
+                  <label className="mb-2 flex items-center text-[11px] font-semibold uppercase tracking-wide text-ink-2">
+                    Columns the model can see
+                    <Tip text="These values are substituted into the prompt for each row. Pick the ones that identify the thing you're researching." />
                   </label>
-
                   <div className="flex flex-wrap gap-1.5">
-                    {smartColumns.recommended.map((col) => (
-                      <button key={col} onClick={() => toggleColumn(col)}
-                        className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${inputColumns.includes(col) ? "border-zinc-400 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:bg-zinc-50"}`}>
-                        {col}
-                      </button>
-                    ))}
-                  </div>
-
-                  {smartColumns.other.length > 0 && (
-                    <div className="mt-2">
-                      {showAllColumns ? (
-                        <>
-                          <div className="flex flex-wrap gap-1.5">
-                            {smartColumns.other.map((col) => (
-                              <button key={col} onClick={() => toggleColumn(col)}
-                                className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${inputColumns.includes(col) ? "border-zinc-400 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:bg-zinc-50"}`}>
-                                {col}
-                              </button>
-                            ))}
-                          </div>
-                          <button onClick={() => setShowAllColumns(false)} className="mt-2 text-[11px] text-zinc-400 hover:text-zinc-700">Show less</button>
-                        </>
-                      ) : (
-                        <button onClick={() => setShowAllColumns(true)} className="mt-1 text-[11px] text-zinc-400 hover:text-zinc-700">
-                          + {smartColumns.other.length} more columns
+                    {(showAllColumns
+                      ? [...smartColumns.recommended, ...smartColumns.other]
+                      : smartColumns.recommended
+                    ).map((col) => {
+                      const on = inputColumns.includes(col);
+                      return (
+                        <button
+                          key={col}
+                          onClick={() =>
+                            setInputColumns((p) =>
+                              p.includes(col) ? p.filter((c) => c !== col) : [...p, col]
+                            )
+                          }
+                          className={`rounded border px-2 py-1 font-mono text-[11px] transition-colors ${
+                            on
+                              ? "border-accent bg-accent text-on-accent"
+                              : "border-line text-ink-2 hover:border-line-strong hover:text-ink"
+                          }`}
+                        >
+                          {col}
                         </button>
-                      )}
-                    </div>
+                      );
+                    })}
+                  </div>
+                  {smartColumns.other.length > 0 && (
+                    <button
+                      onClick={() => setShowAllColumns((v) => !v)}
+                      className="mt-2 font-mono text-[11px] text-ink-2 underline decoration-line-strong underline-offset-2 hover:text-accent"
+                    >
+                      {showAllColumns
+                        ? "Show suggested only"
+                        : `+ ${smartColumns.other.length} more column${smartColumns.other.length === 1 ? "" : "s"}`}
+                    </button>
                   )}
                 </div>
-              )}
 
-              {/* B: Describe what AI should find */}
-              <div className="mb-5">
-                <label className="mb-2 flex items-center text-xs font-medium text-zinc-700">
-                  What should AI find for each row?
-                  <InfoTip text="Describe in plain English. We'll auto-suggest output columns." />
-                </label>
-                <textarea
-                  value={enrichmentDescription}
-                  onChange={(e) => { setEnrichmentDescription(e.target.value); if (autoDetected) { setAutoDetected(false); } }}
-                  onBlur={handleDescriptionBlur}
-                  rows={3}
-                  placeholder="e.g. Find the CEO name, total funding raised, employee count, and a brief company description"
-                  className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-1 focus:ring-zinc-300 focus:outline-none"
-                />
-
-                {/* Prompt templates */}
-                <div className="mt-2.5">
-                  {!enrichmentDescription && <p className="mb-1.5 text-[11px] text-zinc-400">Or start from a template:</p>}
-                  <div className="flex flex-wrap gap-2">
-                    {PROMPT_TEMPLATES.map((t) => (
-                      <button key={t.label} onClick={() => applyTemplate(t)}
-                        className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-[11px] font-medium text-zinc-500 transition hover:border-zinc-300 hover:bg-white hover:text-zinc-900">
+                {/* Description */}
+                <div>
+                  <label
+                    htmlFor="what-to-find"
+                    className="mb-2 flex items-center text-[11px] font-semibold uppercase tracking-wide text-ink-2"
+                  >
+                    What should the model find?
+                  </label>
+                  <textarea
+                    id="what-to-find"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    onBlur={() => {
+                      if (outputColumns.length === 0 && description.trim()) {
+                        const detected = detectOutputColumns(description);
+                        if (detected.length > 0) setOutputColumns(detected);
+                      }
+                    }}
+                    rows={3}
+                    placeholder="e.g. Find the CEO name, total funding raised, employee count, and a one-line company description"
+                    className="w-full resize-y rounded border border-line bg-surface-2 px-2.5 py-2 text-sm text-ink placeholder:text-ink-3 focus:border-accent focus:bg-surface focus:outline-none"
+                  />
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <span className="eyebrow mr-1">Presets</span>
+                    {TEMPLATES.map((t) => (
+                      <button
+                        key={t.label}
+                        onClick={() => applyTemplate(t)}
+                        className="rounded border border-line px-2 py-1 font-mono text-[10px] text-ink-2 transition-colors hover:border-accent hover:text-accent"
+                      >
                         {t.label}
                       </button>
                     ))}
                   </div>
                 </div>
-              </div>
 
-              {/* C: New columns to add */}
-              <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-                <label className="mb-3 flex items-center text-xs font-medium text-zinc-700">
-                  <svg className="mr-1.5 h-3.5 w-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                  New columns to add
-                  <InfoTip text="These columns will be filled with AI-generated data for each row." />
-                </label>
+                {/* Output columns */}
+                <div className="rounded border border-line bg-surface-2 p-3">
+                  <label className="mb-2.5 flex items-center text-[11px] font-semibold uppercase tracking-wide text-ink-2">
+                    <PlusIcon className="mr-1 h-3 w-3 text-data" />
+                    Columns to add
+                    <Tip text="One new spreadsheet column per entry. The model is asked to return exactly these keys as JSON." />
+                  </label>
 
-                {outputColumns.length > 0 && (
-                  <div className="mb-3 flex flex-wrap gap-2">
-                    {outputColumns.map((col) => (
-                      <span key={col.key} className="flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-                        {col.label}
-                        <button onClick={() => removeOutputColumn(col.key)} className="text-emerald-400 hover:text-red-500 transition">
-                          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                        </button>
-                      </span>
-                    ))}
+                  {outputColumns.length > 0 && (
+                    <ul className="mb-2.5 flex flex-wrap gap-1.5">
+                      {outputColumns.map((col) => (
+                        <li
+                          key={col.key}
+                          className="flex items-center gap-1.5 rounded border border-data-line bg-data-soft px-2 py-1 font-mono text-[11px] text-data"
+                        >
+                          {col.label}
+                          <button
+                            onClick={() => setOutputColumns((p) => p.filter((c) => c.key !== col.key))}
+                            aria-label={`Remove ${col.label}`}
+                            className="text-data/60 transition-colors hover:text-danger"
+                          >
+                            <CloseIcon className="h-3 w-3" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  <div className="flex gap-2">
+                    <input
+                      value={newColumnName}
+                      onChange={(e) => setNewColumnName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          addOutputColumn();
+                        }
+                      }}
+                      placeholder="Column name, e.g. CEO Name"
+                      className="min-w-0 flex-1 rounded border border-line bg-surface px-2.5 py-1.5 font-mono text-[11px] text-ink placeholder:text-ink-3 focus:border-accent focus:outline-none"
+                    />
+                    <Button onClick={addOutputColumn} disabled={!newColumnName.trim()}>
+                      Add
+                    </Button>
                   </div>
-                )}
+                </div>
 
-                <div className="flex gap-2">
-                  <input
-                    value={newColumnName}
-                    onChange={(e) => setNewColumnName(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addOutputColumn(); } }}
-                    placeholder="Type a column name, e.g. CEO Name"
-                    className="flex-1 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-1 focus:ring-zinc-300 focus:outline-none"
-                  />
-                  <button onClick={addOutputColumn} disabled={!newColumnName.trim()}
-                    className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-medium text-white transition hover:bg-emerald-500 disabled:opacity-30">
-                    Add
-                  </button>
+                {/* Advanced template */}
+                <div className="border-t border-line pt-3">
+                  <label className="flex cursor-pointer items-center gap-2 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={advancedMode}
+                      onChange={(e) => {
+                        const on = e.target.checked;
+                        setAdvancedMode(on);
+                        // Seed with the *template* — placeholders intact. Seeding with a
+                        // preview (row 1's values already substituted) is what made every
+                        // row come back with the first row's data.
+                        if (on && !customTemplate && generatedTemplate) setCustomTemplate(generatedTemplate);
+                      }}
+                      className="accent-accent"
+                    />
+                    <span className="font-medium text-ink-2">Edit the prompt template directly</span>
+                  </label>
+
+                  {advancedMode && (
+                    <div className="mt-2.5 space-y-2">
+                      <textarea
+                        value={customTemplate}
+                        onChange={(e) => setCustomTemplate(e.target.value)}
+                        rows={9}
+                        spellCheck={false}
+                        className="thin-scroll w-full resize-y rounded border border-line bg-surface-2 px-2.5 py-2 font-mono text-[11px] leading-relaxed text-ink focus:border-accent focus:bg-surface focus:outline-none"
+                      />
+
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="font-mono text-[10px] text-ink-3">
+                          Placeholders:{" "}
+                          {inputColumns.length > 0
+                            ? inputColumns.map((c) => `{${c}}`).join(" ")
+                            : "select input columns first"}
+                        </span>
+                        <button
+                          onClick={() => setCustomTemplate(generatedTemplate)}
+                          className="font-mono text-[10px] text-ink-2 underline decoration-line-strong underline-offset-2 hover:text-accent"
+                        >
+                          Reset to generated
+                        </button>
+                      </div>
+
+                      {templateWarnings.map((w, i) => (
+                        <Callout
+                          key={i}
+                          tone={w.level === "error" ? "danger" : "warn"}
+                          icon={<AlertIcon className="h-3.5 w-3.5" />}
+                        >
+                          {w.message}
+                        </Callout>
+                      ))}
+
+                      {previewPrompt && (
+                        <details className="rounded border border-line bg-surface-2">
+                          <summary className="cursor-pointer px-2.5 py-1.5 font-mono text-[10px] text-ink-2 hover:text-ink">
+                            Preview — exactly what row 1 will send
+                          </summary>
+                          <pre className="thin-scroll max-h-40 overflow-auto whitespace-pre-wrap break-words border-t border-line px-2.5 py-2 font-mono text-[10px] leading-relaxed text-ink-2">
+                            {previewPrompt}
+                          </pre>
+                        </details>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
+            </Panel>
 
-              {/* Advanced */}
-              <div className="mt-4 border-t border-zinc-200 pt-3">
-                <label className="flex items-center gap-2 text-xs">
-                  <input type="checkbox" checked={advancedMode}
-                    onChange={(e) => { setAdvancedMode(e.target.checked); if (e.target.checked && generatedPrompt) setCustomPrompt(generatedPrompt); }}
-                    className="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-300" />
-                  <span className="text-zinc-500">Advanced: Edit the prompt template</span>
-                </label>
-                {advancedMode && (
-                  <div className="mt-2">
-                    <textarea value={customPrompt} onChange={(e) => setCustomPrompt(e.target.value)} rows={8}
-                      className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 font-mono text-[11px] text-zinc-700 focus:border-zinc-400 focus:ring-1 focus:ring-zinc-300 focus:outline-none" />
-                    <div className="mt-1 flex justify-between text-[11px] text-zinc-400">
-                      <span>Use {"{column_name}"} to reference columns</span>
-                      <button onClick={() => setCustomPrompt(generatedPrompt)} className="text-zinc-500 hover:text-zinc-900">Reset to generated</button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </Card>
-
-            {/* --- 3. Provider + Model --- */}
-            <Card className={!file ? "opacity-30 pointer-events-none" : ""}>
-              <StepHeader num={3} title="Choose provider & model" subtitle="All models include live web search" done={!!modelId} active={!!file} />
-
-              <div className="mb-4 grid grid-cols-3 gap-2">
-                <button onClick={() => { setProvider("gemini"); setModelId("gemini-2.5-pro"); setKeyValid(false); setApiKey(""); setKeyError(""); setKeyWarning(""); setRealCostEstimate(null); }}
-                  className={`rounded-lg border-2 px-3 py-2.5 text-xs font-medium transition ${provider === "gemini" ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-500 hover:border-zinc-300"}`}>
-                  Google (Gemini)
-                </button>
-                <button onClick={() => { setProvider("anthropic"); setModelId("claude-sonnet-4-5-20250929"); setKeyValid(false); setApiKey(""); setKeyError(""); setKeyWarning(""); setRealCostEstimate(null); }}
-                  className={`rounded-lg border-2 px-3 py-2.5 text-xs font-medium transition ${provider === "anthropic" ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-500 hover:border-zinc-300"}`}>
-                  Anthropic (Claude)
-                </button>
-                <button onClick={() => { setProvider("grok"); setModelId("grok-4-0320"); setKeyValid(false); setApiKey(""); setKeyError(""); setKeyWarning(""); setRealCostEstimate(null); }}
-                  className={`rounded-lg border-2 px-3 py-2.5 text-xs font-medium transition ${provider === "grok" ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-500 hover:border-zinc-300"}`}>
-                  xAI (Grok)
-                </button>
-              </div>
-
-              <div className="space-y-2">
-                {models.map(([id, model]) => {
-                  const guidance = MODEL_GUIDANCE[id as ModelId];
-                  return (
-                    <button key={id} onClick={() => setModelId(id as ModelId)}
-                      className={`w-full rounded-lg border-2 px-3 py-3 text-left transition ${modelId === id ? "border-zinc-900 bg-zinc-50" : "border-zinc-200 hover:border-zinc-300"}`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-zinc-900">{model.name}</span>
-                          {model.recommended && <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 ring-1 ring-emerald-200">Recommended</span>}
-                        </div>
-                        <span className="text-[11px] text-zinc-400">${model.inputPer1M} / ${model.outputPer1M} per 1M tokens</span>
-                      </div>
-                      {guidance && (
-                        <div className="mt-1.5 flex items-center gap-2">
-                          <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${SPEED_COLORS[guidance.speed]}`}>
-                            {guidance.speed === "fast" ? "Fast" : guidance.speed === "medium" ? "Medium" : "Slow"}
-                          </span>
-                          <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${QUALITY_COLORS[guidance.quality]}`}>
-                            {guidance.quality === "good" ? "Good" : guidance.quality === "great" ? "Great" : "Best"} quality
-                          </span>
-                          <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 ring-1 ring-blue-200">Web search</span>
-                          <InfoTip text={guidance.bestFor} />
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-              <p className="mt-3 text-[11px] text-zinc-400">Not sure? The recommended model is a great default for most tasks.</p>
-
-              {/* Web search toggle */}
-              <div className="mt-4 border-t border-zinc-200 pt-3">
-                <label className="flex items-center gap-2 text-xs">
-                  <input type="checkbox" checked={useWebSearch}
-                    onChange={(e) => { setUseWebSearch(e.target.checked); setRealCostEstimate(null); }}
-                    className="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-300" />
-                  <span className="text-zinc-700">Enable web search</span>
-                  <InfoTip text="Web search lets AI look up live data from the internet. Disable to use AI knowledge only (cheaper but may be outdated)." />
-                </label>
-                {!useWebSearch && (
-                  <p className="mt-1.5 ml-6 text-[11px] text-amber-600">AI will use its training data only — results may not reflect the latest information.</p>
-                )}
-              </div>
-            </Card>
-
-            {/* --- 4. API Key --- */}
-            <Card className={!configReady ? "opacity-30 pointer-events-none" : ""} glow={!!configReady && !keyValid}>
+            {/* ---------- 3. Model ---------- */}
+            <Panel muted={!file}>
               <StepHeader
-                num={4}
-                title={`Connect your ${provider === "anthropic" ? "Anthropic" : provider === "grok" ? "xAI" : "Google"} API key`}
-                subtitle="Your key is never stored — it stays in browser memory only"
-                done={keyValid}
-                active={!!configReady && !keyValid}
+                num={3}
+                title="Pick a model"
+                hint="You pay the provider directly. OpenClay adds nothing."
+                done={!!modelId}
+                active={!!file && defineReady}
+                aside={
+                  <span className="hidden shrink-0 items-center gap-1.5 rounded border border-line px-2 py-1 font-mono text-[10px] text-ink-2 sm:inline-flex">
+                    <ProviderLogo provider={provider} className="h-3 w-3" />
+                    {model.name}
+                  </span>
+                }
               />
 
-              {!keyValid ? (
-                <div className="space-y-3">
-                  <input type="password" value={apiKey} onChange={(e) => { setApiKey(e.target.value); setKeyError(""); }}
-                    placeholder={provider === "anthropic" ? "sk-ant-..." : provider === "grok" ? "xai-..." : "AIza..."}
-                    className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-1 focus:ring-zinc-300 focus:outline-none"
-                  />
-                  {keyError && <p className="text-xs text-red-600">{keyError}</p>}
-                  <button onClick={validateKey} disabled={validating || !apiKey.trim()}
-                    className="w-full rounded-lg bg-zinc-900 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-50">
-                    {validating ? "Validating..." : "Validate & Connect"}
-                  </button>
-                  <p className="text-center text-[11px] text-zinc-400">
-                    {provider === "anthropic" && <a href="https://console.anthropic.com" target="_blank" rel="noopener noreferrer" className="text-zinc-600 underline hover:text-zinc-900">Get a key from Anthropic</a>}
-                    {provider === "gemini" && <a href="https://aistudio.google.com" target="_blank" rel="noopener noreferrer" className="text-zinc-600 underline hover:text-zinc-900">Get a key from Google AI Studio</a>}
-                    {provider === "grok" && <a href="https://console.x.ai" target="_blank" rel="noopener noreferrer" className="text-zinc-600 underline hover:text-zinc-900">Get a key from xAI Console</a>}
-                  </p>
-                  <TrustBadge text="Your API key is never stored, logged, or sent to our servers. It goes directly from your browser to the AI provider." />
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-2 ring-1 ring-emerald-200">
-                    <span className="text-xs font-medium text-emerald-700">
-                      {provider === "anthropic" ? "Anthropic" : provider === "grok" ? "Grok" : "Gemini"} connected
-                    </span>
-                    <button onClick={() => { setKeyValid(false); setApiKey(""); setKeyWarning(""); }} className="text-xs text-red-500 hover:text-red-700">Disconnect</button>
-                  </div>
-                  {keyWarning && <p className="rounded-lg bg-amber-50 px-3 py-2 text-[11px] text-amber-700 ring-1 ring-amber-200">{keyWarning}</p>}
-                </div>
-              )}
-            </Card>
+              <div className="space-y-4 p-4">
+                <ModelPicker
+                  provider={provider}
+                  modelId={modelId}
+                  onProviderChange={handleProviderChange}
+                  onModelChange={(id) => {
+                    setModelId(id);
+                    setPreciseEstimate(null);
+                  }}
+                />
 
-            {/* --- 5. Test, Run & Download --- */}
-            <Card className={!runReady ? "opacity-30 pointer-events-none" : ""} glow={!!runReady && !fullDone}>
-              <StepHeader num={5} title="Preview, run & download" subtitle="Test on 3 rows first, then run all" done={fullDone} active={!!runReady && !fullDone} />
-
-              {!testDone && !testRunning && (
-                <div>
-                  <p className="mb-3 text-xs text-zinc-500">
-                    We&apos;ll test with the first 3 rows so you can verify results before running the full batch.
-                  </p>
-                  <button onClick={runTest} disabled={!runReady}
-                    className="w-full rounded-lg bg-zinc-900 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-50">
-                    Preview with first {file ? Math.min(3, file.totalRows) : 3} rows
-                  </button>
-                </div>
-              )}
-
-              {(testRunning || testDone) && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-zinc-100">
-                      <div className="h-full rounded-full bg-zinc-900 transition-all" style={{ width: `${(testResults.length / Math.min(3, file?.totalRows || 3)) * 100}%` }} />
-                    </div>
-                    <span className="text-[11px] text-zinc-500">{testResults.length}/{Math.min(3, file?.totalRows || 3)}</span>
-                  </div>
-
-                  {testResults.length > 0 && (
-                    <div className="overflow-hidden rounded-lg border border-zinc-200">
-                      <div className="max-h-72 overflow-auto">
-                        <table className="min-w-full text-[11px]">
-                          <thead className="sticky top-0 bg-zinc-50">
-                            <tr>
-                              {inputColumns.map((c) => <th key={c} className="whitespace-nowrap px-2 py-1.5 text-left font-medium text-zinc-500">{c}</th>)}
-                              {outputColumns.map((c) => <th key={c.key} className="whitespace-nowrap bg-emerald-50 px-2 py-1.5 text-left font-medium text-emerald-700">{c.label}</th>)}
-                              <th className="px-2 py-1.5 text-left font-medium text-zinc-400">Status</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {testResults.map((r, i) => (
-                              <tr key={i} className="border-t border-zinc-100">
-                                {inputColumns.map((c) => <td key={c} className="max-w-[120px] truncate whitespace-nowrap px-2 py-1.5 text-zinc-500">{file?.rows[i]?.[c]}</td>)}
-                                {outputColumns.map((c) => <td key={c.key} className="max-w-[180px] truncate whitespace-nowrap bg-emerald-50/50 px-2 py-1.5 text-emerald-800">{r.data[c.key] || "-"}</td>)}
-                                <td className="px-2 py-1.5">{r.success ? <span className="font-medium text-emerald-600">OK</span> : <span className="font-medium text-red-600" title={r.error}>Err</span>}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                <div className="grid gap-4 border-t border-line pt-4 sm:grid-cols-2">
+                  {/* Web search */}
+                  <div>
+                    <label className="flex cursor-pointer items-start gap-2 text-xs">
+                      <input
+                        type="checkbox"
+                        checked={useWebSearch}
+                        disabled={!model.search}
+                        onChange={(e) => {
+                          setUseWebSearch(e.target.checked);
+                          setPreciseEstimate(null);
+                        }}
+                        className="mt-0.5 accent-accent"
+                      />
+                      <span>
+                        <span className="flex items-center gap-1.5 font-medium text-ink">
+                          <GlobeIcon className="h-3.5 w-3.5 text-data" />
+                          Live web search
+                        </span>
+                        <span className="mt-0.5 block text-[11px] leading-snug text-ink-2">
+                          {model.search
+                            ? "Grounds answers in current pages. Billed per search by the provider."
+                            : "This model cannot search the web."}
+                        </span>
+                      </span>
+                    </label>
+                    {!useWebSearch && model.search && (
+                      <div className="mt-2">
+                        <Callout tone="warn" icon={<AlertIcon className="h-3.5 w-3.5" />}>
+                          Training data only — results may be out of date.
+                        </Callout>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
 
-                  {testDone && !fullRunning && !fullDone && (
-                    <div className="flex gap-2">
-                      <button onClick={() => { setTestDone(false); setTestResults([]); }}
-                        className="flex-1 rounded-lg border border-zinc-200 py-2.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50">
-                        Adjust & re-test
-                      </button>
-                      <button onClick={runFull}
-                        className="flex-1 rounded-lg bg-emerald-600 py-2.5 text-xs font-semibold text-white transition hover:bg-emerald-500">
-                        Looks good — Run all {file?.totalRows} rows
-                      </button>
+                  {/* Concurrency */}
+                  <div>
+                    <label
+                      htmlFor="concurrency"
+                      className="flex items-center text-[11px] font-semibold uppercase tracking-wide text-ink-2"
+                    >
+                      Parallel requests
+                      <Tip text="How many rows run at once. Lower this if you hit rate limits; raise it to finish sooner. Rate-limited rows retry automatically with backoff." />
+                    </label>
+                    <div className="mt-2 flex items-center gap-3">
+                      <input
+                        id="concurrency"
+                        type="range"
+                        min={1}
+                        max={MAX_CONCURRENCY}
+                        value={concurrency}
+                        onChange={(e) => setConcurrency(Number(e.target.value))}
+                        disabled={fullRunning}
+                        className="min-w-0 flex-1 accent-accent"
+                      />
+                      <span className="w-6 shrink-0 text-right font-mono text-sm font-semibold text-ink tnum">
+                        {concurrency}
+                      </span>
                     </div>
-                  )}
+                    <p className="mt-1 font-mono text-[10px] text-ink-3">
+                      {concurrency <= 2
+                        ? "Gentle — safest for new API keys"
+                        : concurrency <= 5
+                          ? "Balanced"
+                          : "Aggressive — watch for 429s"}
+                    </p>
+                  </div>
                 </div>
-              )}
+              </div>
+            </Panel>
 
-              {(fullRunning || fullDone) && (
-                <div className="mt-4 space-y-3 border-t border-zinc-200 pt-4">
-                  <div className="flex items-center justify-between text-xs text-zinc-500">
-                    <span>{fullCompleted + fullFailed} / {file?.totalRows} processed</span>
-                    <span className="tabular-nums">{fullCompleted} OK &middot; {fullFailed} failed</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-zinc-100">
-                    <div className={`h-full rounded-full transition-all ${fullDone ? "bg-emerald-500" : "bg-zinc-900"}`} style={{ width: `${((fullCompleted + fullFailed) / (file?.totalRows || 1)) * 100}%` }} />
-                  </div>
+            {/* ---------- 4. Key ---------- */}
+            <Panel muted={!configReady} active={configReady && !keyValid}>
+              <StepHeader
+                num={4}
+                title={`Connect your ${providerMeta.company} key`}
+                hint="Held in memory for this tab only. Never stored, logged or sent to our servers."
+                done={keyValid}
+                active={configReady && !keyValid}
+              />
 
-                  {fullRunning && (
-                    <div className="flex gap-2">
-                      <button onClick={() => { pauseRef.current = !pauseRef.current; setFullPaused(!fullPaused); }}
-                        className="flex-1 rounded-lg border border-zinc-200 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-50">
-                        {fullPaused ? "Resume" : "Pause"}
-                      </button>
-                      <button onClick={() => { stopRef.current = true; pauseRef.current = false; setFullRunning(false); setFullDone(true); }}
-                        className="flex-1 rounded-lg border border-red-200 py-2 text-xs font-medium text-red-600 hover:bg-red-50">Stop</button>
+              <div className="p-4">
+                {!keyValid ? (
+                  <div className="space-y-2.5">
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <input
+                        type="password"
+                        value={apiKey}
+                        onChange={(e) => {
+                          setApiKey(e.target.value);
+                          setKeyError("");
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") validateKey();
+                        }}
+                        placeholder={`${providerMeta.keyPrefix}…`}
+                        autoComplete="off"
+                        spellCheck={false}
+                        className="min-w-0 flex-1 rounded border border-line bg-surface-2 px-2.5 py-2 font-mono text-xs text-ink placeholder:text-ink-3 focus:border-accent focus:bg-surface focus:outline-none"
+                      />
+                      <Button
+                        variant="primary"
+                        onClick={validateKey}
+                        disabled={validating || !apiKey.trim()}
+                        className="sm:w-36"
+                      >
+                        {validating ? "Checking…" : "Validate key"}
+                      </Button>
                     </div>
-                  )}
 
-                  {fullDone && (
-                    <div className="space-y-3">
-                      <div className="rounded-lg bg-emerald-50 px-4 py-3 ring-1 ring-emerald-200">
-                        <p className="text-sm font-semibold text-emerald-800">Enrichment complete</p>
-                        <p className="mt-0.5 text-xs text-emerald-600">{fullCompleted} rows enriched{fullFailed > 0 ? `, ${fullFailed} failed` : ""}. {outputColumns.length} new columns added.</p>
+                    {keyError && (
+                      <Callout tone="danger" icon={<AlertIcon className="h-3.5 w-3.5" />}>
+                        {keyError}
+                      </Callout>
+                    )}
+
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <a
+                        href={providerMeta.keyUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-mono text-[11px] text-accent underline decoration-accent-line underline-offset-2"
+                      >
+                        Get a key from {providerMeta.docsLabel} →
+                      </a>
+                      {provider === "gemini" && (
+                        <span className="font-mono text-[10px] text-ink-3">
+                          Vertex AI: paste your service-account JSON instead
+                        </span>
+                      )}
+                    </div>
+
+                    <Callout tone="data" icon={<LockIcon className="h-3.5 w-3.5" />}>
+                      Your key goes from this tab to a stateless proxy and straight on to{" "}
+                      {providerMeta.company}. It is never written to disk, a database, a log or a cookie.
+                    </Callout>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-3 rounded border border-data-line bg-data-soft px-2.5 py-2">
+                      <span className="flex items-center gap-2 font-mono text-[11px] font-medium text-data">
+                        <CheckIcon className="h-3.5 w-3.5" />
+                        {providerMeta.company} connected
+                      </span>
+                      <button
+                        onClick={() => {
+                          setKeyValid(false);
+                          setApiKey("");
+                          setKeyWarning("");
+                        }}
+                        className="font-mono text-[11px] text-ink-2 underline decoration-line-strong underline-offset-2 hover:text-danger"
+                      >
+                        Disconnect
+                      </button>
+                    </div>
+                    {keyWarning && (
+                      <Callout tone="warn" icon={<AlertIcon className="h-3.5 w-3.5" />}>
+                        {keyWarning}
+                      </Callout>
+                    )}
+                  </div>
+                )}
+              </div>
+            </Panel>
+
+            {/* ---------- 5. Run ---------- */}
+            <Panel muted={!runReady} active={runReady && !fullDone}>
+              <StepHeader
+                num={5}
+                title="Test, run, download"
+                hint={`Always test ${TEST_ROW_COUNT} rows first — it also gives you an exact cost per row.`}
+                done={fullDone && failed === 0}
+                active={runReady && !fullDone}
+              />
+
+              <div className="space-y-4 p-4">
+                {/* -- Test -- */}
+                {!testDone && !testRunning && !fullRunning && !fullDone && (
+                  <Button variant="primary" onClick={runTest} disabled={!runReady} className="w-full py-2.5">
+                    Test {Math.min(TEST_ROW_COUNT, totalRows)} row
+                    {Math.min(TEST_ROW_COUNT, totalRows) === 1 ? "" : "s"}
+                  </Button>
+                )}
+
+                {(testRunning || (testDone && !fullRunning && !fullDone)) && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="relative h-1 flex-1 overflow-hidden rounded-full bg-surface-3">
+                        <div
+                          className="h-full bg-accent transition-[width] duration-300"
+                          style={{
+                            width: `${(testResults.length / Math.min(TEST_ROW_COUNT, totalRows || 1)) * 100}%`,
+                          }}
+                        />
                       </div>
-                      <button onClick={handleDownload}
-                        className="w-full rounded-lg bg-emerald-600 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500">
-                        Download Enriched File
-                      </button>
+                      <span className="font-mono text-[11px] text-ink-2 tnum">
+                        {testResults.length}/{Math.min(TEST_ROW_COUNT, totalRows)}
+                      </span>
                     </div>
-                  )}
-                </div>
-              )}
-            </Card>
 
-            {/* Disclaimer */}
-            <p className="px-2 text-center text-[10px] leading-relaxed text-zinc-400">
-              Disclaimer: OpenClay is provided as-is. AI-generated data may be inaccurate — always verify results. We are not responsible for the accuracy or consequences of any output. Use at your own risk.
+                    {throttleNotice && (
+                      <Callout tone="warn" icon={<AlertIcon className="h-3.5 w-3.5" />}>
+                        {throttleNotice}
+                      </Callout>
+                    )}
+
+                    {testResults.length > 0 && (
+                      <ResultTable
+                        rows={testResults}
+                        file={file}
+                        inputColumns={inputColumns}
+                        outputColumns={outputColumns}
+                      />
+                    )}
+
+                    {testDone && (
+                      <>
+                        {testResults.every((r) => !r.success) ? (
+                          <Callout tone="danger" icon={<AlertIcon className="h-3.5 w-3.5" />}>
+                            Every test row failed, so the full run would too. First error:{" "}
+                            {testResults[0]?.error}
+                          </Callout>
+                        ) : (
+                          <TestQuality results={testResults} outputColumns={outputColumns} />
+                        )}
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                          <Button onClick={clearResults} className="flex-1">
+                            <RefreshIcon className="h-3.5 w-3.5" />
+                            Adjust &amp; re-test
+                          </Button>
+                          <Button
+                            variant="primary"
+                            onClick={runFull}
+                            disabled={testResults.every((r) => !r.success)}
+                            className="flex-1"
+                          >
+                            Run all {totalRows.toLocaleString()} rows
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* -- Full run -- */}
+                {(fullRunning || fullDone) && (
+                  <div className="space-y-3">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <span className="font-mono text-[11px] text-ink-2 tnum">
+                        {completed.toLocaleString()} / {totalRows.toLocaleString()} processed
+                      </span>
+                      <span className="font-mono text-[11px] tnum">
+                        <span className="text-data">{succeeded.toLocaleString()} ok</span>
+                        {failed > 0 && (
+                          <>
+                            <span className="text-ink-3"> · </span>
+                            <span className="text-danger">{failed.toLocaleString()} failed</span>
+                          </>
+                        )}
+                      </span>
+                    </div>
+
+                    <div
+                      className={`relative h-1.5 overflow-hidden rounded-full bg-surface-3 ${
+                        fullRunning && !fullPaused ? "sweep" : ""
+                      }`}
+                    >
+                      <div
+                        className={`h-full transition-[width] duration-300 ${
+                          fullDone && failed === 0 ? "bg-data" : "bg-accent"
+                        }`}
+                        style={{ width: `${totalRows ? (completed / totalRows) * 100 : 0}%` }}
+                      />
+                    </div>
+
+                    {/* Live counters — the numbers Olin asked for */}
+                    <div className="flex flex-wrap gap-y-2 rounded border border-line bg-surface-2 px-3 py-2">
+                      <Stat
+                        label="Tokens in"
+                        value={formatTokens(stats.inputTokens)}
+                        sub={`${formatTokens(stats.outputTokens)} out`}
+                      />
+                      <Stat
+                        label="Peak TPM"
+                        value={formatTokens(stats.peakTokensPerMinute)}
+                        sub="rate-limit sizing"
+                        tone="accent"
+                      />
+                      <Stat
+                        label="Blank cells"
+                        value={stats.naCells.toLocaleString()}
+                        sub={fillRate !== null ? `${(fillRate * 100).toFixed(0)}% filled` : undefined}
+                        tone={fillRate !== null && fillRate < 0.6 ? "warn" : "ink"}
+                      />
+                      <Stat
+                        label="Retries"
+                        value={stats.retries.toLocaleString()}
+                        sub={stats.rateLimited > 0 ? `${stats.rateLimited} rows` : "none"}
+                        tone={stats.retries > 0 ? "warn" : "ink"}
+                      />
+                      {fullRunning ? (
+                        <Stat
+                          label="Remaining"
+                          value={etaMs !== null ? formatDuration(etaMs) : "—"}
+                          sub={etaMs !== null ? `done ~${formatFinishTime(etaMs)}` : "measuring…"}
+                          tone="data"
+                        />
+                      ) : (
+                        <Stat
+                          label="Elapsed"
+                          value={
+                            stats.startedAt && stats.finishedAt
+                              ? formatDuration(stats.finishedAt - stats.startedAt)
+                              : "—"
+                          }
+                          sub={`~$${spentSoFar.toFixed(2)} spent`}
+                          tone="data"
+                        />
+                      )}
+                    </div>
+
+                    {throttleNotice && (
+                      <Callout tone="warn" icon={<AlertIcon className="h-3.5 w-3.5" />}>
+                        {throttleNotice}
+                      </Callout>
+                    )}
+
+                    {fullRunning && (
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => {
+                            pauseRef.current = !pauseRef.current;
+                            setFullPaused(pauseRef.current);
+                          }}
+                          className="flex-1"
+                        >
+                          {fullPaused ? (
+                            <>
+                              <PlayIcon className="h-3.5 w-3.5" /> Resume
+                            </>
+                          ) : (
+                            <>
+                              <PauseIcon className="h-3.5 w-3.5" /> Pause
+                            </>
+                          )}
+                        </Button>
+                        <Button variant="danger" onClick={stopRun} className="flex-1">
+                          <StopIcon className="h-3.5 w-3.5" /> Stop
+                        </Button>
+                      </div>
+                    )}
+
+                    {fullDone && (
+                      <>
+                        <Callout
+                          tone={failed === 0 ? "data" : "warn"}
+                          icon={
+                            failed === 0 ? (
+                              <CheckIcon className="h-3.5 w-3.5" />
+                            ) : (
+                              <AlertIcon className="h-3.5 w-3.5" />
+                            )
+                          }
+                        >
+                          <strong className="font-semibold">
+                            {succeeded.toLocaleString()} of {totalRows.toLocaleString()} rows enriched
+                          </strong>
+                          {failed > 0 &&
+                            ` — ${failed.toLocaleString()} failed. Failed rows download as blank cells plus an enrichment_status column.`}
+                          {failed === 0 && ` across ${outputColumns.length} new columns.`}
+                        </Callout>
+
+                        <Button variant="primary" onClick={handleDownload} className="w-full py-2.5">
+                          <DownloadIcon className="h-4 w-4" />
+                          Download enriched {file?.fileType === "csv" ? "CSV" : "XLSX"}
+                        </Button>
+
+                        {/* Olin: there was no way back from this screen. Now there are three. */}
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                          {failed > 0 && (
+                            <Button onClick={retryFailed} className="flex-1">
+                              <RefreshIcon className="h-3.5 w-3.5" />
+                              Retry {failed.toLocaleString()} failed
+                            </Button>
+                          )}
+                          <Button variant="danger" onClick={clearResults} className="flex-1">
+                            <TrashIcon className="h-3.5 w-3.5" />
+                            Clear results &amp; re-run
+                          </Button>
+                        </div>
+                        <p className="text-center font-mono text-[10px] text-ink-3">
+                          Clearing keeps your file, columns, prompt and key — only the results go.
+                        </p>
+
+                        {fullResults.length > 0 && (
+                          <details className="rounded border border-line">
+                            <summary className="cursor-pointer px-2.5 py-1.5 font-mono text-[11px] text-ink-2 hover:text-ink">
+                              Inspect results ({completed.toLocaleString()} rows)
+                            </summary>
+                            <div className="border-t border-line p-2">
+                              <ResultTable
+                                rows={fullResults.slice(0, 100)}
+                                file={file}
+                                inputColumns={inputColumns}
+                                outputColumns={outputColumns}
+                              />
+                              {fullResults.length > 100 && (
+                                <p className="mt-1.5 text-center font-mono text-[10px] text-ink-3">
+                                  Showing the first 100 — download for everything.
+                                </p>
+                              )}
+                            </div>
+                          </details>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            </Panel>
+
+            <p className="px-2 text-center text-[10px] leading-relaxed text-ink-3">
+              OpenClay is provided as-is. AI-generated data can be wrong or out of date — verify anything
+              you act on. We are not responsible for the accuracy or consequences of any output.
             </p>
           </div>
 
-          {/* ============ RIGHT COLUMN — Sidebar ============ */}
-          <div className="hidden lg:block">
-            <div className="sticky top-20 space-y-4">
+          {/* ================= RIGHT ================= */}
+          <aside className="hidden lg:block">
+            <div className="sticky top-16 space-y-4">
+              <EstimatePanel
+                estimate={estimate}
+                range={costRange}
+                precise={!!preciseEstimate}
+                outputColumnCount={outputColumns.length}
+                model={model}
+                spent={fullRunning || fullDone ? spentSoFar : null}
+                useWebSearch={useWebSearch}
+              />
 
-              {/* Estimate sidebar */}
-              <Card>
-                <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-                  {realCostEstimate ? "Precise Estimate" : "Estimate"}
-                </h3>
-                {realCostEstimate ? (
-                  <div className="space-y-3">
-                    {/* Total — hero treatment */}
-                    <div className="rounded-xl bg-zinc-50 px-4 py-3 text-center ring-1 ring-zinc-100">
-                      <span className="block text-[10px] font-medium uppercase tracking-wider text-zinc-400">Estimated Total</span>
-                      <span className="text-2xl font-bold text-zinc-900">~${realCostEstimate.totalCost.toFixed(2)}</span>
-                    </div>
-                    <div className="space-y-1.5 text-xs">
-                      <div className="flex justify-between"><span className="text-zinc-400">Rows</span><span className="font-medium text-zinc-700">{realCostEstimate.totalRows.toLocaleString()}</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-400">Model</span><span className="font-medium text-zinc-700">{realCostEstimate.modelName}</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-400">New columns</span><span className="font-medium text-zinc-700">{outputColumns.length}</span></div>
-                    </div>
-                    <div className="border-t border-zinc-100 pt-2.5 space-y-1.5 text-xs">
-                      <div className="flex justify-between"><span className="text-zinc-400">Platform fee</span><span className="font-semibold text-emerald-600">Free</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-400">Input tokens</span><span className="text-zinc-600">${realCostEstimate.inputCost.toFixed(2)}</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-400">Output tokens</span><span className="text-zinc-600">${realCostEstimate.outputCost.toFixed(2)}</span></div>
-                      {realCostEstimate.searchCost > 0 && (
-                        <div className="flex justify-between"><span className="text-zinc-400">Web search</span><span className="text-zinc-600">${realCostEstimate.searchCost.toFixed(2)}</span></div>
-                      )}
-                    </div>
-                    {realCostEstimate.freeSearchNote && <p className="text-[11px] text-emerald-600">{realCostEstimate.freeSearchNote}</p>}
-                    <p className="text-center text-[10px] text-emerald-600">Based on your test run</p>
-                  </div>
-                ) : costRange ? (
-                  <div className="space-y-3">
-                    {/* Total range — hero treatment */}
-                    <div className="rounded-xl bg-zinc-50 px-4 py-3 text-center ring-1 ring-zinc-100">
-                      <span className="block text-[10px] font-medium uppercase tracking-wider text-zinc-400">Estimated Range</span>
-                      <span className="text-2xl font-bold text-zinc-900">${costRange.low.totalCost.toFixed(2)} – ${costRange.high.totalCost.toFixed(2)}</span>
-                    </div>
-                    <div className="space-y-1.5 text-xs">
-                      <div className="flex justify-between"><span className="text-zinc-400">Rows</span><span className="font-medium text-zinc-700">{costRange.low.totalRows.toLocaleString()}</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-400">Model</span><span className="font-medium text-zinc-700">{costRange.low.modelName}</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-400">New columns</span><span className="font-medium text-zinc-700">{outputColumns.length}</span></div>
-                    </div>
-                    <div className="border-t border-zinc-100 pt-2.5 space-y-1.5 text-xs">
-                      <div className="flex justify-between"><span className="text-zinc-400">Platform fee</span><span className="font-semibold text-emerald-600">Free</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-400">Input tokens</span><span className="text-zinc-600">${costRange.low.inputCost.toFixed(2)} – ${costRange.high.inputCost.toFixed(2)}</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-400">Output tokens</span><span className="text-zinc-600">${costRange.low.outputCost.toFixed(2)}</span></div>
-                      {costRange.high.searchCost > 0 && (
-                        <div className="flex justify-between"><span className="text-zinc-400">Web search</span><span className="text-zinc-600">${costRange.low.searchCost.toFixed(2)}</span></div>
-                      )}
-                    </div>
-                    {costRange.low.freeSearchNote && <p className="text-[11px] text-emerald-600">{costRange.low.freeSearchNote}</p>}
-                    <p className="text-center text-[10px] text-amber-600">{useWebSearch ? "Run a test for a precise estimate" : "Estimate based on prompt tokens"}</p>
-                  </div>
-                ) : (
-                  <p className="text-xs text-zinc-400">Upload a file and describe your enrichment to see an estimate.</p>
-                )}
-              </Card>
-
-              {/* Privacy */}
-              <Card>
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Privacy</h3>
-                <ul className="space-y-1.5 text-[11px] text-zinc-500">
-                  {["API key in browser memory only", "Files parsed client-side", "No database, no cookies", "100% open source"].map((item) => (
-                    <li key={item} className="flex items-start gap-1.5">
-                      <svg className="mt-0.5 h-3 w-3 shrink-0 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" /></svg>
+              <Panel>
+                <div className="border-b border-line px-3 py-2">
+                  <h3 className="eyebrow">Privacy guarantees</h3>
+                </div>
+                <ul className="space-y-1.5 p-3">
+                  {[
+                    "API key lives in memory, never storage",
+                    "Spreadsheets parsed in your browser",
+                    "No database, no cookies, no accounts",
+                    "Server logs nothing about your data",
+                    "Open source — read it yourself",
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-1.5 text-[11px] leading-snug text-ink-2">
+                      <CheckIcon className="mt-px h-3 w-3 shrink-0 text-data" />
                       {item}
                     </li>
                   ))}
                 </ul>
-              </Card>
+              </Panel>
 
-              {/* Feedback */}
-              <Card>
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Feedback</h3>
-                <p className="text-[11px] text-zinc-500 mb-2.5">Found a bug? Have a feature idea?</p>
-                <a
-                  href="https://www.linkedin.com/in/-raghav/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 rounded-lg border border-zinc-100 bg-transparent px-3 py-2 text-[11px] text-zinc-400 transition hover:border-zinc-200 hover:text-zinc-600"
-                >
-                  <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-                  Connect with me
-                </a>
-              </Card>
-
-              <div className="text-center text-[10px] text-zinc-400">
-                <p>Pricing last updated: {PRICING_LAST_UPDATED}</p>
-                <p className="mt-0.5"><a href={providerPricingUrl} target="_blank" rel="noopener noreferrer" className="text-zinc-500 underline hover:text-zinc-900">Official pricing</a></p>
-                <div className="mt-2 flex items-center justify-center gap-4">
-                  <Link href="/privacy" className="hover:text-zinc-900">Privacy</Link>
-                  <Link href="/terms" className="hover:text-zinc-900">Terms</Link>
-                  <Link href="/data" className="hover:text-zinc-900">Data</Link>
-                </div>
+              <div className="space-y-1 px-1 text-center font-mono text-[10px] text-ink-3">
+                <p>
+                  Pricing verified {PRICING_LAST_UPDATED} ·{" "}
+                  <a
+                    href={providerMeta.pricingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline decoration-line-strong underline-offset-2 hover:text-accent"
+                  >
+                    check current rates
+                  </a>
+                </p>
+                <p className="flex items-center justify-center gap-3 pt-1">
+                  <Link href="/privacy" className="hover:text-accent">
+                    Privacy
+                  </Link>
+                  <Link href="/terms" className="hover:text-accent">
+                    Terms
+                  </Link>
+                  <Link href="/data" className="hover:text-accent">
+                    Data
+                  </Link>
+                </p>
               </div>
             </div>
-          </div>
+          </aside>
         </div>
       </div>
 
-      {/* Mobile estimate bar */}
-      {(realCostEstimate || costRange) && (
-        <div className="fixed bottom-0 left-0 right-0 border-t border-zinc-200 bg-white/90 p-3 backdrop-blur-xl lg:hidden">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-zinc-500">{(realCostEstimate || costRange?.low)?.totalRows.toLocaleString()} rows &middot; {(realCostEstimate || costRange?.low)?.modelName}</span>
-            <div className="flex items-center gap-3">
-              <span className="text-emerald-600 text-[10px]">Platform: $0</span>
-              {realCostEstimate ? (
-                <span className="font-bold text-zinc-900">~${realCostEstimate.totalCost.toFixed(2)}</span>
-              ) : costRange ? (
-                <span className="font-bold text-zinc-900">${costRange.low.totalCost.toFixed(2)} – ${costRange.high.totalCost.toFixed(2)}</span>
-              ) : null}
-            </div>
+      {/* Mobile cost bar */}
+      {estimate && (
+        <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-line bg-paper/95 px-4 py-2.5 backdrop-blur-md lg:hidden">
+          <div className="flex items-center justify-between gap-3">
+            <span className="min-w-0 truncate font-mono text-[10px] text-ink-2 tnum">
+              {estimate.totalRows.toLocaleString()} rows · {estimate.modelName}
+            </span>
+            <span className="shrink-0 font-mono text-sm font-bold text-ink tnum">
+              {preciseEstimate
+                ? `~$${estimate.totalCost.toFixed(2)}`
+                : costRange
+                  ? `$${costRange.low.totalCost.toFixed(2)}–${costRange.high.totalCost.toFixed(2)}`
+                  : "—"}
+            </span>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Sub-components                                                     */
+/* ------------------------------------------------------------------ */
+
+function ResultTable({
+  rows,
+  file,
+  inputColumns,
+  outputColumns,
+}: {
+  rows: EnrichmentResult[];
+  file: ParsedFile | null;
+  inputColumns: string[];
+  outputColumns: OutputColumn[];
+}) {
+  return (
+    <div className="thin-scroll max-h-96 overflow-auto rounded border border-line">
+      <table className="min-w-full border-collapse font-mono text-[11px]">
+        <thead className="sticky top-0 z-10 bg-surface-2">
+          <tr>
+            <th className="border-b border-line px-2 py-1.5 text-left font-medium text-ink-3">#</th>
+            {inputColumns.map((c) => (
+              <th
+                key={c}
+                className="whitespace-nowrap border-b border-line px-2 py-1.5 text-left font-medium text-ink-2"
+              >
+                {c}
+              </th>
+            ))}
+            {outputColumns.map((c) => (
+              <th
+                key={c.key}
+                className="whitespace-nowrap border-b border-data-line bg-data-soft px-2 py-1.5 text-left font-medium text-data"
+              >
+                {c.label}
+              </th>
+            ))}
+            <th className="border-b border-line px-2 py-1.5 text-left font-medium text-ink-3">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.rowIndex} className="border-b border-line last:border-0">
+              <td className="px-2 py-1.5 text-ink-3 tnum">{r.rowIndex + 1}</td>
+              {inputColumns.map((c) => (
+                <td key={c} className="max-w-[140px] truncate whitespace-nowrap px-2 py-1.5 text-ink-2">
+                  {file?.rows[r.rowIndex]?.[c]}
+                </td>
+              ))}
+              {outputColumns.map((c) => {
+                const value = r.data[c.key];
+                const blank = !value || /^(n\/?a|none|unknown|-)$/i.test(value.trim());
+                return (
+                  <td
+                    key={c.key}
+                    className={`max-w-[240px] whitespace-normal break-words px-2 py-1.5 align-top ${
+                      blank ? "text-ink-3" : "text-ink"
+                    }`}
+                  >
+                    {value || "—"}
+                  </td>
+                );
+              })}
+              <td className="whitespace-nowrap px-2 py-1.5">
+                {r.success ? (
+                  <span className="text-data">
+                    ok
+                    {(r.retries ?? 0) > 0 && <span className="text-warn"> ·{r.retries}r</span>}
+                  </span>
+                ) : (
+                  <span className="text-danger" title={r.error}>
+                    failed
+                  </span>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/** Surfaces fill rate right after the test, while changing the prompt is still cheap. */
+function TestQuality({
+  results,
+  outputColumns,
+}: {
+  results: EnrichmentResult[];
+  outputColumns: OutputColumn[];
+}) {
+  const ok = results.filter((r) => r.success);
+  if (ok.length === 0 || outputColumns.length === 0) return null;
+
+  const cells = ok.length * outputColumns.length;
+  const blank = ok.reduce((s, r) => s + (r.naCount ?? 0), 0);
+  const fill = 1 - blank / cells;
+  const avgMs = ok.reduce((s, r) => s + (r.durationMs ?? 0), 0) / ok.length;
+
+  return (
+    <Callout
+      tone={fill < 0.6 ? "warn" : "neutral"}
+      icon={fill < 0.6 ? <AlertIcon className="h-3.5 w-3.5" /> : <InfoIcon className="h-3.5 w-3.5" />}
+    >
+      <span className="font-mono tnum">{(fill * 100).toFixed(0)}%</span> of cells filled ·{" "}
+      <span className="font-mono tnum">{blank}</span> blank of{" "}
+      <span className="font-mono tnum">{cells}</span> ·{" "}
+      <span className="font-mono tnum">{(avgMs / 1000).toFixed(1)}s</span> per row
+      {fill < 0.6 &&
+        " — a lot of blanks. Try naming the columns more explicitly, or switch to a stronger model before running everything."}
+    </Callout>
+  );
+}
+
+function EstimatePanel({
+  estimate,
+  range,
+  precise,
+  outputColumnCount,
+  model,
+  spent,
+  useWebSearch,
+}: {
+  estimate: CostEstimate | null;
+  range: { low: CostEstimate; high: CostEstimate } | null;
+  precise: boolean;
+  outputColumnCount: number;
+  model: ReturnType<typeof requireModel>;
+  spent: number | null;
+  useWebSearch: boolean;
+}) {
+  return (
+    <Panel>
+      <div className="flex items-center justify-between border-b border-line px-3 py-2">
+        <h3 className="eyebrow">{precise ? "Measured cost" : "Cost estimate"}</h3>
+        {precise && (
+          <span className="rounded border border-data-line bg-data-soft px-1.5 py-px font-mono text-[9px] text-data">
+            from test run
+          </span>
+        )}
+      </div>
+
+      {!estimate ? (
+        <p className="p-3 text-[11px] leading-snug text-ink-2">
+          Load a file and describe your enrichment to see what it will cost.
+        </p>
+      ) : (
+        <div className="p-3">
+          <div className="rounded border border-line bg-surface-2 px-3 py-3 text-center">
+            <div className="eyebrow">{precise ? "Projected total" : "Likely range"}</div>
+            <div className="mt-1 font-mono text-2xl font-bold text-ink tnum">
+              {precise
+                ? `~$${estimate.totalCost.toFixed(2)}`
+                : range
+                  ? `$${range.low.totalCost.toFixed(2)}–${range.high.totalCost.toFixed(2)}`
+                  : "—"}
+            </div>
+            <div className="mt-0.5 font-mono text-[10px] text-ink-3 tnum">
+              ${(estimate.totalCost / Math.max(1, estimate.totalRows)).toFixed(4)} per row
+            </div>
+          </div>
+
+          {spent !== null && (
+            <div className="mt-2 flex items-baseline justify-between rounded border border-accent-line bg-accent-soft px-2.5 py-1.5">
+              <span className="eyebrow">Spent so far</span>
+              <span className="font-mono text-sm font-bold text-accent tnum">${spent.toFixed(2)}</span>
+            </div>
+          )}
+
+          <dl className="mt-3 space-y-1 font-mono text-[11px]">
+            <Row label="Rows" value={estimate.totalRows.toLocaleString()} />
+            <Row label="Model" value={estimate.modelName} />
+            <Row label="New columns" value={String(outputColumnCount)} />
+            <Row label="Context" value={`${(model.contextWindow / 1000).toFixed(0)}k`} />
+          </dl>
+
+          <dl className="mt-2.5 space-y-1 border-t border-line pt-2.5 font-mono text-[11px]">
+            <Row label="OpenClay fee" value="$0.00" tone="data" />
+            <Row
+              label="Input tokens"
+              value={
+                precise || !range
+                  ? `$${estimate.inputCost.toFixed(2)}`
+                  : `$${range.low.inputCost.toFixed(2)}–${range.high.inputCost.toFixed(2)}`
+              }
+            />
+            <Row label="Output tokens" value={`$${estimate.outputCost.toFixed(2)}`} />
+            {useWebSearch && (
+              <Row
+                label="Web search"
+                value={`$${estimate.searchCost.toFixed(2)}${estimate.searchCostEstimated ? "*" : ""}`}
+              />
+            )}
+          </dl>
+
+          {estimate.freeSearchNote && (
+            <p className="mt-2 text-[10px] leading-snug text-data">{estimate.freeSearchNote}</p>
+          )}
+          {estimate.searchCostEstimated && useWebSearch && (
+            <p className="mt-1.5 text-[10px] leading-snug text-warn">
+              * xAI does not publish a per-search rate. This line is our estimate, not a quoted price.
+            </p>
+          )}
+          {model.pricingNote && (
+            <p className="mt-1.5 text-[10px] leading-snug text-warn">{model.pricingNote}</p>
+          )}
+          {!precise && (
+            <p className="mt-2 text-[10px] leading-snug text-ink-3">
+              The range is wide because web search injects a variable amount of page content into each
+              prompt. Run the test for an exact figure.
+            </p>
+          )}
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+function Row({
+  label,
+  value,
+  tone = "ink",
+}: {
+  label: string;
+  value: string;
+  tone?: "ink" | "data";
+}) {
+  return (
+    <div className="flex items-baseline justify-between gap-2">
+      <dt className="text-ink-3">{label}</dt>
+      <dd className={`truncate tnum ${tone === "data" ? "font-semibold text-data" : "text-ink-2"}`}>
+        {value}
+      </dd>
     </div>
   );
 }

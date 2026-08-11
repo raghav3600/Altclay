@@ -1,97 +1,289 @@
 @import "tailwindcss";
 
-@keyframes fade-in-up {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-@keyframes slide-in-left {
-  from { opacity: 0; transform: translateX(-40px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-@keyframes slide-in-right {
-  from { opacity: 0; transform: translateX(40px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
-}
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.2); }
-  50% { box-shadow: 0 0 50px rgba(99, 102, 241, 0.45); }
-}
-@keyframes gradient-x {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-@keyframes ticker {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-@keyframes grid-fade {
-  0%, 100% { opacity: 0.03; }
-  50% { opacity: 0.07; }
+/* ------------------------------------------------------------------ *
+ *  Design tokens — "blueprint"
+ *
+ *  A technical-instrument palette rather than a marketing one. The tool
+ *  spends the user's own money against their own API keys, so the visual
+ *  job is legibility and confidence: warm paper ground, hairline rules,
+ *  one signal accent (vermilion) reserved for actions, and a separate
+ *  data colour (teal) that only ever marks model-generated values.
+ *
+ *  Every number, model id and column name is set in mono. That single
+ *  choice does most of the work of making the thing feel like an
+ *  instrument instead of a form.
+ * ------------------------------------------------------------------ */
+
+:root {
+  --paper: #fbfaf7;
+  --surface: #ffffff;
+  --surface-2: #f4f1ea;
+  --surface-3: #ebe7dc;
+
+  --ink: #16150f;
+  --ink-2: #5c574a;
+  --ink-3: #8a8371;
+
+  --line: #e3dfd4;
+  --line-strong: #cfc9b8;
+
+  --accent: #cc4211;
+  --accent-hover: #b23a0f;
+  --accent-soft: #fdefe9;
+  --accent-line: #f2c9b8;
+  --on-accent: #ffffff;
+
+  --data: #0f6e6e;
+  --data-soft: #e6f2f0;
+  --data-line: #b8dcd7;
+
+  --warn: #a66a00;
+  --warn-soft: #fdf3e0;
+  --warn-line: #eeddb5;
+
+  --danger: #b3261e;
+  --danger-soft: #fdeceb;
+  --danger-line: #f3c9c6;
+
+  --grid: rgba(22, 21, 15, 0.055);
 }
 
-.animate-fade-in-up { animation: fade-in-up 0.7s ease-out both; }
-.animate-fade-in { animation: fade-in 0.6s ease-out both; }
-.animate-slide-in-left { animation: slide-in-left 0.7s ease-out both; }
-.animate-slide-in-right { animation: slide-in-right 0.7s ease-out both; }
-.animate-float { animation: float 3s ease-in-out infinite; }
-.animate-pulse-glow { animation: pulse-glow 2.5s ease-in-out infinite; }
-.animate-gradient-x { background-size: 200% 200%; animation: gradient-x 3s ease infinite; }
-.animate-ticker { animation: ticker 30s linear infinite; }
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #0e0e10;
+    --surface: #16161a;
+    --surface-2: #1e1e23;
+    --surface-3: #26262d;
 
-.delay-100 { animation-delay: 0.1s; }
-.delay-200 { animation-delay: 0.2s; }
-.delay-300 { animation-delay: 0.3s; }
-.delay-400 { animation-delay: 0.4s; }
-.delay-500 { animation-delay: 0.5s; }
-.delay-600 { animation-delay: 0.6s; }
-.delay-700 { animation-delay: 0.7s; }
-.delay-800 { animation-delay: 0.8s; }
-.delay-1000 { animation-delay: 1.0s; }
-.delay-1200 { animation-delay: 1.2s; }
+    --ink: #efebe3;
+    --ink-2: #a9a49a;
+    --ink-3: #77726a;
 
-.gradient-text {
-  background: linear-gradient(135deg, #818cf8, #a78bfa, #c084fc);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+    --line: #2a2a31;
+    --line-strong: #3c3c45;
+
+    --accent: #ff6a3d;
+    --accent-hover: #ff8259;
+    --accent-soft: #2a1710;
+    --accent-line: #4a2617;
+    --on-accent: #17110d;
+
+    --data: #34c7b5;
+    --data-soft: #0f2a27;
+    --data-line: #1f4a45;
+
+    --warn: #e0a34a;
+    --warn-soft: #2a2013;
+    --warn-line: #4a3a1d;
+
+    --danger: #f2685c;
+    --danger-soft: #2b1614;
+    --danger-line: #4d2521;
+
+    --grid: rgba(239, 235, 227, 0.05);
+  }
 }
 
-.gradient-text-green {
-  background: linear-gradient(135deg, #34d399, #6ee7b7);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-line: var(--accent-line);
+  --color-on-accent: var(--on-accent);
+
+  --color-data: var(--data);
+  --color-data-soft: var(--data-soft);
+  --color-data-line: var(--data-line);
+
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-warn-line: var(--warn-line);
+
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-line: var(--danger-line);
+
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono",
+    monospace;
 }
 
-html { scroll-behavior: smooth; }
+/* ------------------------------------------------------------------ *
+ *  Base
+ * ------------------------------------------------------------------ */
+
+html {
+  scroll-behavior: smooth;
+  color-scheme: light dark;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* Numbers should never reflow as they tick up during a run. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Small-caps section label — used instead of bold headings in the chrome. */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Graph-paper ground. Purely decorative; kept subtle enough to read over. */
+.blueprint-grid {
+  background-image:
+    linear-gradient(to right, var(--grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Focus ring: one consistent treatment, accent-coloured, always visible. */
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* Scrollbars inside data tables — unobtrusive, theme-aware. */
+.thin-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+.thin-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.thin-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.thin-scroll::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 6px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+/* ------------------------------------------------------------------ *
+ *  Motion — all of it opt-out via prefers-reduced-motion
+ * ------------------------------------------------------------------ */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.animate-rise {
+  animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.animate-fade {
+  animation: fade 0.5s ease-out both;
+}
+.animate-blink {
+  animation: blink 1.4s ease-in-out infinite;
+}
+
+/* Indeterminate progress shimmer, used while a batch is in flight. */
+.sweep::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  width: 33%;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.55;
+  animation: sweep 1.5s ease-in-out infinite;
+}
+
+.delay-100 { animation-delay: 0.05s; }
+.delay-200 { animation-delay: 0.1s; }
+.delay-300 { animation-delay: 0.15s; }
+.delay-400 { animation-delay: 0.2s; }
+.delay-500 { animation-delay: 0.25s; }
+.delay-600 { animation-delay: 0.3s; }
+.delay-700 { animation-delay: 0.35s; }
+.delay-800 { animation-delay: 0.4s; }
+.delay-1000 { animation-delay: 0.5s; }
+.delay-1200 { animation-delay: 0.6s; }
 
 .reveal {
   opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
+  transform: translateY(16px);
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s ease;
 }
 .reveal.visible {
   opacity: 1;
   transform: translateY(0);
 }
 
-/* Noise texture overlay for dark sections */
-.noise-bg {
-  position: relative;
-}
-.noise-bg::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  opacity: 0.4;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-  pointer-events: none;
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .animate-rise,
+  .animate-fade,
+  .animate-blink,
+  .sweep::after {
+    animation: none;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }

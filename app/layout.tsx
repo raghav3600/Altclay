@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     template: "%s | OpenClay",
   },
   description:
-    "Free, open-source alternative to Clay.com for AI-powered spreadsheet data enrichment. Use Claude or Gemini with your own API key. Enrich company data, find contacts, research leads — no subscription, no account needed.",
+    "Free, open-source alternative to Clay.com for AI-powered spreadsheet data enrichment. Use Claude, Gemini or Grok with your own API key. Enrich company data, find contacts, research leads — no subscription, no account needed.",
   keywords: [
     "data enrichment",
     "spreadsheet enrichment",
@@ -89,7 +89,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-white text-gray-900 antialiased">
+      <body className="min-h-screen bg-paper text-ink antialiased">
         <WebsiteJsonLd />
         <SoftwareApplicationJsonLd />
         {children}

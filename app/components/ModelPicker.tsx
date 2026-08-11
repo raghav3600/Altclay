@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import type { ModelConfig, Provider } from "@/lib/types";
-import { MODELS_BY_PROVIDER, PROVIDER_META, searchModels } from "@/lib/pricing";
+import { MODELS_BY_PROVIDER, PROVIDER_META, PROVIDER_ORDER, searchModels } from "@/lib/pricing";
+import { costPerThousandRows as modelCostPerThousandRows } from "@/lib/costEstimator";
 import { ProviderLogo, SearchIcon, CheckIcon, GlobeIcon } from "./icons";
 
 /*
@@ -29,13 +30,9 @@ const QUALITY_LABEL: Record<ModelConfig["quality"], string> = {
   best: "Best",
 };
 
-/** Rough per-1k-rows figure so users can compare models at a glance. */
+/** Per-1k-rows figure used both to label and to rank models. */
 function costPerThousandRows(model: ModelConfig): number {
-  const inputTokens = 200 + (model.toolOverheadTokens ?? 0);
-  const outputTokens = 140;
-  const tokenCost =
-    (inputTokens / 1_000_000) * model.inputPer1M + (outputTokens / 1_000_000) * model.outputPer1M;
-  return tokenCost * 1000;
+  return modelCostPerThousandRows(model.id);
 }
 
 function Chip({
@@ -152,17 +149,15 @@ export function ModelPicker({
     };
   }, [all, query, showAll]);
 
-  const providers: Provider[] = ["gemini", "anthropic", "grok"];
-
   return (
     <div>
       {/* Provider tabs */}
       <div
         role="tablist"
         aria-label="AI provider"
-        className="grid grid-cols-3 overflow-hidden rounded border border-line"
+        className="grid grid-cols-2 overflow-hidden rounded border border-line sm:grid-cols-4"
       >
-        {providers.map((p, i) => {
+        {PROVIDER_ORDER.map((p, i) => {
           const active = provider === p;
           const meta = PROVIDER_META[p];
           return (
@@ -171,8 +166,10 @@ export function ModelPicker({
               role="tab"
               aria-selected={active}
               onClick={() => onProviderChange(p)}
-              className={`flex items-center justify-center gap-2 px-3 py-2.5 text-xs font-medium transition-colors ${
-                i > 0 ? "border-l border-line" : ""
+              className={`flex items-center justify-center gap-2 px-3 py-2.5 text-xs font-medium transition-colors ${i % 2 === 1 ? "border-l border-line" : ""} ${
+                i >= 2 ? "border-t border-line sm:border-t-0" : ""
+              } ${
+                i === 2 ? "sm:border-l sm:border-line" : ""
               } ${
                 active
                   ? "bg-ink text-paper"

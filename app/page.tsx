@@ -2,8 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo } from "react";
 import Link from "next/link";
-import type { Provider } from "@/lib/types";
-import { ALL_MODELS, MODELS_BY_PROVIDER, PROVIDER_META, getModel } from "@/lib/pricing";
+import { ALL_MODELS, MODELS_BY_PROVIDER, PROVIDER_META, PROVIDER_ORDER, getModel } from "@/lib/pricing";
 import { estimateCostSimple } from "@/lib/costEstimator";
 import { FAQJsonLd, FAQ_ITEMS } from "./structured-data";
 import {
@@ -86,8 +85,6 @@ function CostCalculator() {
     })).sort((a, b) => a.total - b.total)[0];
   }, [rows, fields]);
 
-  const providers: Provider[] = ["gemini", "anthropic", "grok"];
-
   return (
     <div className="overflow-hidden rounded border border-line bg-surface">
       <div className="flex items-center justify-between border-b border-line px-4 py-3">
@@ -143,7 +140,7 @@ function CostCalculator() {
               onChange={(e) => setModelId(e.target.value)}
               className="mt-1.5 w-full rounded border border-line bg-surface-2 px-2.5 py-2 font-mono text-xs text-ink focus:border-accent focus:bg-surface focus:outline-none"
             >
-              {providers.map((p) => (
+              {PROVIDER_ORDER.map((p) => (
                 <optgroup key={p} label={`${PROVIDER_META[p].company} (${PROVIDER_META[p].name})`}>
                   {MODELS_BY_PROVIDER[p].map((m) => (
                     <option key={m.id} value={m.id}>
@@ -288,7 +285,7 @@ const STEPS = [
   {
     n: "03",
     t: "Pick a model, add your key",
-    d: "Claude, Gemini or Grok. See the cost before you commit. Key stays in memory.",
+    d: "GPT, Gemini, Claude or Grok. See the cost before you commit. Key stays in memory.",
   },
   {
     n: "04",
@@ -301,7 +298,7 @@ const COMPARISON: [string, string, string][] = [
   ["Platform fee", "$149 – $800/mo", "$0 forever"],
   ["AI research per row", "Uses your Clay credits", "Paid to the provider directly"],
   ["500 rows researched", "Eats credit quota", "~$1 – $10 in API usage"],
-  ["Model choice", "Claygent's model", "Claude, Gemini or Grok — your pick"],
+  ["Model choice", "Claygent's model", `${PROVIDER_ORDER.length} providers, ${ALL_MODELS.length} models`],
   ["Web search", "Yes, via Claygent", "Yes, built in"],
   ["Where your data lives", "Their servers", "Your browser"],
   ["Rate-limit handling", "Managed for you", "Backoff + retry + tunable concurrency"],
@@ -380,7 +377,7 @@ export default function LandingPage() {
           </div>
 
           <div className="animate-fade delay-500 mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 font-mono text-[10px] text-ink-3">
-            {["We charge $0, always", "Nothing stored", "Open source", "3 providers, 19 models"].map((t) => (
+            {["We charge $0, always", "Nothing stored", "Open source", `${PROVIDER_ORDER.length} providers, ${ALL_MODELS.length} models`].map((t) => (
               <span key={t} className="flex items-center gap-1.5">
                 <CheckIcon className="h-3 w-3 text-data" />
                 {t}
@@ -538,7 +535,7 @@ export default function LandingPage() {
               Here is what the model costs.
             </Heading>
             <p className="mt-4 max-w-2xl text-base text-ink-2">
-              No markup, no credits, no seats. You are billed by Anthropic, Google or xAI at their
+              No markup, no credits, no seats. You are billed by OpenAI, Google, Anthropic or xAI at their
               published rates — and the tool tells you the number before you commit.
             </p>
           </R>
@@ -611,7 +608,7 @@ export default function LandingPage() {
             <div className="mt-10 grid items-stretch gap-2 sm:grid-cols-[1fr_auto_1fr_auto_1fr]">
               {[
                 { label: "Your browser", sub: "Parses the file, holds the key", icon: <LockIcon className="h-4 w-4" /> },
-                { label: "Model provider", sub: "Anthropic · Google · xAI", icon: <GlobeIcon className="h-4 w-4" /> },
+                { label: "Model provider", sub: "OpenAI · Google · Anthropic · xAI", icon: <GlobeIcon className="h-4 w-4" /> },
                 { label: "Your download", sub: "Enriched file, locally built", icon: <CheckIcon className="h-4 w-4" /> },
               ].map((box, i) => (
                 <div key={box.label} className="contents">

@@ -47,6 +47,18 @@ function XaiMark({ className = "" }: { className?: string }) {
   );
 }
 
+function OpenAiMark({ className = "" }: { className?: string }) {
+  // Six-fold interlocking knot, after the OpenAI mark.
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden="true">
+      <g stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 6.4 7.1 9.2v5.6L12 17.6l4.9-2.8V9.2L12 6.4Z" />
+        <path d="M12 6.4V3.2M16.9 9.2l2.8-1.6M16.9 14.8l2.8 1.6M12 17.6v3.2M7.1 14.8l-2.8 1.6M7.1 9.2 4.3 7.6" />
+      </g>
+    </svg>
+  );
+}
+
 export function ProviderLogo({
   provider,
   className = "h-4 w-4",
@@ -56,6 +68,7 @@ export function ProviderLogo({
 }) {
   if (provider === "anthropic") return <AnthropicMark className={className} />;
   if (provider === "gemini") return <GeminiMark className={className} />;
+  if (provider === "openai") return <OpenAiMark className={className} />;
   return <XaiMark className={className} />;
 }
 

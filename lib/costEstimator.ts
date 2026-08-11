@@ -86,23 +86,66 @@ export function calculateCostRange(
   modelId: string,
   useWebSearch: boolean
 ): { low: CostEstimate; high: CostEstimate } {
-  const highMultiplier = useWebSearch ? SEARCH_TOKEN_MULTIPLIER_HIGH : SEARCH_TOKEN_MULTIPLIER_LOW;
+  const model = requireModel(modelId);
+  const searching = useWebSearch && model.search !== null;
+
+  // When a provider publishes how much search content it injects, use that
+  // figure directly instead of guessing with a multiplier. For OpenAI the
+  // documented ~8k tokens per search dwarfs a 250-token prompt, so the
+  // multiplier alone would understate the run by an order of magnitude.
+  const knownOverhead = searching ? (model.search!.tokenOverheadPerSearch ?? 0) : 0;
+
+  // The multiplier only covers the *unknown* part, so it applies to the
+  // authored prompt and never to an overhead we already know exactly.
+  const highMultiplier = searching && knownOverhead === 0 ? SEARCH_TOKEN_MULTIPLIER_HIGH : SEARCH_TOKEN_MULTIPLIER_LOW;
+
   return {
     low: calculateCostEstimate(
       totalRows,
-      baseInputTokensPerRow * SEARCH_TOKEN_MULTIPLIER_LOW,
+      baseInputTokensPerRow * SEARCH_TOKEN_MULTIPLIER_LOW + knownOverhead,
       outputTokensPerRow,
       modelId,
       useWebSearch
     ),
     high: calculateCostEstimate(
       totalRows,
-      baseInputTokensPerRow * highMultiplier,
+      baseInputTokensPerRow * highMultiplier + knownOverhead,
       outputTokensPerRow,
       modelId,
       useWebSearch
     ),
   };
+}
+
+/** Typical shape of one enrichment row, used for like-for-like model comparison. */
+const REFERENCE_ROW = { promptTokens: 250, outputTokens: 140 };
+
+/**
+ * What 1,000 rows would actually cost on this model — the figure the picker
+ * shows and sorts by.
+ *
+ * Two things this must get right, both of which have bitten already:
+ *
+ *  - Search fees belong in it. A token-only figure made OpenAI and Anthropic
+ *    look far cheaper than they are, because for a 250-token prompt the
+ *    per-search fee dwarfs the tokens.
+ *  - Free allowances belong in it too. Gemini 3.x includes 5,000 free grounded
+ *    searches per month, so quoting its marginal $14/1k made a 1,000-row Gemini
+ *    run look ~50x more expensive than it is.
+ *
+ * Delegating to calculateCostEstimate means the picker and the sidebar estimate
+ * can't disagree.
+ */
+export function costPerThousandRows(modelId: string, useWebSearch: boolean = true): number {
+  const model = requireModel(modelId);
+  const searching = useWebSearch && model.search !== null;
+  const inputTokens =
+    REFERENCE_ROW.promptTokens +
+    (model.toolOverheadTokens ?? 0) +
+    (searching ? (model.search!.tokenOverheadPerSearch ?? 0) : 0);
+
+  return calculateCostEstimate(1000, inputTokens, REFERENCE_ROW.outputTokens, modelId, useWebSearch)
+    .totalCost;
 }
 
 /** Precise estimate from real token counts measured during the test run. */

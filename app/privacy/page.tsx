@@ -31,7 +31,7 @@ export default function PrivacyPage() {
             <p className="mt-2">
               OpenClay does not collect, store, or process any personal data. We have no database, no user accounts,
               no cookies, and no localStorage. Your API keys and spreadsheet data never leave your browser
-              except to make direct API calls to your chosen AI provider (Anthropic or Google).
+              except to make direct API calls to your chosen AI provider (OpenAI, Google, Anthropic or xAI).
             </p>
           </section>
 

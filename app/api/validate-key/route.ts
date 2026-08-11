@@ -13,6 +13,7 @@ const PROBE_MODEL: Record<Provider, string> = {
   anthropic: "claude-haiku-4-5",
   gemini: "gemini-3.1-flash-lite",
   grok: "grok-4.3",
+  openai: "gpt-5-nano",
 };
 
 interface ProbeResult {
@@ -78,6 +79,22 @@ async function probe(provider: Provider, apiKey: string): Promise<ProbeResult> {
     return { status: res.status, body: await res.text().catch(() => "") };
   }
 
+  if (provider === "openai") {
+    const res = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: { "content-type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: PROBE_MODEL.openai,
+        input: [{ role: "user", content: "Hi" }],
+        // Reasoning models need headroom even for a trivial probe; a budget of
+        // 4 would come back incomplete and look like a broken key.
+        max_output_tokens: 16,
+        reasoning: { effort: "low" },
+      }),
+    });
+    return { status: res.status, body: await res.text().catch(() => "") };
+  }
+
   const res = await fetch("https://api.x.ai/v1/responses", {
     method: "POST",
     headers: { "content-type": "application/json", Authorization: `Bearer ${apiKey}` },
@@ -96,7 +113,7 @@ export async function POST(req: NextRequest) {
   if (!apiKey || typeof apiKey !== "string") {
     return NextResponse.json({ valid: false, error: "Missing API key" }, { status: 400 });
   }
-  if (provider !== "anthropic" && provider !== "gemini" && provider !== "grok") {
+  if (!Object.prototype.hasOwnProperty.call(PROBE_MODEL, provider)) {
     return NextResponse.json({ valid: false, error: "Unknown provider" }, { status: 400 });
   }
 

@@ -18,11 +18,11 @@ export interface FaqItem {
 export const FAQ_ITEMS: FaqItem[] = [
   {
     q: "What is OpenClay?",
-    a: "OpenClay is a free, open-source alternative to Clay.com for AI-powered spreadsheet data enrichment. It uses AI models (Claude, Gemini or Grok) combined with live web search to research and enrich each row of your spreadsheet — finding company data, contacts, news, and any custom information you describe.",
+    a: "OpenClay is a free, open-source alternative to Clay.com for AI-powered spreadsheet data enrichment. It uses AI models (GPT, Gemini, Claude or Grok) combined with live web search to research and enrich each row of your spreadsheet — finding company data, contacts, news, and any custom information you describe.",
   },
   {
     q: "Is OpenClay really free?",
-    a: "Yes, OpenClay charges no platform fee — ever. The only cost is the AI provider's token usage (Anthropic, Google or xAI), which you pay directly at their published rates. Enriching 500 rows typically costs $1–$10 in API usage depending on the model chosen.",
+    a: "Yes, OpenClay charges no platform fee — ever. The only cost is the AI provider's token usage (OpenAI, Google, Anthropic or xAI), which you pay directly at their published rates. Enriching 500 rows typically costs $1–$10 in API usage depending on the model chosen.",
   },
   {
     q: "How is OpenClay different from Clay?",
@@ -34,7 +34,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   },
   {
     q: "What AI models does OpenClay support?",
-    a: "Anthropic Claude (Haiku 4.5, Sonnet 5, Opus 5 and previous flagships), Google Gemini (the 3.x Flash, Flash-Lite and Pro family plus the 2.5 series), and xAI Grok (4.3, 4.5 and the 4.20 variants). Every model listed supports live web search. Pricing is verified against each provider's published rates.",
+    a: "OpenAI GPT (the GPT-5.6 Luna/Terra/Sol line plus GPT-5 Mini, Nano and earlier flagships), Google Gemini (the 3.x Flash, Flash-Lite and Pro family plus the 2.5 series), Anthropic Claude (Haiku 4.5, Sonnet 5, Opus 5 and previous flagships), and xAI Grok (4.3, 4.5 and the 4.20 variants). Every model listed supports live web search. Pricing is verified against each provider's published rates.",
   },
   {
     q: "What if I hit rate limits?",
@@ -69,7 +69,7 @@ export function WebsiteJsonLd() {
         name: "OpenClay",
         url: SITE_URL,
         description:
-          "Free, open-source AI-powered data enrichment tool. Enrich any spreadsheet with company data, contacts, and custom research using Claude, Gemini or Grok.",
+          "Free, open-source AI-powered data enrichment tool. Enrich any spreadsheet with company data, contacts, and custom research using GPT, Gemini, Claude or Grok.",
         potentialAction: {
           "@type": "SearchAction",
           target: `${SITE_URL}/tool`,
@@ -95,11 +95,11 @@ export function SoftwareApplicationJsonLd() {
           priceCurrency: "USD",
         },
         description:
-          "Free, open-source alternative to Clay for AI-powered spreadsheet data enrichment. Supports Claude, Gemini and Grok models with live web search. Bring your own API key — no subscription needed.",
+          "Free, open-source alternative to Clay for AI-powered spreadsheet data enrichment. Supports OpenAI GPT, Google Gemini, Anthropic Claude and xAI Grok models with live web search. Bring your own API key — no subscription needed.",
         featureList: [
           "AI-powered spreadsheet data enrichment",
           "Live web search for each row",
-          "Supports Claude (Anthropic), Gemini (Google) and Grok (xAI) models",
+          "Supports GPT (OpenAI), Gemini (Google), Claude (Anthropic) and Grok (xAI) models",
           "Bring your own API key (BYOK)",
           "CSV and Excel file support",
           "Transparent cost estimation before running",

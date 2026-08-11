@@ -1,4 +1,4 @@
-export type Provider = "anthropic" | "gemini" | "grok";
+export type Provider = "anthropic" | "gemini" | "grok" | "openai";
 
 export type SpeedTier = "fast" | "medium" | "slow";
 export type QualityTier = "good" | "great" | "best";
@@ -17,6 +17,13 @@ export interface SearchPricing {
   freeWindow?: "day" | "month";
   /** True when we could not verify the rate from official docs. */
   estimated?: boolean;
+  /**
+   * Input tokens the provider injects per search, when they publish a figure.
+   * OpenAI documents roughly 8k of search content billed at model rates on top
+   * of the per-call fee, which dominates the token cost of a short prompt — so
+   * quoting only the call fee would understate an OpenAI run badly.
+   */
+  tokenOverheadPerSearch?: number;
 }
 
 export interface ModelConfig {
@@ -43,6 +50,12 @@ export interface ModelConfig {
    * send an explicit low effort or every row pays for reasoning it doesn't need.
    */
   supportsAdaptiveThinking?: boolean;
+  /**
+   * OpenAI only. The GPT-5 family reasons by default; without an explicit low
+   * effort every row pays for reasoning a one-line lookup doesn't need. Note
+   * "minimal" is deliberately not used — web search rejects it.
+   */
+  supportsReasoningEffort?: boolean;
   contextWindow: number;
   speed: SpeedTier;
   quality: QualityTier;

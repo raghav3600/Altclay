@@ -12,6 +12,8 @@ import { parseVertexConfig, getVertexAccessToken } from "@/lib/vertexAuth";
  */
 
 const MAX_OUTPUT_TOKENS = 4096;
+/** Reasoning models spend this budget on thinking before the answer. */
+const REASONING_OUTPUT_TOKENS = 8192;
 
 /** Provider failure with the upstream status preserved. */
 class UpstreamError extends Error {
@@ -250,8 +252,42 @@ async function callGemini(apiKey: string, modelId: string, prompt: string, useWe
 }
 
 /* ------------------------------------------------------------------ */
-/*  xAI Grok                                                           */
+/*  Responses API — shared by OpenAI and xAI                           */
 /* ------------------------------------------------------------------ */
+
+interface ResponsesPayload {
+  status?: string;
+  incomplete_details?: { reason?: string };
+  output?: { type?: string; content?: { type?: string; text?: string }[] }[];
+  usage?: { input_tokens?: number; output_tokens?: number };
+}
+
+/** xAI implements OpenAI's Responses shape, so one reader serves both. */
+function readResponsesApi(data: ResponsesPayload, provider: string) {
+  let text = "";
+  for (const item of data.output ?? []) {
+    if (item.type === "message" && Array.isArray(item.content)) {
+      for (const block of item.content) {
+        if (block.type === "output_text") text += block.text ?? "";
+      }
+    }
+  }
+
+  // Reasoning tokens count against max_output_tokens, so a truncated response
+  // is a real failure mode worth naming rather than a confusing parse error.
+  if (!text && data.status === "incomplete") {
+    throw new UpstreamError(
+      `${provider} response was cut off (${data.incomplete_details?.reason ?? "incomplete"}) before any text was produced.`,
+      422
+    );
+  }
+
+  return {
+    data: extractJSON(text),
+    inputTokens: data.usage?.input_tokens ?? 0,
+    outputTokens: data.usage?.output_tokens ?? 0,
+  };
+}
 
 async function callGrok(apiKey: string, modelId: string, prompt: string, useWebSearch: boolean) {
   const res = await fetch("https://api.x.ai/v1/responses", {
@@ -265,22 +301,39 @@ async function callGrok(apiKey: string, modelId: string, prompt: string, useWebS
     }),
   });
   await assertOk(res, "xAI");
+  return readResponsesApi(await res.json(), "xAI");
+}
 
-  const data = await res.json();
-  let text = "";
-  for (const item of data.output ?? []) {
-    if (item.type === "message" && Array.isArray(item.content)) {
-      for (const block of item.content) {
-        if (block.type === "output_text") text += block.text;
-      }
-    }
+/* ------------------------------------------------------------------ */
+/*  OpenAI                                                             */
+/* ------------------------------------------------------------------ */
+
+async function callOpenAI(apiKey: string, modelId: string, prompt: string, useWebSearch: boolean) {
+  const model = getModel(modelId);
+
+  const body: Record<string, unknown> = {
+    model: modelId,
+    input: [{ role: "user", content: prompt }],
+    // Reasoning tokens are drawn from this budget, so the cap is higher than
+    // the other providers' to leave room for the answer itself.
+    max_output_tokens: REASONING_OUTPUT_TOKENS,
+    ...(useWebSearch ? { tools: [{ type: "web_search" }] } : {}),
+  };
+
+  // The GPT-5 family reasons by default. "low" rather than "minimal": web
+  // search refuses minimal effort, and every row would otherwise be billed for
+  // reasoning that a one-line lookup does not need.
+  if (model?.supportsReasoningEffort) {
+    body.reasoning = { effort: "low" };
   }
 
-  return {
-    data: extractJSON(text),
-    inputTokens: data.usage?.input_tokens ?? 0,
-    outputTokens: data.usage?.output_tokens ?? 0,
-  };
+  const res = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: { "content-type": "application/json", Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify(body),
+  });
+  await assertOk(res, "OpenAI");
+  return readResponsesApi(await res.json(), "OpenAI");
 }
 
 /* ------------------------------------------------------------------ */
@@ -300,7 +353,9 @@ export async function POST(req: NextRequest) {
           ? await callGemini(apiKey, modelId, prompt, useWebSearch)
           : provider === "grok"
             ? await callGrok(apiKey, modelId, prompt, useWebSearch)
-            : null;
+            : provider === "openai"
+              ? await callOpenAI(apiKey, modelId, prompt, useWebSearch)
+              : null;
 
     if (!result) return NextResponse.json({ error: "Unknown provider" }, { status: 400 });
     return NextResponse.json(result);

@@ -47,7 +47,7 @@ export default function DataPage() {
                 <h3 className="text-sm font-semibold text-zinc-900">3. Enrichment runs</h3>
                 <p className="mt-1 text-sm">
                   For each row, your browser sends a request through our API route (a thin CORS proxy) to either
-                  Anthropic or Google. Our server forwards the request without reading or logging the body. The AI
+                  OpenAI, Google, Anthropic or xAI. Our server forwards the request without reading or logging the body. The AI
                   provider processes the request and returns results directly.
                 </p>
               </div>

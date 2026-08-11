@@ -42,6 +42,14 @@ export const PROVIDER_META: Record<
     pricingUrl: "https://docs.x.ai/developers/models",
     docsLabel: "xAI Console",
   },
+  openai: {
+    name: "GPT",
+    company: "OpenAI",
+    keyPrefix: "sk-",
+    keyUrl: "https://platform.openai.com/api-keys",
+    pricingUrl: "https://developers.openai.com/api/docs/pricing",
+    docsLabel: "OpenAI Platform",
+  },
 };
 
 /* ------------------------------------------------------------------ */
@@ -366,16 +374,172 @@ const GROK: ModelConfig[] = [
 ];
 
 /* ------------------------------------------------------------------ */
+/*  OpenAI                                                             */
+/* ------------------------------------------------------------------ */
+
+// $10 per 1,000 web_search calls, plus the search content itself billed as
+// input tokens at the model's rate. OpenAI documents roughly 8k tokens per
+// search — for a 250-token enrichment prompt that overhead *is* the cost, so
+// it is priced in explicitly rather than left to a guessed multiplier.
+const OPENAI_SEARCH = { per1K: 10, tokenOverheadPerSearch: 8000 };
+
+// Only the reasoning-capable GPT-5 family is listed. Non-reasoning models
+// (gpt-4o, gpt-4.1) fall on a different, pricier search tier ($25/1k calls),
+// and they are worse at open-web research than anything below — including
+// them would mean quoting a search rate that doesn't apply to most rows.
+const OPENAI: ModelConfig[] = [
+  {
+    id: "gpt-5.6-luna",
+    name: "GPT-5.6 Luna",
+    provider: "openai",
+    label: "Best value",
+    inputPer1M: 0.2,
+    outputPer1M: 1.2,
+    search: OPENAI_SEARCH,
+    supportsReasoningEffort: true,
+    contextWindow: 400_000,
+    speed: "fast",
+    quality: "great",
+    bestFor: "Newest small model — the cheapest sensible default for OpenAI",
+    tier: "recommended",
+  },
+  {
+    id: "gpt-5-mini",
+    name: "GPT-5 Mini",
+    provider: "openai",
+    label: "Cheap & proven",
+    inputPer1M: 0.25,
+    outputPer1M: 2.0,
+    search: OPENAI_SEARCH,
+    supportsReasoningEffort: true,
+    contextWindow: 400_000,
+    speed: "fast",
+    quality: "good",
+    bestFor: "Well-understood workhorse for high-volume simple lookups",
+    tier: "recommended",
+  },
+  {
+    id: "gpt-5.6-terra",
+    name: "GPT-5.6 Terra",
+    provider: "openai",
+    label: "Most capable",
+    inputPer1M: 2.0,
+    outputPer1M: 12.0,
+    search: OPENAI_SEARCH,
+    supportsReasoningEffort: true,
+    contextWindow: 400_000,
+    speed: "medium",
+    quality: "best",
+    bestFor: "Strong reasoning for research that needs judgement, not just lookup",
+    tier: "recommended",
+  },
+  {
+    id: "gpt-5-nano",
+    name: "GPT-5 Nano",
+    provider: "openai",
+    label: "Lowest token price",
+    inputPer1M: 0.05,
+    outputPer1M: 0.4,
+    search: OPENAI_SEARCH,
+    supportsReasoningEffort: true,
+    contextWindow: 400_000,
+    speed: "fast",
+    quality: "good",
+    bestFor: "Cheapest tokens anywhere here, but the weakest at open-web research",
+    tier: "standard",
+  },
+  {
+    id: "gpt-5.4-mini",
+    name: "GPT-5.4 Mini",
+    provider: "openai",
+    label: "Mid-tier",
+    inputPer1M: 0.75,
+    outputPer1M: 4.5,
+    search: OPENAI_SEARCH,
+    supportsReasoningEffort: true,
+    contextWindow: 400_000,
+    speed: "fast",
+    quality: "great",
+    bestFor: "Step up from Mini when answers need a little more care",
+    tier: "standard",
+  },
+  {
+    id: "gpt-5.1",
+    name: "GPT-5.1",
+    provider: "openai",
+    label: "Stable flagship",
+    inputPer1M: 1.25,
+    outputPer1M: 10.0,
+    search: OPENAI_SEARCH,
+    supportsReasoningEffort: true,
+    contextWindow: 400_000,
+    speed: "medium",
+    quality: "great",
+    bestFor: "Mature flagship if you'd rather not run a newer release",
+    tier: "standard",
+  },
+  {
+    id: "gpt-5.4",
+    name: "GPT-5.4",
+    provider: "openai",
+    label: "Previous flagship",
+    inputPer1M: 2.5,
+    outputPer1M: 15.0,
+    search: OPENAI_SEARCH,
+    supportsReasoningEffort: true,
+    contextWindow: 400_000,
+    speed: "medium",
+    quality: "best",
+    bestFor: "Pin this to reproduce a run already validated on GPT-5.4",
+    tier: "standard",
+  },
+  {
+    id: "gpt-5.6-sol",
+    name: "GPT-5.6 Sol",
+    provider: "openai",
+    label: "Top of the line",
+    inputPer1M: 5.0,
+    outputPer1M: 30.0,
+    search: OPENAI_SEARCH,
+    supportsReasoningEffort: true,
+    contextWindow: 400_000,
+    speed: "slow",
+    quality: "best",
+    bestFor: "Hardest research questions; expensive per row, so test first",
+    tier: "standard",
+  },
+  {
+    id: "gpt-5",
+    name: "GPT-5",
+    provider: "openai",
+    label: "Legacy",
+    inputPer1M: 1.25,
+    outputPer1M: 10.0,
+    search: OPENAI_SEARCH,
+    supportsReasoningEffort: true,
+    contextWindow: 400_000,
+    speed: "medium",
+    quality: "great",
+    bestFor: "Original GPT-5, kept for reproducibility",
+    tier: "legacy",
+  },
+];
+
+/* ------------------------------------------------------------------ */
 /*  Registry                                                           */
 /* ------------------------------------------------------------------ */
 
-export const ALL_MODELS: ModelConfig[] = [...ANTHROPIC, ...GEMINI, ...GROK];
+export const ALL_MODELS: ModelConfig[] = [...ANTHROPIC, ...GEMINI, ...GROK, ...OPENAI];
 
 export const MODELS_BY_PROVIDER: Record<Provider, ModelConfig[]> = {
   anthropic: ANTHROPIC,
   gemini: GEMINI,
   grok: GROK,
+  openai: OPENAI,
 };
+
+/** Tab order in the picker: cheapest-to-get-started first. */
+export const PROVIDER_ORDER: Provider[] = ["gemini", "openai", "anthropic", "grok"];
 
 const MODEL_INDEX = new Map(ALL_MODELS.map((m) => [m.id, m]));
 

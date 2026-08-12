@@ -28,6 +28,22 @@ export const FAQ_ITEMS: FaqItem[] = [
     a: "Clay connects to 150+ data providers (Apollo, ZoomInfo, etc.) for structured lookups and costs $149–$800/month. OpenClay uses AI + live web search to research each row, similar to Clay's Claygent feature. OpenClay is great for public information, news, company overviews, and custom research. It is not ideal for verified contact emails or data requiring proprietary database access.",
   },
   {
+    q: "What is the best free alternative to Clay?",
+    a: "OpenClay is a free, open-source alternative to Clay for the AI research half of the job: it reads the live web and answers a question you write, once per row. There is no platform fee, no credit system and no account. You bring an API key from OpenAI, Google, Anthropic or xAI and pay that provider directly, which works out at a fraction of a cent per row. For verified emails and phone numbers you would still pair it with a contact-data provider.",
+  },
+  {
+    q: "Is there an open-source Clay alternative?",
+    a: "Yes. OpenClay is fully open source and can be self-hosted in three commands, or used at openclay.io with no sign-up. Because your spreadsheet is parsed in the browser and your API key is held in memory only, you can verify the privacy claims by reading the source rather than trusting a policy page.",
+  },
+  {
+    q: "What is a good Claygent alternative?",
+    a: "OpenClay does the same job as Claygent: per-row AI research against the live web, returning structured columns. The difference is billing. Claygent consumes credits inside a Clay subscription; OpenClay sends the request on your own API key with no platform fee. Claygent prompts port over almost directly, since OpenClay uses the same braces syntax for column placeholders.",
+  },
+  {
+    q: "How much cheaper is OpenClay than Clay?",
+    a: "Clay charges a monthly platform fee, publicly listed from around $149 to $800 depending on tier, plus credits for research. OpenClay charges no platform fee at any volume. A 1,000-row job with four researched columns starts at well under a dollar in API usage on the cheapest capable model. The exact figure for your own prompt is quoted after a five-row test, before you run the batch.",
+  },
+  {
     q: "Is my data safe with OpenClay?",
     a: "Yes. OpenClay is privacy-first by design. Your files are parsed entirely in your browser and never uploaded. Your API key lives in browser memory only (React state) and is never persisted. There is no database, no cookies, and no localStorage. The API routes are stateless proxies that log nothing. The entire codebase is open source so you can verify all of this.",
   },

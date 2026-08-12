@@ -7,7 +7,7 @@ const siteUrl = "https://openclay.io";
 
 export const metadata: Metadata = {
   title: {
-    default: "OpenClay: The Free, Open-Source Clay Alternative",
+    default: "Free Clay Alternative for AI Data Enrichment | OpenClay",
     template: "%s | OpenClay",
   },
   description:

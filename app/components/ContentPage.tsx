@@ -20,6 +20,12 @@ export function SiteNav() {
         </Link>
         <div className="flex items-center gap-4">
           <Link
+            href="/alternatives/clay"
+            className="hidden font-mono text-[11px] text-ink-2 transition-colors hover:text-accent sm:block"
+          >
+            vs Clay
+          </Link>
+          <Link
             href="/models"
             className="hidden font-mono text-[11px] text-ink-2 transition-colors hover:text-accent sm:block"
           >
@@ -58,7 +64,9 @@ export function SiteFooter() {
     {
       title: "Compare",
       links: [
-        ["/alternatives/clay", "vs Clay"],
+        ["/alternatives/clay", "Clay alternative"],
+        ["/alternatives/claygent", "Claygent alternative"],
+        ["/alternatives/clay-pricing", "Clay pricing"],
         ["/models/openai", "OpenAI pricing"],
         ["/models/gemini", "Gemini pricing"],
         ["/models/anthropic", "Claude pricing"],

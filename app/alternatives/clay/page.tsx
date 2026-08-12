@@ -3,24 +3,17 @@ import type { Metadata } from "next";
 import { ALL_MODELS, CATALOG_PROVIDERS, PRICING_LAST_UPDATED } from "@/lib/pricing";
 import { costPerThousandRows } from "@/lib/costEstimator";
 import { formatUSD } from "@/lib/runStats";
+import { getAlternative } from "@/lib/alternatives";
 import { pageMetadata, articleJsonLd } from "@/lib/seo";
 import { ContentPage, H2, H3, P, UL, LI, CTA } from "@/app/components/ContentPage";
 
+const PAGE = getAlternative("clay")!;
+
 export const metadata: Metadata = pageMetadata({
-  title: "OpenClay vs Clay: features, pricing and what each is best at",
-  description:
-    "OpenClay covers Clay's AI research layer with your own API key and no platform fee. A clear side-by-side: what each tool is best at, and what 1,000 enriched rows actually costs.",
+  title: PAGE.title,
+  description: PAGE.description,
   path: "/alternatives/clay",
-  keywords: [
-    "Clay alternative",
-    "free Clay alternative",
-    "open source Clay",
-    "Clay.com alternative",
-    "Claygent alternative",
-    "cheaper than Clay",
-    "Clay pricing alternative",
-    "data enrichment without Clay",
-  ],
+  keywords: PAGE.keywords,
   type: "article",
 });
 
@@ -45,19 +38,18 @@ export default function ClayAlternativePage() {
 
   return (
     <ContentPage
-      title="The free, open-source alternative to Clay"
-      lede="OpenClay covers Clay\u2019s AI research layer at zero platform cost. Here is exactly what each tool is best at, so you can tell in a minute which one you need."
+      title={PAGE.h1}
+      lede={PAGE.lede}
       updated={PRICING_LAST_UPDATED}
       crumbs={[
         { name: "Home", path: "/" },
-        { name: "Alternatives", path: "/alternatives/clay" },
+        { name: "Alternatives", path: "/alternatives" },
         { name: "Clay", path: "/alternatives/clay" },
       ]}
       jsonLd={[
         articleJsonLd({
-          title: "OpenClay vs Clay: features, pricing and what each is best at",
-          description:
-            "A side-by-side comparison of OpenClay and Clay: what each tool is best at, and real costs per 1,000 rows.",
+          title: PAGE.title,
+          description: PAGE.description,
           path: "/alternatives/clay",
           updated: "2026-08-11",
         }),
@@ -156,6 +148,28 @@ export default function ClayAlternativePage() {
         <LI>Re-describe your Claygent prompt in plain English, or paste it into the template editor.</LI>
         <LI>Test five rows, compare against what Clay returned, then run the batch.</LI>
         <LI>Download and push back into your sequencer or CRM.</LI>
+      </UL>
+
+      <H2>Related</H2>
+      <UL>
+        <LI>
+          <Link
+            href="/alternatives/claygent"
+            className="text-accent underline decoration-accent-line underline-offset-2"
+          >
+            Claygent alternative
+          </Link>
+          : the direct swap if AI research is the only Clay feature you use.
+        </LI>
+        <LI>
+          <Link
+            href="/alternatives/clay-pricing"
+            className="text-accent underline decoration-accent-line underline-offset-2"
+          >
+            Clay pricing compared
+          </Link>
+          : the arithmetic at 1,000, 5,000 and 25,000 rows.
+        </LI>
       </UL>
 
       <CTA label="Try it on a Clay export" />

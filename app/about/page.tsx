@@ -38,7 +38,7 @@ const AUTHOR = {
 
 export const metadata: Metadata = pageMetadata({
   title: `About ${AUTHOR.name}, the maker of OpenClay`,
-  description: `${AUTHOR.name} built OpenClay, a free and open-source alternative to Clay for AI spreadsheet enrichment. Why it exists, how it stays free, and how to get in touch.`,
+  description: `${AUTHOR.name} built OpenClay, the free and open-source alternative to Clay for AI spreadsheet enrichment. Why it exists, how it stays free, and how to get in touch.`,
   path: "/about",
   keywords: [
     `${AUTHOR.name} OpenClay`,

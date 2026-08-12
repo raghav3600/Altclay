@@ -46,7 +46,7 @@ export function GET() {
 
   const body = `# OpenClay
 
-> A free, open-source alternative to Clay.com for AI-powered spreadsheet enrichment.
+> The free, open-source alternative to Clay.com for AI-powered spreadsheet enrichment.
 > Users bring their own API key. OpenClay charges no platform fee, requires no
 > account, and stores no data.
 

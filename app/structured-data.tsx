@@ -17,7 +17,7 @@ export interface FaqItem {
 export const FAQ_ITEMS: FaqItem[] = [
   {
     q: "What is OpenClay?",
-    a: "OpenClay is a free, open-source alternative to Clay.com for AI-powered spreadsheet data enrichment. It uses AI models (GPT, Gemini, Claude or Grok) combined with live web search to research and enrich each row of your spreadsheet, finding company data, contacts, news, and any custom information you describe.",
+    a: "OpenClay is the free, open-source alternative to Clay.com for AI-powered spreadsheet data enrichment. It uses AI models (GPT, Gemini, Claude or Grok) combined with live web search to research and enrich each row of your spreadsheet, finding company data, contacts, news, and any custom information you describe.",
   },
   {
     q: "Is OpenClay really free?",
@@ -68,7 +68,7 @@ export function WebsiteJsonLd() {
         name: "OpenClay",
         url: SITE_URL,
         description:
-          "Free, open-source AI-powered data enrichment tool. Enrich any spreadsheet with company data, contacts, and custom research using GPT, Gemini, Claude or Grok.",
+          "The free, open-source alternative to Clay. Enrich any spreadsheet with company data, contacts, and custom research using GPT, Gemini, Claude or Grok.",
         potentialAction: {
           "@type": "SearchAction",
           target: `${SITE_URL}/tool`,
@@ -94,7 +94,7 @@ export function SoftwareApplicationJsonLd() {
           priceCurrency: "USD",
         },
         description:
-          "Free, open-source alternative to Clay for AI-powered spreadsheet data enrichment. Supports OpenAI GPT, Google Gemini, Anthropic Claude and xAI Grok models with live web search. Bring your own API key, no subscription needed.",
+          "The free, open-source alternative to Clay for AI-powered spreadsheet data enrichment. Supports OpenAI GPT, Google Gemini, Anthropic Claude and xAI Grok models with live web search. Bring your own API key, no subscription needed.",
         featureList: [
           "AI-powered spreadsheet data enrichment",
           "Live web search for each row",

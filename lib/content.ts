@@ -65,7 +65,7 @@ export const USE_CASES: UseCase[] = [
     h1: "Enrich a lead list without a subscription",
     lede: "Export raw prospects from Apollo, lemlist or LinkedIn, enrich them with live research, and pipe them back into your sequencer.",
     description:
-      "Enrich sales leads with job titles, company context and recent news using AI and web search. A free, open-source alternative to Clay with no platform fee.",
+      "Enrich sales leads with job titles, company context and recent news using AI and web search. The free, open-source alternative to Clay, with no platform fee.",
     keywords: [
       "lead enrichment",
       "free lead enrichment tool",

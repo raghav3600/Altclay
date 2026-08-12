@@ -7,7 +7,7 @@ import { pageMetadata, articleJsonLd } from "@/lib/seo";
 import { ContentPage, H2, H3, P, UL, LI, CTA } from "@/app/components/ContentPage";
 
 export const metadata: Metadata = pageMetadata({
-  title: "A free, open-source Clay alternative",
+  title: "OpenClay vs Clay: features, pricing and what each is best at",
   description:
     "OpenClay covers Clay's AI research layer with your own API key and no platform fee. A clear side-by-side: what each tool is best at, and what 1,000 enriched rows actually costs.",
   path: "/alternatives/clay",
@@ -45,7 +45,7 @@ export default function ClayAlternativePage() {
 
   return (
     <ContentPage
-      title="A free, open-source alternative to Clay"
+      title="The free, open-source alternative to Clay"
       lede="OpenClay covers Clay\u2019s AI research layer at zero platform cost. Here is exactly what each tool is best at, so you can tell in a minute which one you need."
       updated={PRICING_LAST_UPDATED}
       crumbs={[
@@ -55,7 +55,7 @@ export default function ClayAlternativePage() {
       ]}
       jsonLd={[
         articleJsonLd({
-          title: "A free, open-source Clay alternative",
+          title: "OpenClay vs Clay: features, pricing and what each is best at",
           description:
             "A side-by-side comparison of OpenClay and Clay: what each tool is best at, and real costs per 1,000 rows.",
           path: "/alternatives/clay",

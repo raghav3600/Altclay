@@ -7,11 +7,11 @@ const siteUrl = "https://openclay.io";
 
 export const metadata: Metadata = {
   title: {
-    default: "OpenClay: Free, Open-Source AI Data Enrichment Tool",
+    default: "OpenClay: The Free, Open-Source Clay Alternative",
     template: "%s | OpenClay",
   },
   description:
-    "Free, open-source alternative to Clay.com for AI-powered spreadsheet data enrichment. Use GPT, Gemini, Claude or Grok with your own API key. Enrich company data, find contacts, research leads, no subscription, no account needed.",
+    "The free, open-source alternative to Clay.com for AI-powered spreadsheet data enrichment. Use GPT, Gemini, Claude or Grok with your own API key. Enrich company data, find contacts, research leads, no subscription, no account needed.",
   keywords: [
     "data enrichment",
     "spreadsheet enrichment",
@@ -46,9 +46,9 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: siteUrl,
     siteName: "OpenClay",
-    title: "OpenClay: Free, Open-Source AI Data Enrichment",
+    title: "OpenClay: The Free, Open-Source Clay Alternative",
     description:
-      "Enrich any spreadsheet with AI + web search. Free alternative to Clay. Use your own API key, no subscription, no account, no data stored.",
+      "The free, open-source Clay alternative. Enrich any spreadsheet with AI and live web search using your own API key. No subscription, no account, no data stored.",
     images: [
       {
         url: `${siteUrl}/icon.svg`,
@@ -60,9 +60,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary",
-    title: "OpenClay: Free, Open-Source AI Data Enrichment",
+    title: "OpenClay: The Free, Open-Source Clay Alternative",
     description:
-      "Enrich any spreadsheet with AI + web search. Free alternative to Clay. Bring your own API key, zero cost, zero data stored.",
+      "The free, open-source Clay alternative. Enrich any spreadsheet with AI and live web search. Bring your own API key: zero platform cost, zero data stored.",
     images: [`${siteUrl}/icon.svg`],
   },
   robots: {

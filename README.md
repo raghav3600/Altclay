@@ -4,7 +4,7 @@
 
 **Enrich any spreadsheet with AI and live web search, using your own API key.**
 
-A free, open-source alternative to Clay's AI research layer.
+The free, open-source alternative to Clay's AI research layer.
 No account, no database, no platform fee.
 
 [Live app](https://openclay.io/tool) · [Models & pricing](https://openclay.io/models) · [vs Clay](https://openclay.io/alternatives/clay) · [HTTP API](https://openclay.io/docs/api)

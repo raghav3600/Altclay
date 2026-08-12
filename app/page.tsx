@@ -354,7 +354,7 @@ export default function LandingPage() {
           </h1>
 
           <p className="animate-rise delay-200 mx-auto mt-6 max-w-xl text-base leading-relaxed text-ink-2 sm:text-lg">
-            The open-source alternative to Clay. Point it at a CSV, describe what you need in plain
+            The free, open-source alternative to Clay. Point it at a CSV, describe what you need in plain
             English, and every row is researched with AI and live web search. You pay the model
             provider directly and we take nothing.
           </p>

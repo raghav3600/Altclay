@@ -1,77 +1,96 @@
-export type Provider = "anthropic" | "gemini" | "grok" | "openai" | "vertex";
+export type Provider = "anthropic" | "gemini" | "grok" | "openai" | "custom";
 
-export type AnthropicModelId =
-  | "claude-haiku-4-5-20251001"
-  | "claude-sonnet-4-5-20250929"
-  | "claude-opus-4-5-20251101";
-
-export type GeminiModelId =
-  | "gemini-2.0-flash"
-  | "gemini-2.5-flash"
-  | "gemini-2.5-flash-lite"
-  | "gemini-2.5-pro"
-  | "gemini-3-flash-preview"
-  | "gemini-3.1-flash-lite-preview"
-  | "gemini-3.1-pro-preview";
-
-export type GrokModelId =
-  | "grok-4-1-fast"
-  | "grok-4-0320";
-
-export type OpenAIModelId =
-  | "gpt-5.4"
-  | "gpt-5.4-mini"
-  | "gpt-5.4-nano"
-  | "gpt-4.1-nano";
-
-export type ModelId = AnthropicModelId | GeminiModelId | GrokModelId | OpenAIModelId;
-
-export interface AnthropicModelConfig {
-  name: string;
-  label: string;
+/**
+ * A user-supplied OpenAI-compatible endpoint.
+ *
+ * One adapter covers Azure OpenAI, OpenRouter, Groq, Together, Fireworks,
+ * DeepInfra, Ollama, LM Studio and vLLM, because they all speak
+ * /v1/chat/completions. Prices are entered by the user since we cannot know
+ * them; zero means "don't pretend to estimate".
+ */
+export interface CustomEndpoint {
+  baseUrl: string;
+  modelId: string;
   inputPer1M: number;
   outputPer1M: number;
-  webSearchPer1K: number;
-  toolOverheadTokens: number;
-  recommended: boolean;
-}
-
-export interface GeminiModelConfig {
-  name: string;
-  label: string;
-  inputPer1M: number;
-  outputPer1M: number;
-  groundingPer1K: number;
-  freeGroundingPerDay: number;
-  recommended: boolean;
-}
-
-export interface GrokModelConfig {
-  name: string;
-  label: string;
-  inputPer1M: number;
-  outputPer1M: number;
-  webSearchPer1K: number;
-  recommended: boolean;
-}
-
-export interface OpenAIModelConfig {
-  name: string;
-  label: string;
-  inputPer1M: number;
-  outputPer1M: number;
-  webSearchPer1K: number;
-  recommended: boolean;
+  /** Most OpenAI-compatible gateways do not implement a server-side search tool. */
+  supportsSearch: boolean;
 }
 
 export type SpeedTier = "fast" | "medium" | "slow";
 export type QualityTier = "good" | "great" | "best";
 
-export interface ModelGuidance {
+/** Curation tier, drives which models the picker shows before "show all". */
+export type ModelTier = "recommended" | "standard" | "legacy";
+
+/**
+ * How a provider bills web search / grounding.
+ * `per1K` is the cost per 1,000 search requests.
+ * `freeRequests` (if set) are free within `freeWindow` before billing starts.
+ */
+export interface SearchPricing {
+  per1K: number;
+  freeRequests?: number;
+  freeWindow?: "day" | "month";
+  /** True when we could not verify the rate from official docs. */
+  estimated?: boolean;
+  /**
+   * Input tokens the provider injects per search, when they publish a figure.
+   * OpenAI documents roughly 8k of search content billed at model rates on top
+   * of the per-call fee, which dominates the token cost of a short prompt, so
+   * quoting only the call fee would understate an OpenAI run badly.
+   */
+  tokenOverheadPerSearch?: number;
+}
+
+export interface ModelConfig {
+  id: string;
+  name: string;
+  provider: Provider;
+  /** Short positioning label, e.g. "Best value". */
+  label: string;
+  inputPer1M: number;
+  outputPer1M: number;
+  /** null when the model cannot search the web. */
+  search: SearchPricing | null;
+  /**
+   * Tokens the provider silently adds for tool definitions. Anthropic bills
+   * these on every request that declares the web-search tool.
+   */
+  toolOverheadTokens?: number;
+  /** Anthropic only: which web_search tool version this model accepts. */
+  webSearchToolType?: string;
+  /**
+   * Anthropic only. Models from Sonnet 4.6 / Opus 4.6 onward take
+   * `thinking: {type:"adaptive"}` + `output_config.effort`; Haiku 4.5 and older
+   * reject `effort` outright. Opus 5 and Sonnet 5 think by *default*, so we must
+   * send an explicit low effort or every row pays for reasoning it doesn't need.
+   */
+  supportsAdaptiveThinking?: boolean;
+  /**
+   * OpenAI only. The GPT-5 family reasons by default; without an explicit low
+   * effort every row pays for reasoning a one-line lookup doesn't need. Note
+   * "minimal" is deliberately not used, web search rejects it.
+   */
+  supportsReasoningEffort?: boolean;
+  contextWindow: number;
   speed: SpeedTier;
   quality: QualityTier;
   bestFor: string;
-  hasWebSearch: boolean;
+  tier: ModelTier;
+  /**
+   * Capability order within the provider: 1 is the most capable.
+   *
+   * Curated rather than derived. Price is a poor proxy across generations (a
+   * previous-generation Pro can cost more than a current-generation Flash while
+   * being less capable), and the quality tier alone is too coarse to order nine
+   * models. Convention used: newest generation first, then class within that
+   * generation (Pro before Flash before Flash-Lite, Opus before Sonnet before
+   * Haiku, full before Mini before Nano).
+   */
+  rank: number;
+  /** Caveat shown next to the price, e.g. promotional rates with an end date. */
+  pricingNote?: string;
 }
 
 export interface OutputColumn {
@@ -100,16 +119,7 @@ export interface CostEstimate {
   totalCost: number;
   searchCostPerRow: number;
   freeSearchNote?: string;
-}
-
-export interface EnrichmentConfig {
-  provider: Provider;
-  apiKey: string;
-  modelId: ModelId;
-  inputColumns: string[];
-  outputColumns: OutputColumn[];
-  enrichmentDescription: string;
-  customPrompt?: string;
+  searchCostEstimated?: boolean;
 }
 
 export interface EnrichmentResult {
@@ -119,14 +129,45 @@ export interface EnrichmentResult {
   error?: string;
   inputTokens?: number;
   outputTokens?: number;
+  /** Wall-clock ms for this row, including retries. */
+  durationMs?: number;
+  /** Cells that came back "N/A" or empty. */
+  naCount?: number;
+  /** How many times this row had to be retried. */
+  retries?: number;
 }
 
-export interface RunProgress {
-  total: number;
-  completed: number;
-  failed: number;
-  running: boolean;
-  paused: boolean;
-  results: EnrichmentResult[];
-  actualCost: number;
+/**
+ * Live statistics for a run. Surfaced during and after enrichment so users can
+ * size provider rate limits (Azure/Vertex TPM) and judge data quality.
+ */
+export interface RunStats {
+  inputTokens: number;
+  outputTokens: number;
+  /** Highest tokens-consumed-in-any-60s-window observed. */
+  peakTokensPerMinute: number;
+  /** Output cells that returned "N/A" or empty. */
+  naCells: number;
+  /** Total output cells attempted (successful rows x output columns). */
+  totalCells: number;
+  /** Number of retry attempts across all rows. */
+  retries: number;
+  /** Number of rows that hit a rate limit at least once. */
+  rateLimited: number;
+  startedAt: number | null;
+  finishedAt: number | null;
+}
+
+export function emptyRunStats(): RunStats {
+  return {
+    inputTokens: 0,
+    outputTokens: 0,
+    peakTokensPerMinute: 0,
+    naCells: 0,
+    totalCells: 0,
+    retries: 0,
+    rateLimited: 0,
+    startedAt: null,
+    finishedAt: null,
+  };
 }

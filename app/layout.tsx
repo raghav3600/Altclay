@@ -7,11 +7,11 @@ const siteUrl = "https://openclay.io";
 
 export const metadata: Metadata = {
   title: {
-    default: "OpenClay — Free, Open-Source AI Data Enrichment Tool",
+    default: "Free Clay Alternative for AI Data Enrichment | OpenClay",
     template: "%s | OpenClay",
   },
   description:
-    "Free, open-source alternative to Clay.com for AI-powered spreadsheet data enrichment. Use GPT, Claude, Gemini, or Grok with your own API key. Enrich company data, find contacts, research leads — no subscription, no account needed.",
+    "The free, open-source alternative to Clay.com for AI-powered spreadsheet data enrichment. Use GPT, Gemini, Claude or Grok with your own API key. Enrich company data, find contacts, research leads, no subscription, no account needed.",
   keywords: [
     "data enrichment",
     "spreadsheet enrichment",
@@ -28,8 +28,9 @@ export const metadata: Metadata = {
     "AI web research",
     "Claude API tool",
     "Gemini API tool",
-    "GPT API tool",
-    "OpenAI data enrichment",
+    "OpenAI API tool",
+    "GPT-5 data enrichment",
+    "ChatGPT spreadsheet enrichment",
     "CSV enrichment",
     "Excel enrichment",
     "open source data tool",
@@ -45,23 +46,23 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: siteUrl,
     siteName: "OpenClay",
-    title: "OpenClay — Free, Open-Source AI Data Enrichment",
+    title: "OpenClay: The Free, Open-Source Clay Alternative",
     description:
-      "Enrich any spreadsheet with AI + web search. Free alternative to Clay. Use your own API key — no subscription, no account, no data stored.",
+      "The free, open-source Clay alternative. Enrich any spreadsheet with AI and live web search using your own API key. No subscription, no account, no data stored.",
     images: [
       {
         url: `${siteUrl}/icon.svg`,
         width: 512,
         height: 512,
-        alt: "OpenClay — Free AI Data Enrichment",
+        alt: "OpenClay, Free AI Data Enrichment",
       },
     ],
   },
   twitter: {
     card: "summary",
-    title: "OpenClay — Free, Open-Source AI Data Enrichment",
+    title: "OpenClay: The Free, Open-Source Clay Alternative",
     description:
-      "Enrich any spreadsheet with AI + web search. Free alternative to Clay. Bring your own API key — zero cost, zero data stored.",
+      "The free, open-source Clay alternative. Enrich any spreadsheet with AI and live web search. Bring your own API key: zero platform cost, zero data stored.",
     images: [`${siteUrl}/icon.svg`],
   },
   robots: {
@@ -91,7 +92,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-white text-gray-900 antialiased">
+      <body className="min-h-screen bg-paper text-ink antialiased">
         <WebsiteJsonLd />
         <SoftwareApplicationJsonLd />
         {children}

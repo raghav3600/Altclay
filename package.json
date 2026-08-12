@@ -6,15 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint app/ lib/"
+    "lint": "eslint app/ lib/",
+    "setup": "npm install && npm run dev",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.74.0",
-    "@google/generative-ai": "^0.24.1",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/papaparse": "^5.5.2",
     "@vercel/analytics": "^1.6.1",
-    "google-auth-library": "^10.6.2",
+    "jose": "^6.2.2",
     "next": "^16.1.6",
     "papaparse": "^5.5.3",
     "postcss": "^8.5.6",
@@ -32,5 +32,15 @@
     "eslint": "^9.15.0",
     "eslint-config-next": "^16.1.6",
     "typescript": "5.9.3"
+  },
+  "description": "Free, open-source AI spreadsheet enrichment. Bring your own API key.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/raghav3600/Altclay.git"
+  },
+  "homepage": "https://openclay.io",
+  "engines": {
+    "node": ">=20"
   }
 }

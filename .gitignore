@@ -31,3 +31,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# claude code: local machine settings (launch.json is shared, settings.local.json is not)
+.claude/settings.local.json
+
+# env files (keep API keys out of git)
+.env
+scripts/.env

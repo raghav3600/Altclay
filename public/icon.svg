@@ -1,64 +1,64 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="OpenClay">
+  <title>OpenClay</title>
+  <!--
+    An open clay vessel, lid leaned against it.
+
+    Decisions worth keeping:
+      - The mouth is a genuinely dark opening. A faint tint reads as a closed
+        pot; darkness is what makes "open" legible at a glance.
+      - The lid is a near-circular disc, not a flat ellipse. Flat reads as a
+        spout or a pooled shadow.
+      - The lid face is flatly shaded with a concentric ring and a centred
+        knob. A radial gradient on a circle reads as a sphere, not a lid.
+      - The pot reaches the frame edges, because a favicon is judged at 16px
+        and every pixel of margin is a pixel of subject lost.
+
+    Palette is the site's vermilion rather than a generic orange.
+  -->
   <defs>
-    <linearGradient id="pot-main" x1="0" y1="0" x2="0.3" y2="1">
-      <stop offset="0%" stop-color="#f0863a"/>
-      <stop offset="50%" stop-color="#e8732a"/>
-      <stop offset="100%" stop-color="#d4621e"/>
+    <linearGradient id="body" x1="0.12" y1="0" x2="0.9" y2="1">
+      <stop offset="0%" stop-color="#E4602F"/>
+      <stop offset="52%" stop-color="#CC4211"/>
+      <stop offset="100%" stop-color="#9E3009"/>
     </linearGradient>
-    <linearGradient id="pot-shadow" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#d4621e"/>
-      <stop offset="100%" stop-color="#b8511a"/>
-    </linearGradient>
-    <linearGradient id="lid-main" x1="0" y1="0" x2="0.3" y2="1">
-      <stop offset="0%" stop-color="#f0863a"/>
-      <stop offset="100%" stop-color="#d4621e"/>
-    </linearGradient>
-    <linearGradient id="highlight" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#f9a85c" stop-opacity="0.8"/>
-      <stop offset="100%" stop-color="#f0863a" stop-opacity="0"/>
+    <linearGradient id="lidFace" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#EE7A4A"/>
+      <stop offset="100%" stop-color="#D04915"/>
     </linearGradient>
   </defs>
 
-  <!-- Lid - tilted ellipse, resting in front of pot -->
-  <ellipse cx="170" cy="420" rx="95" ry="28" fill="url(#pot-shadow)" transform="rotate(-12, 170, 420)"/>
-  <ellipse cx="170" cy="414" rx="90" ry="24" fill="url(#lid-main)" transform="rotate(-12, 170, 414)"/>
-  <ellipse cx="165" cy="411" rx="60" ry="14" fill="url(#highlight)" transform="rotate(-12, 165, 411)" opacity="0.5"/>
+  <!-- Artwork was drawn in the upper-left of the canvas; this fits it to the
+       frame so the subject, not the margin, gets the pixels. -->
+  <g transform="translate(-22.2 -84.9) scale(1.14)">
 
-  <!-- Pot body -->
+  <!-- Body. -->
   <path d="
-    M155,130
-    C155,130 135,130 130,135
-    Q90,150 75,210
-    Q55,290 70,350
-    Q85,400 155,420
-    Q200,432 256,435
-    Q312,432 357,420
-    Q427,400 442,350
-    Q457,290 437,210
-    Q422,150 382,135
-    C377,130 357,130 357,130
-  " fill="url(#pot-main)"/>
+    M154,132
+    C126,204 106,254 106,304
+    C106,386 184,450 280,450
+    C376,450 454,386 454,304
+    C454,254 434,204 406,132
+    Z
+  " fill="url(#body)"/>
 
-  <!-- Pot rim - wide top opening -->
-  <ellipse cx="256" cy="132" rx="105" ry="22" fill="url(#pot-shadow)"/>
-  <ellipse cx="256" cy="128" rx="105" ry="22" fill="#f5955e"/>
-  <ellipse cx="256" cy="128" rx="88" ry="16" fill="url(#pot-shadow)" opacity="0.4"/>
-
-  <!-- Pot body highlight/sheen -->
+  <!-- One soft sheen; anything more is lost below 32px. -->
   <path d="
-    M195,180
-    Q175,240 185,310
-    Q190,340 210,360
-  " fill="none" stroke="#f9a85c" stroke-width="14" stroke-linecap="round" opacity="0.45"/>
+    M176,186
+    C150,250 144,312 160,364
+  " fill="none" stroke="#F79463" stroke-width="30" stroke-linecap="round" opacity="0.38"/>
 
-  <!-- Pot right shadow for depth -->
-  <path d="
-    M357,130
-    Q422,150 437,210
-    Q457,290 442,350
-    Q427,400 357,420
-    Q400,395 415,345
-    Q435,280 420,210
-    Q405,155 357,135
-  " fill="#c45a1a" opacity="0.3"/>
+  <!-- Rim, then the mouth. -->
+  <ellipse cx="280" cy="132" rx="126" ry="30" fill="#EE7A4A"/>
+  <ellipse cx="280" cy="136" rx="99" ry="21" fill="#5E1B05"/>
+  <ellipse cx="280" cy="132" rx="99" ry="21" fill="#7E2708"/>
+
+  <!-- Lid: edge for thickness, flat face, concentric ring, centred knob. -->
+  <g transform="rotate(-16 112 398)">
+    <ellipse cx="112" cy="409" rx="76" ry="57" fill="#8A2C0A"/>
+    <ellipse cx="112" cy="398" rx="76" ry="57" fill="url(#lidFace)"/>
+    <ellipse cx="112" cy="398" rx="49" ry="36" fill="none" stroke="#F79463" stroke-width="7" opacity="0.34"/>
+    <ellipse cx="112" cy="396" rx="20" ry="16" fill="#F79463"/>
+  </g>
+
+  </g>
 </svg>

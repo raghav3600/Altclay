@@ -78,7 +78,7 @@ export function calculateCostEstimate(
     totalCost: inputCost + outputCost + searchCost,
     searchCostPerRow,
     freeSearchNote: !useWebSearch
-      ? "Web search disabled — no search fees."
+      ? "Web search disabled, no search fees."
       : searchNote(model, totalRows, paidSearches),
     searchCostEstimated: searching ? model.search!.estimated : false,
   };
@@ -86,7 +86,7 @@ export function calculateCostEstimate(
 
 /**
  * Low/high bracket used before the test run, when we have no real token counts.
- * Only input tokens vary — search fees and output length don't scale with
+ * Only input tokens vary, search fees and output length don't scale with
  * however much context the provider injects.
  */
 export function calculateCostRange(
@@ -131,7 +131,7 @@ export function calculateCostRange(
 const REFERENCE_ROW = { promptTokens: 250, outputTokens: 140 };
 
 /**
- * What 1,000 rows would actually cost on this model — the figure the picker
+ * What 1,000 rows would actually cost on this model, the figure the picker
  * shows and sorts by.
  *
  * Two things this must get right, both of which have bitten already:

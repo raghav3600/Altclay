@@ -10,7 +10,7 @@ import type {
  * Session recovery.
  *
  * localStorage rather than sessionStorage so work survives a full tab close,
- * not just a reload — losing a half-finished 2,000-row run to an accidental
+ * not just a reload, losing a half-finished 2,000-row run to an accidental
  * Cmd-W is expensive in real money, not just time.
  *
  * PRIVACY (see CLAUDE.md): the API key is never part of the saved session and
@@ -108,7 +108,7 @@ export function clearSession(): void {
   try {
     localStorage.removeItem(SESSION_KEY);
   } catch {
-    /* storage disabled — nothing to clear */
+    /* storage disabled, nothing to clear */
   }
 }
 

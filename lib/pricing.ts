@@ -104,7 +104,7 @@ const ANTHROPIC: ModelConfig[] = [
     contextWindow: 1_000_000,
     speed: "medium",
     quality: "great",
-    bestFor: "Near-Opus quality at Sonnet cost — the default for most datasets",
+    bestFor: "Near-Opus quality at Sonnet cost, the default for most datasets",
     tier: "recommended",
     pricingNote: "Promotional rate through 31 Aug 2026, then $3 / $15",
   },
@@ -182,7 +182,7 @@ const GEMINI: ModelConfig[] = [
     contextWindow: 1_000_000,
     speed: "fast",
     quality: "good",
-    bestFor: "Large simple lookups — the lowest cost per row of any model here",
+    bestFor: "Large simple lookups, the lowest cost per row of any model here",
     tier: "recommended",
   },
   {
@@ -196,7 +196,7 @@ const GEMINI: ModelConfig[] = [
     contextWindow: 1_000_000,
     speed: "fast",
     quality: "great",
-    bestFor: "Strong quality at a fraction of flagship cost — great default",
+    bestFor: "Strong quality at a fraction of flagship cost, great default",
     tier: "recommended",
   },
   {
@@ -238,7 +238,7 @@ const GEMINI: ModelConfig[] = [
     contextWindow: 1_000_000,
     speed: "fast",
     quality: "great",
-    bestFor: "Generally available Flash — no preview caveats",
+    bestFor: "Generally available Flash, no preview caveats",
     tier: "standard",
   },
   {
@@ -387,13 +387,13 @@ const GROK: ModelConfig[] = [
 
 // $10 per 1,000 web_search calls, plus the search content itself billed as
 // input tokens at the model's rate. OpenAI documents roughly 8k tokens per
-// search — for a 250-token enrichment prompt that overhead *is* the cost, so
+// search, for a 250-token enrichment prompt that overhead *is* the cost, so
 // it is priced in explicitly rather than left to a guessed multiplier.
 const OPENAI_SEARCH = { per1K: 10, tokenOverheadPerSearch: 8000 };
 
 // Only the reasoning-capable GPT-5 family is listed. Non-reasoning models
 // (gpt-4o, gpt-4.1) fall on a different, pricier search tier ($25/1k calls),
-// and they are worse at open-web research than anything below — including
+// and they are worse at open-web research than anything below, including
 // them would mean quoting a search rate that doesn't apply to most rows.
 const OPENAI: ModelConfig[] = [
   {
@@ -408,7 +408,7 @@ const OPENAI: ModelConfig[] = [
     contextWindow: 400_000,
     speed: "fast",
     quality: "great",
-    bestFor: "Newest small model — the cheapest sensible default for OpenAI",
+    bestFor: "Newest small model, the cheapest sensible default for OpenAI",
     tier: "recommended",
   },
   {
@@ -596,7 +596,7 @@ export function getModel(id: string): ModelConfig | undefined {
   return MODEL_INDEX.get(id);
 }
 
-/** Throws on unknown ids — callers downstream of the picker can rely on this. */
+/** Throws on unknown ids, callers downstream of the picker can rely on this. */
 export function requireModel(id: string): ModelConfig {
   const m = MODEL_INDEX.get(id);
   if (!m) throw new Error(`Unknown model: ${id}`);

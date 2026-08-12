@@ -51,7 +51,7 @@ async function assertOk(res: Response, provider: string): Promise<void> {
     const parsed = JSON.parse(body);
     message = briefly(parsed?.error?.message ?? parsed?.error ?? parsed?.message ?? message);
   } catch {
-    /* body was not JSON — the truncated text is the best we have */
+    /* body was not JSON, the truncated text is the best we have */
   }
   throw new UpstreamError(message, res.status, parseRetryAfter(res));
 }
@@ -262,7 +262,7 @@ async function callGemini(apiKey: string, modelId: string, prompt: string, useWe
 }
 
 /* ------------------------------------------------------------------ */
-/*  Responses API — shared by OpenAI and xAI                           */
+/*  Responses API, shared by OpenAI and xAI                           */
 /* ------------------------------------------------------------------ */
 
 interface ResponsesPayload {
@@ -306,8 +306,7 @@ async function callGrok(apiKey: string, modelId: string, prompt: string, useWebS
     body: JSON.stringify({
       model: modelId,
       input: [{ role: "user", content: prompt }],
-      max_output_tokens: MAX_OUTPUT_TOKENS,
-      ...(useWebSearch ? { tools: [{ type: "web_search" }] } : {}),
+      max_output_tokens: MAX_OUTPUT_TOKENS, ...(useWebSearch ? { tools: [{ type: "web_search" }] } : {}),
     }),
   });
   await assertOk(res, "xAI");
@@ -326,8 +325,7 @@ async function callOpenAI(apiKey: string, modelId: string, prompt: string, useWe
     input: [{ role: "user", content: prompt }],
     // Reasoning tokens are drawn from this budget, so the cap is higher than
     // the other providers' to leave room for the answer itself.
-    max_output_tokens: REASONING_OUTPUT_TOKENS,
-    ...(useWebSearch ? { tools: [{ type: "web_search" }] } : {}),
+    max_output_tokens: REASONING_OUTPUT_TOKENS, ...(useWebSearch ? { tools: [{ type: "web_search" }] } : {}),
   };
 
   // The GPT-5 family reasons by default. "low" rather than "minimal": web

@@ -11,11 +11,11 @@ import { ProviderLogo, SearchIcon, CheckIcon } from "./icons";
  * Providers ship dozens of models and the list keeps growing, so showing all of
  * them flat is unusable. Three things keep it navigable:
  *
- *   1. Curation — each model carries a tier, and only "recommended" shows up
+ *   1. Curation, each model carries a tier, and only "recommended" shows up
  *      front. Everything else is one click away, never gone.
- *   2. Search — free-text across name, id, price positioning and best-for copy,
+ *   2. Search, free-text across name, id, price positioning and best-for copy,
  *      so "cheap", "flash" and "opus" all land somewhere sensible.
- *   3. Sorted by cost — within a tier the cheapest model is first, because
+ *   3. Sorted by cost, within a tier the cheapest model is first, because
  *      "what will this cost me" is the question users actually arrive with.
  */
 
@@ -28,7 +28,7 @@ const QUALITY_LABEL: Record<ModelConfig["quality"], string> = {
 /*
  * Only badge speed when it is actually a reason to pick or avoid a model.
  * A neutral "Fast" chip on a card whose neighbour says "Medium" in the same
- * grey carries no signal — it is just another word to read. Fast earns a
+ * grey carries no signal, it is just another word to read. Fast earns a
  * positive tone, Slow earns a warning, Medium says nothing and is omitted.
  */
 function speedChip(speed: ModelConfig["speed"]) {
@@ -109,7 +109,7 @@ function ModelRow({
         </span>
       </div>
 
-      {/* Rationale only for the current pick — nine of these at once is a wall. */}
+      {/* Rationale only for the current pick, nine of these at once is a wall. */}
       {selected && <p className="mt-1.5 text-[11px] leading-snug text-ink-2">{model.bestFor}</p>}
 
       {model.pricingNote && (
@@ -148,7 +148,7 @@ function CustomEndpointForm({
     <div className="mt-3 space-y-3 rounded border border-line bg-surface p-3">
       <p className="text-[11px] leading-snug text-ink-2">
         Any endpoint that speaks the OpenAI <code className="font-mono text-ink">/chat/completions</code>{" "}
-        API — Azure, OpenRouter, Groq, Together, Fireworks, vLLM, Ollama, LM Studio.
+        API, Azure, OpenRouter, Groq, Together, Fireworks, vLLM, Ollama, LM Studio.
       </p>
 
       <div className="flex flex-wrap gap-1.5">
@@ -182,7 +182,7 @@ function CustomEndpointForm({
         )}
         {looksPrivate && (
           <p className="mt-1 font-mono text-[10px] text-warn">
-            Local address — only reachable from a self-hosted OpenClay with
+            Local address, only reachable from a self-hosted OpenClay with
             OPENCLAY_ALLOW_PRIVATE_ENDPOINTS=true.
           </p>
         )}
@@ -315,7 +315,7 @@ export function ModelPicker({
         <CustomEndpointForm value={customEndpoint} onChange={onCustomChange} />
       ) : (
         <>
-      {/* Search — only earns its place once the list is long enough to scan */}
+      {/* Search, only earns its place once the list is long enough to scan */}
       {all.length > 5 && (
         <div className="relative mt-3">
           <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-3" />

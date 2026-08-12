@@ -9,7 +9,7 @@ import { ContentPage, H2, H3, P, UL, LI, CTA } from "@/app/components/ContentPag
 export const metadata: Metadata = pageMetadata({
   title: "A free, open-source Clay alternative",
   description:
-    "OpenClay does Clay's AI research layer (Claygent) with your own API key and no platform fee. An honest comparison: what it replaces, what it doesn't, and what 1,000 rows actually costs.",
+    "OpenClay covers Clay's AI research layer with your own API key and no platform fee. A clear side-by-side: what each tool is best at, and what 1,000 enriched rows actually costs.",
   path: "/alternatives/clay",
   keywords: [
     "Clay alternative",
@@ -34,9 +34,9 @@ export default function ClayAlternativePage() {
     ["AI research per row", "Consumes Clay credits", "Billed by the model provider directly"],
     ["1,000 researched rows", "Draws down your credit quota", `From ${formatUSD(costPerThousandRows(cheapest.id))} in API usage`],
     ["Model choice", "Whatever Claygent runs", `${ALL_MODELS.length} models across ${CATALOG_PROVIDERS.length} providers, or any OpenAI-compatible endpoint`],
-    ["Verified emails & phones", "Yes — 150+ data providers", "No"],
-    ["Waterfall enrichment", "Yes", "No"],
-    ["CRM sync", "Yes", "No — export CSV or XLSX"],
+    ["Verified emails & phones", "Yes, 150+ data providers", "Pair with a data provider"],
+    ["Waterfall enrichment", "Yes", "Single model per run"],
+    ["CRM sync", "Yes", "CSV and XLSX export"],
     ["Where your data lives", "Their servers", "Your browser"],
     ["Rate-limit handling", "Managed for you", "Backoff, retry and tunable concurrency"],
     ["Source code", "Proprietary", "Open source"],
@@ -46,7 +46,7 @@ export default function ClayAlternativePage() {
   return (
     <ContentPage
       title="A free, open-source alternative to Clay"
-      lede="OpenClay replaces one specific part of Clay — the AI research layer — and does not pretend to replace the rest. Here is the honest split, so you can tell quickly whether it fits."
+      lede="OpenClay covers Clay\u2019s AI research layer at zero platform cost. Here is exactly what each tool is best at, so you can tell in a minute which one you need."
       updated={PRICING_LAST_UPDATED}
       crumbs={[
         { name: "Home", path: "/" },
@@ -57,7 +57,7 @@ export default function ClayAlternativePage() {
         articleJsonLd({
           title: "A free, open-source Clay alternative",
           description:
-            "An honest comparison of OpenClay and Clay: what the AI research layer replaces, what it doesn't, and real costs.",
+            "A side-by-side comparison of OpenClay and Clay: what each tool is best at, and real costs per 1,000 rows.",
           path: "/alternatives/clay",
           updated: "2026-08-11",
         }),
@@ -66,16 +66,15 @@ export default function ClayAlternativePage() {
       <H2>The short version</H2>
       <P>
         Clay is two products in one. It is a <strong className="font-semibold text-ink">data
-        aggregator</strong> — 150+ providers like Apollo, ZoomInfo and Clearbit, queried in a
-        waterfall until one returns a verified email. And it is an{" "}
-        <strong className="font-semibold text-ink">AI research agent</strong> — Claygent, which reads
+        aggregator</strong>, querying 150+ providers like Apollo, ZoomInfo and Clearbit in a
+        waterfall until one returns a verified record. It is also an{" "}
+        <strong className="font-semibold text-ink">AI research agent</strong>, Claygent, which reads
         the open web and answers a question per row.
       </P>
       <P>
-        OpenClay is the second thing only. If you are paying Clay mainly because Claygent researches
-        your rows, you are paying a subscription for something your own API key can do for a fraction
-        of a cent per row. If you are paying Clay for verified contact data, OpenClay cannot replace
-        it and you should keep Clay.
+        OpenClay does the research half, and does it without a subscription. If Claygent is what you
+        actually use Clay for, your own API key does the same work for a fraction of a cent per row.
+        If you also need licensed contact data, run both: they complement each other well.
       </P>
 
       <H2>Side by side</H2>
@@ -107,7 +106,7 @@ export default function ClayAlternativePage() {
         Clay pricing from their public pricing page and subject to change.
       </p>
 
-      <H2>When OpenClay is the better tool</H2>
+      <H2>Choose OpenClay when</H2>
       <UL>
         <LI>You mostly used Claygent, and the credit burn is what pushed you to look elsewhere.</LI>
         <LI>Your research questions are custom and don&apos;t fit a data provider&apos;s schema.</LI>
@@ -116,13 +115,21 @@ export default function ClayAlternativePage() {
         <LI>You want to see, and change, exactly what prompt runs against each row.</LI>
       </UL>
 
-      <H2>When it isn&apos;t</H2>
+      <H2>Keep Clay for</H2>
+      <P>
+        The two tools solve different halves of the problem, and plenty of teams run both. Clay
+        remains the right choice for:
+      </P>
       <UL>
-        <LI>You need verified email addresses or phone numbers. That needs a real data provider.</LI>
-        <LI>You need waterfall enrichment across multiple sources with fallbacks.</LI>
-        <LI>You need CRM sync, scheduled runs or a shared team workspace.</LI>
-        <LI>You want a support contract and an SLA. This is an open-source project.</LI>
+        <LI>Verified email addresses and phone numbers from licensed contact databases.</LI>
+        <LI>Waterfall enrichment that falls back across several providers per field.</LI>
+        <LI>Native CRM sync, scheduled refreshes and a shared team workspace.</LI>
+        <LI>A commercial support contract with an SLA behind it.</LI>
       </UL>
+      <P>
+        A common setup is Clay or Apollo for contact records, OpenClay for the research columns
+        around them, at no additional subscription cost.
+      </P>
 
       <H2>What it actually costs</H2>
       <P>
@@ -134,13 +141,12 @@ export default function ClayAlternativePage() {
         on {cheapest.name}, including web-search fees.
       </P>
       <P>
-        The tool quotes an exact figure after a five-row test, before you commit to the batch — and
+        The tool quotes an exact figure after a five-row test, before you commit to the batch, and
         reports token usage, peak tokens-per-minute and a blank-cell count while it runs. Full
         breakdown on the{" "}
         <Link href="/models" className="text-accent underline decoration-accent-line underline-offset-2">
           model pricing page
-        </Link>
-        .
+        </Link>.
       </P>
 
       <H3>Moving a workflow across</H3>

@@ -8,7 +8,7 @@ import { ContentPage, H2, P, CTA } from "@/app/components/ContentPage";
 import { ProviderLogo } from "@/app/components/icons";
 
 export const metadata: Metadata = pageMetadata({
-  title: `AI model pricing compared — ${ALL_MODELS.length} models`,
+  title: `AI model pricing compared: ${ALL_MODELS.length} models`,
   description: `Side-by-side API pricing for ${ALL_MODELS.length} models from OpenAI, Google, Anthropic and xAI, including web-search fees and real cost per 1,000 enriched rows. Verified ${PRICING_LAST_UPDATED}.`,
   path: "/models",
   keywords: [
@@ -53,7 +53,7 @@ export default function ModelsIndex() {
   return (
     <ContentPage
       title="AI model pricing, compared honestly"
-      lede={`Every model OpenClay supports, ranked by what 1,000 enriched rows actually cost — tokens plus web-search fees, minus any free allowance. Verified ${PRICING_LAST_UPDATED} against each provider's published rates.`}
+      lede={`Every model OpenClay supports, ranked by what 1,000 enriched rows actually cost, counting tokens plus web-search fees and any free allowance. Verified ${PRICING_LAST_UPDATED} against each provider's published rates.`}
       updated={PRICING_LAST_UPDATED}
       crumbs={[
         { name: "Home", path: "/" },
@@ -67,8 +67,8 @@ export default function ModelsIndex() {
 
       <H2>Why per-1,000-rows and not per-token</H2>
       <P>
-        Token prices alone are misleading for enrichment. A row is a short prompt — a few hundred
-        tokens — but every row also triggers a web search, and providers bill that separately. On
+        Token prices alone are misleading for enrichment. A row is a short prompt of a few hundred
+        tokens, but every row also triggers a web search, and providers bill that separately. On
         OpenAI the search fee and the ~8k tokens of search content it injects together dwarf the
         prompt. Gemini, meanwhile, includes 5,000 free grounded searches a month, which makes it far
         cheaper than its token price suggests for small runs.
@@ -109,7 +109,7 @@ export default function ModelsIndex() {
                   ${m.inputPer1M} / ${m.outputPer1M}
                 </td>
                 <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-ink-2 tnum">
-                  {m.search ? `$${m.search.per1K}/1k` : "—"}
+                  {m.search ? `$${m.search.per1K}/1k` : ""}
                   {m.search?.freeRequests ? (
                     <span className="ml-1 text-data">
                       ({m.search.freeRequests.toLocaleString()} free)

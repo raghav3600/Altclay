@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Terms of Service",
   description:
-    "OpenClay terms of service. Free, open-source AI data enrichment tool — no warranty, BYOK model, your key and your costs.",
+    "OpenClay terms of service. Free, open-source AI data enrichment tool, no warranty, BYOK model, your key and your costs.",
   alternates: { canonical: "https://openclay.io/terms" },
 };
 
@@ -24,7 +24,7 @@ export default function TermsPage() {
             <p className="mt-2">
               OpenClay is a free, open-source web application that helps users enrich spreadsheet data using AI.
               It acts as an interface between your browser and AI providers (Anthropic and Google). OpenClay does not
-              provide AI services directly — it connects you to your own API key.
+              provide AI services directly, it connects you to your own API key.
             </p>
           </section>
 

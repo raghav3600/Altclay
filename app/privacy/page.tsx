@@ -35,7 +35,7 @@ export default function PrivacyPage() {
               <li>We do not collect personal information</li>
               <li>We do not use cookies or localStorage</li>
               <li>We do not log API requests, API keys, or user data on our servers</li>
-              <li>We do not store uploaded files — they are parsed entirely in your browser</li>
+              <li>We do not store uploaded files, they are parsed entirely in your browser</li>
               <li>We use <strong className="text-ink">Vercel Web Analytics</strong> to collect anonymous, aggregated page view data (no cookies, no personal data)</li>
             </ul>
           </section>
@@ -45,7 +45,7 @@ export default function PrivacyPage() {
             <p className="mt-2">
               Your API key is stored exclusively in browser memory (React <code className="rounded border border-line bg-surface-2 px-1.5 py-0.5 text-sm">useState()</code>).
               It is never written to localStorage, cookies, or any persistent storage. When you close the tab, it is gone.
-              The key is sent directly from your browser to your chosen AI provider&apos;s API — our server acts only as a
+              The key is sent directly from your browser to your chosen AI provider&apos;s API, our server acts only as a
               CORS proxy and does not read, log, or store the key.
             </p>
           </section>
@@ -65,9 +65,9 @@ export default function PrivacyPage() {
               When you use OpenClay, your data is sent to the AI provider you choose:
             </p>
             <ul className="mt-3 list-disc space-y-1.5 pl-5">
-              <li><strong className="text-ink">Anthropic (Claude)</strong> — subject to <a href="https://www.anthropic.com/privacy" target="_blank" rel="noopener noreferrer" className="text-ink underline">Anthropic&apos;s Privacy Policy</a></li>
-              <li><strong className="text-ink">Google (Gemini)</strong> — subject to <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-ink underline">Google&apos;s Privacy Policy</a></li>
-              <li><strong className="text-ink">Vercel Web Analytics</strong> — collects anonymous page view data without cookies. See <a href="https://vercel.com/docs/analytics/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-ink underline">Vercel Analytics Privacy</a></li>
+              <li><strong className="text-ink">Anthropic (Claude)</strong>, subject to <a href="https://www.anthropic.com/privacy" target="_blank" rel="noopener noreferrer" className="text-ink underline">Anthropic&apos;s Privacy Policy</a></li>
+              <li><strong className="text-ink">Google (Gemini)</strong>, subject to <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-ink underline">Google&apos;s Privacy Policy</a></li>
+              <li><strong className="text-ink">Vercel Web Analytics</strong>, collects anonymous page view data without cookies. See <a href="https://vercel.com/docs/analytics/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-ink underline">Vercel Analytics Privacy</a></li>
             </ul>
             <p className="mt-3">
               This application is hosted on Vercel. Vercel may collect standard server logs (IP address, request timestamp).

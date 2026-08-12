@@ -5,7 +5,7 @@ import { pageMetadata } from "@/lib/seo";
 import { ContentPage, CTA } from "@/app/components/ContentPage";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Use cases — what you can enrich",
+  title: "Use cases: what you can enrich",
   description:
     "Company research, lead enrichment, competitor matrices, hiring signals, university data and any other CSV. Real prompts, real column names and real costs for each.",
   path: "/use-cases",
@@ -23,7 +23,7 @@ export default function UseCasesIndex() {
   return (
     <ContentPage
       title="What can you enrich?"
-      lede="Every row becomes its own prompt with that row's values substituted in, so the tool is not specific to any one kind of list. These are the patterns people reach for most, each with a working prompt and an honest note on where it falls short."
+      lede="Every row becomes its own prompt with that row's values substituted in, so the tool works on any kind of list. These are the patterns people reach for most, each with a working prompt, the exact columns it produces, and what it costs."
       crumbs={[
         { name: "Home", path: "/" },
         { name: "Use cases", path: "/use-cases" },

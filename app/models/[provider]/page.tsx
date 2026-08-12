@@ -50,13 +50,13 @@ export async function generateMetadata({
 const PROVIDER_NOTES: Partial<Record<Provider, { searchNote: string; quirk: string }>> = {
   openai: {
     searchNote:
-      "OpenAI bills web search at $10 per 1,000 calls plus the search content itself as input tokens — roughly 8k per search. On a short enrichment prompt that overhead is the dominant cost, not the prompt.",
+      "OpenAI bills web search at $10 per 1,000 calls plus the search content itself as input tokens, roughly 8k per search. On a short enrichment prompt that overhead is the dominant cost, not the prompt.",
     quirk:
       "The GPT-5 family reasons by default. OpenClay sends an explicit low reasoning effort so a one-line lookup isn't billed for deliberation it doesn't need. Minimal effort is deliberately not used, because web search rejects it.",
   },
   gemini: {
     searchNote:
-      "Gemini 3.x includes 5,000 free grounded searches per month, then $14 per 1,000. The 2.5 series gets 1,500 free per day but costs $35 per 1,000 after that — which usually makes a 3.x model cheaper overall despite a higher token price.",
+      "Gemini 3.x includes 5,000 free grounded searches per month, then $14 per 1,000. The 2.5 series gets 1,500 free per day but costs $35 per 1,000 after that, which usually makes a 3.x model cheaper overall despite a higher token price.",
     quirk:
       "Paste a Google Cloud service-account JSON instead of an API key to run through Vertex AI. Gemini 3.x on Vertex is only served from the global endpoint, which OpenClay handles automatically.",
   },
@@ -64,7 +64,7 @@ const PROVIDER_NOTES: Partial<Record<Provider, { searchNote: string; quirk: stri
     searchNote:
       "Anthropic bills web search at $10 per 1,000 searches with no free allowance, and adds roughly 346 tokens of tool-definition overhead to every request that declares the tool.",
     quirk:
-      "Opus 5 and Sonnet 5 think by default. OpenClay sends adaptive thinking at low effort rather than disabling it outright — with thinking off, these models occasionally emit a tool call as plain text, which means the web search silently never runs.",
+      "Opus 5 and Sonnet 5 think by default. OpenClay sends adaptive thinking at low effort rather than disabling it outright, with thinking off, these models occasionally emit a tool call as plain text, which means the web search silently never runs.",
   },
   grok: {
     searchNote:
@@ -178,11 +178,10 @@ export default async function ProviderPage({
             className="text-accent underline decoration-accent-line underline-offset-2"
           >
             {meta.docsLabel}
-          </a>
-          . Keys start with <Code>{meta.keyPrefix}</Code>.
+          </a>. Keys start with <Code>{meta.keyPrefix}</Code>.
         </LI>
         <LI>
-          Paste it into OpenClay. It stays in browser memory for the tab — never written to disk, a
+          Paste it into OpenClay. It stays in browser memory for the tab, never written to disk, a
           database, a log or a cookie.
         </LI>
         <LI>

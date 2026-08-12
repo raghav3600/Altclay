@@ -117,7 +117,7 @@ export function SiteFooter() {
           ))}
         </div>
         <p className="mt-8 text-center text-[10px] leading-relaxed text-ink-3">
-          Provided as-is without warranty. AI-generated data can be inaccurate — always verify results.
+          Provided as-is without warranty. AI-generated data can be inaccurate, so always verify results.
         </p>
       </div>
     </footer>
@@ -247,7 +247,7 @@ export function Pre({ children }: { children: string }) {
   );
 }
 
-export function CTA({ label = "Start enriching — free" }: { label?: string }) {
+export function CTA({ label = "Start enriching, free" }: { label?: string }) {
   return (
     <div className="mt-10 rounded border border-accent-line bg-accent-soft p-5 text-center">
       <p className="text-sm font-semibold text-ink">No account, no card, no platform fee.</p>

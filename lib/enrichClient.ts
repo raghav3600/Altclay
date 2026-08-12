@@ -30,7 +30,7 @@ export class EnrichError extends Error {
  * on every attempt, so retrying only burns the user's quota and their patience.
  */
 export function isRetryableStatus(status?: number): boolean {
-  if (status === undefined) return true; // network/transport failure — worth one more go
+  if (status === undefined) return true; // network/transport failure, worth one more go
   if (status === 408 || status === 409 || status === 425 || status === 429) return true;
   return status >= 500;
 }

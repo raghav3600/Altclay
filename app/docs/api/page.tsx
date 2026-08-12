@@ -3,7 +3,7 @@ import { pageMetadata, SITE_URL } from "@/lib/seo";
 import { ContentPage, H2, H3, P, UL, LI, Pre, Code, CTA } from "@/app/components/ContentPage";
 
 export const metadata: Metadata = pageMetadata({
-  title: "HTTP API — call OpenClay from your own code",
+  title: "HTTP API: call OpenClay from your own code",
   description:
     "Enrich rows programmatically with a single POST. Works against a self-hosted instance or your own fork. No SDK, no auth layer, no rate limits of ours.",
   path: "/docs/api",
@@ -20,7 +20,7 @@ export default function ApiDocsPage() {
   return (
     <ContentPage
       title="Call OpenClay from your own code"
-      lede="The UI is one client of a small HTTP API. If you're wiring enrichment into a pipeline rather than clicking through a browser, POST to it directly."
+      lede="The UI is one client of a small HTTP API. If you are wiring enrichment into a pipeline rather than clicking through a browser, POST to it directly."
       crumbs={[
         { name: "Home", path: "/" },
         { name: "Docs", path: "/docs/api" },
@@ -32,7 +32,7 @@ export default function ApiDocsPage() {
         <LI>
           <strong className="font-semibold text-ink">Run your own instance.</strong> The hosted
           endpoint at openclay.io exists to serve the web app and carries no uptime promise for
-          programmatic use. Self-hosting takes three commands — see the{" "}
+          programmatic use. Self-hosting takes three commands. See the{" "}
           <Code>/self-host</Code> guide.
         </LI>
         <LI>
@@ -42,7 +42,7 @@ export default function ApiDocsPage() {
         </LI>
         <LI>
           <strong className="font-semibold text-ink">One row per request.</strong> There is no batch
-          endpoint by design — it keeps the server stateless. Fan out client-side with whatever
+          endpoint by design, which keeps the server stateless. Fan out client-side with whatever
           concurrency your quota tolerates.
         </LI>
       </UL>
@@ -55,7 +55,7 @@ export default function ApiDocsPage() {
   -H 'content-type: application/json' \\
   -d '{
     "provider": "gemini",
-    "apiKey": "AIza...",
+    "apiKey": "AIza, ...",
     "modelId": "gemini-3-flash-preview",
     "prompt": "Find the CEO of Stripe. Return ONLY JSON: {\\"ceo\\":\\"string\\"}",
     "useWebSearch": true
@@ -108,18 +108,18 @@ export default function ApiDocsPage() {
       </P>
       <UL>
         <LI>
-          <Code>429</Code> — rate limited. Retry with backoff; <Code>retryAfterMs</Code> is included
+          <Code>429</Code>: rate limited. Retry with backoff. <Code>retryAfterMs</Code> is included
           when the provider sent a Retry-After header.
         </LI>
         <LI>
-          <Code>5xx</Code> — transient provider failure. Worth retrying.
+          <Code>5xx</Code>: transient provider failure, worth retrying.
         </LI>
         <LI>
-          <Code>400 / 401 / 403 / 404</Code> — bad request, bad key, no access, unknown model. These
-          fail identically on every attempt; do not retry them.
+          <Code>400 / 401 / 403 / 404</Code>: bad request, bad key, no access, unknown model. These
+          fail identically on every attempt, so do not retry them.
         </LI>
         <LI>
-          <Code>422</Code> — the model replied but not with usable JSON, or was cut off. Usually a
+          <Code>422</Code>: the model replied but not with usable JSON, or was cut off. Usually a
           prompt problem.
         </LI>
       </UL>
@@ -186,7 +186,7 @@ console.log(JSON.stringify(out, null, 2));`}</Pre>
       <H2>Machine-readable summary</H2>
       <P>
         <Code>{SITE_URL}/llms.txt</Code> carries a plain-text description of the project, the full
-        model catalog with current prices, and an explicit list of what OpenClay cannot do — for
+        model catalog with current prices, and a precise statement of scope, written for
         assistants and agents rather than browsers.
       </P>
 

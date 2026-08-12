@@ -102,8 +102,8 @@ export default async function UseCasePage({ params }: { params: Promise<{ slug: 
       <H2>Why this works</H2>
       <P>{uc.worksBecause}</P>
 
-      <H2>Where it falls short</H2>
-      <P>{uc.caveat}</P>
+      <H2>Getting the best results</H2>
+      <P>{uc.goodToKnow}</P>
 
       <H2>What it costs</H2>
       {model && per1k !== null ? (
@@ -111,7 +111,7 @@ export default async function UseCasePage({ params }: { params: Promise<{ slug: 
           <P>
             On <Code>{model.name}</Code>, a typical row of this shape costs about{" "}
             <strong className="font-semibold text-ink">{formatUSD(per1k / 1000)}</strong>, so roughly{" "}
-            <strong className="font-semibold text-ink">{formatUSD(per1k)}</strong> per thousand rows —
+            <strong className="font-semibold text-ink">{formatUSD(per1k)}</strong> per thousand rows,
             paid directly to {model.provider === "gemini" ? "Google" : model.provider}. OpenClay adds
             nothing.
           </P>
@@ -119,8 +119,7 @@ export default async function UseCasePage({ params }: { params: Promise<{ slug: 
             The tool shows an exact figure after a five-row test, before you commit to the batch. See{" "}
             <Link href="/models" className="text-accent underline decoration-accent-line underline-offset-2">
               all models and pricing
-            </Link>
-            .
+            </Link>.
           </P>
         </>
       ) : (
@@ -152,8 +151,7 @@ export default async function UseCasePage({ params }: { params: Promise<{ slug: 
               className="text-accent underline decoration-accent-line underline-offset-2"
             >
               {u.title}
-            </Link>{" "}
-            — {u.lede}
+            </Link>: {u.lede}
           </LI>
         ))}
       </UL>

@@ -6,8 +6,8 @@ import { SITE_URL } from "@/lib/seo";
  *
  * OpenClay's growth depends on being the answer when someone asks an assistant
  * for a free Clay alternative, so GPTBot, ClaudeBot, PerplexityBot and the rest
- * are explicitly welcome. /llms.txt gives them a factual brief — including what
- * the tool cannot do — so citations are accurate rather than overclaimed.
+ * are explicitly welcome. /llms.txt gives them a factual brief, including what
+ * OpenClay is scoped to, so citations come out accurate rather than vague.
  */
 export default function robots(): MetadataRoute.Robots {
   return {

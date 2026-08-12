@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------ *
- *  Design tokens — "blueprint"
+ *  Design tokens, "blueprint"
  *
  *  A technical-instrument palette rather than a marketing one. The tool
  *  spends the user's own money against their own API keys, so the visual
@@ -139,7 +139,7 @@ body {
   font-feature-settings: "tnum";
 }
 
-/* Small-caps section label — used instead of bold headings in the chrome. */
+/* Small-caps section label, used instead of bold headings in the chrome. */
 .eyebrow {
   font-family: var(--font-mono);
   font-size: 10px;
@@ -168,7 +168,7 @@ body {
   color: var(--on-accent);
 }
 
-/* Scrollbars inside data tables — unobtrusive, theme-aware. */
+/* Scrollbars inside data tables, unobtrusive, theme-aware. */
 .thin-scroll {
   scrollbar-width: thin;
   scrollbar-color: var(--line-strong) transparent;
@@ -188,7 +188,7 @@ body {
 }
 
 /* ------------------------------------------------------------------ *
- *  Motion — all of it opt-out via prefers-reduced-motion
+ *  Motion, all of it opt-out via prefers-reduced-motion
  * ------------------------------------------------------------------ */
 
 @keyframes rise {
@@ -275,10 +275,7 @@ body {
   html {
     scroll-behavior: auto;
   }
-  .animate-rise,
-  .animate-fade,
-  .animate-blink,
-  .sweep::after {
+  .animate-rise.animate-fade.animate-blink.sweep::after {
     animation: none;
   }
   .reveal {

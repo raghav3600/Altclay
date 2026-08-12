@@ -76,7 +76,7 @@ export default function CustomEndpointPage() {
           In step 3, choose <strong className="font-semibold text-ink">Custom</strong>.
         </LI>
         <LI>
-          Paste the base URL. Ending it at <Code>/v1</Code> is enough — OpenClay appends{" "}
+          Paste the base URL. Ending it at <Code>/v1</Code> is enough, because OpenClay appends{" "}
           <Code>/chat/completions</Code>. Pasting the full path works too.
         </LI>
         <LI>Enter the model ID exactly as your provider names it.</LI>
@@ -97,16 +97,15 @@ export default function CustomEndpointPage() {
 Model ID:  my-gpt5-deployment`}</Pre>
       <P>
         Azure throttles on tokens-per-minute rather than requests, which is exactly what the run
-        panel&apos;s peak-TPM figure is for. Size your quota against the peak, not the average — the
+        panel&apos;s peak-TPM figure is for. Size your quota against the peak, not the average, because the
         average hides the bursts that actually trigger a 429.
       </P>
 
       <H2>Web search</H2>
       <P>
         Most OpenAI-compatible gateways do not implement a server-side search tool, so the custom
-        provider does not send one. Your prompts still run, but answers come from the model&apos;s
-        training data rather than the live web — which for research-style enrichment is a real
-        limitation, not a detail. Use a built-in provider when freshness matters.
+        provider does not send one. Your prompts still run, and answers come from the model&apos;s
+        training data rather than the live web. Use a built-in provider whenever freshness matters.
       </P>
 
       <H2>Local models and the private-address rule</H2>
@@ -117,7 +116,7 @@ Model ID:  my-gpt5-deployment`}</Pre>
         <Code>http://169.254.169.254/</Code> would let a visitor read cloud metadata through us.
       </P>
       <P>
-        On your own machine the same reasoning inverts — localhost means your Ollama — so
+        On your own machine the same reasoning inverts, because localhost means your own Ollama, so
         self-hosted installs can opt in:
       </P>
       <Pre>{`# .env.local
@@ -143,7 +142,7 @@ OPENCLAY_ALLOW_PRIVATE_ENDPOINTS=true`}</Pre>
         </LI>
         <LI>
           <strong className="font-semibold text-ink">Refused private address:</strong> expected on the
-          hosted instance — self-host and set the environment variable above.
+          hosted instance. Self-host and set the environment variable above.
         </LI>
       </UL>
 

@@ -20,7 +20,7 @@ export interface CustomEndpoint {
 export type SpeedTier = "fast" | "medium" | "slow";
 export type QualityTier = "good" | "great" | "best";
 
-/** Curation tier — drives which models the picker shows before "show all". */
+/** Curation tier, drives which models the picker shows before "show all". */
 export type ModelTier = "recommended" | "standard" | "legacy";
 
 /**
@@ -37,7 +37,7 @@ export interface SearchPricing {
   /**
    * Input tokens the provider injects per search, when they publish a figure.
    * OpenAI documents roughly 8k of search content billed at model rates on top
-   * of the per-call fee, which dominates the token cost of a short prompt — so
+   * of the per-call fee, which dominates the token cost of a short prompt, so
    * quoting only the call fee would understate an OpenAI run badly.
    */
   tokenOverheadPerSearch?: number;
@@ -70,7 +70,7 @@ export interface ModelConfig {
   /**
    * OpenAI only. The GPT-5 family reasons by default; without an explicit low
    * effort every row pays for reasoning a one-line lookup doesn't need. Note
-   * "minimal" is deliberately not used — web search rejects it.
+   * "minimal" is deliberately not used, web search rejects it.
    */
   supportsReasoningEffort?: boolean;
   contextWindow: number;

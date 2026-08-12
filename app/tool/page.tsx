@@ -258,7 +258,7 @@ function detectOutputColumns(description: string): OutputColumn[] {
 
   const parts = cleaned
     .split(/,\s*|\s+and\s+/i)
-    // "A, B, and C" splits on the comma first, leaving "and C" — strip the
+    // "A, B, and C" splits on the comma first, leaving "and C", strip the
     // conjunction before the article, or you get a column called
     // "and employee count" and a JSON key of `and_employee_count`.
     .map((p) =>
@@ -373,7 +373,7 @@ export default function ToolPage() {
 
   const activeTemplate = advancedMode && customTemplate ? customTemplate : generatedTemplate;
 
-  /** Preview is generated separately from the template — conflating the two was the bug. */
+  /** Preview is generated separately from the template, conflating the two was the bug. */
   const previewPrompt = useMemo(
     () =>
       file && file.rows.length > 0 && activeTemplate
@@ -587,8 +587,8 @@ export default function ToolPage() {
           onRetry: ({ attempt, delayMs, error }) =>
             setThrottleNotice(
               error.isRateLimit
-                ? `Rate limited — backing off ${(delayMs / 1000).toFixed(1)}s (attempt ${attempt})`
-                : `Retrying after error — waiting ${(delayMs / 1000).toFixed(1)}s (attempt ${attempt})`
+                ? `Rate limited, backing off ${(delayMs / 1000).toFixed(1)}s (attempt ${attempt})`
+                : `Retrying after error, waiting ${(delayMs / 1000).toFixed(1)}s (attempt ${attempt})`
             ),
         });
         return {
@@ -1130,7 +1130,7 @@ export default function ToolPage() {
                       e.preventDefault();
                       const next = !advancedMode;
                       setAdvancedMode(next);
-                      // Seed with the *template* — placeholders intact. Seeding with a
+                      // Seed with the *template*, placeholders intact. Seeding with a
                       // preview (row 1's values already substituted) is what made every
                       // row come back with the first row's data.
                       if (next && !customTemplate && generatedTemplate) {
@@ -1181,7 +1181,7 @@ export default function ToolPage() {
                       {previewPrompt && (
                         <details className="rounded border border-line bg-surface-2">
                           <summary className="cursor-pointer px-2.5 py-1.5 font-mono text-[10px] text-ink-2 hover:text-ink">
-                            Preview — exactly what row 1 will send
+                            Preview, exactly what row 1 will send
                           </summary>
                           <pre className="thin-scroll max-h-40 overflow-auto whitespace-pre-wrap break-words border-t border-line px-2.5 py-2 font-mono text-[10px] leading-relaxed text-ink-2">
                             {previewPrompt}
@@ -1256,7 +1256,7 @@ export default function ToolPage() {
                     {!useWebSearch && model.search && (
                       <div className="mt-2">
                         <Callout tone="warn" icon={<AlertIcon className="h-3.5 w-3.5" />}>
-                          Training data only — may be out of date.
+                          Training data only, may be out of date.
                         </Callout>
                       </div>
                     )}
@@ -1502,7 +1502,7 @@ export default function ToolPage() {
                       />
                     </div>
 
-                    {/* Live counters — the numbers Olin asked for */}
+                    {/* Live counters, the numbers Olin asked for */}
                     <div className="flex flex-wrap gap-y-2 rounded border border-line bg-surface-2 px-3 py-2">
                       <Stat
                         label="Tokens in"
@@ -1530,7 +1530,7 @@ export default function ToolPage() {
                       {fullRunning ? (
                         <Stat
                           label="Remaining"
-                          value={etaMs !== null ? formatDuration(etaMs) : "—"}
+                          value={etaMs !== null ? formatDuration(etaMs) : ""}
                           sub={etaMs !== null ? `done ~${formatFinishTime(etaMs)}` : "measuring…"}
                           tone="data"
                         />
@@ -1540,7 +1540,7 @@ export default function ToolPage() {
                           value={
                             stats.startedAt && stats.finishedAt
                               ? formatDuration(stats.finishedAt - stats.startedAt)
-                              : "—"
+                              : ", "
                           }
                           sub={`~${formatUSD(spentSoFar)} spent`}
                           tone="data"
@@ -1595,7 +1595,7 @@ export default function ToolPage() {
                             {succeeded.toLocaleString()} of {totalRows.toLocaleString()} rows enriched
                           </strong>
                           {failed > 0 &&
-                            ` — ${failed.toLocaleString()} failed. Failed rows download as blank cells plus an enrichment_status column.`}
+                            `, ${failed.toLocaleString()} failed. Failed rows download as blank cells plus an enrichment_status column.`}
                           {failed === 0 && ` across ${outputColumns.length} new columns.`}
                         </Callout>
 
@@ -1649,7 +1649,7 @@ export default function ToolPage() {
             </Panel>
 
             <p className="px-2 text-center text-[10px] leading-relaxed text-ink-3">
-              Provided as-is. AI-generated data can be wrong — verify anything you act on.
+              Provided as-is. AI-generated data can be wrong, so verify anything you act on.
             </p>
           </div>
 
@@ -1727,7 +1727,7 @@ export default function ToolPage() {
                 ? `~${formatUSD(estimate.totalCost)}`
                 : costRange
                   ? formatUSDRange(costRange.low.totalCost, costRange.high.totalCost)
-                  : "—"}
+                  : ""}
             </span>
           </div>
         </div>
@@ -1795,7 +1795,7 @@ function ResultTable({
                       blank ? "text-ink-3" : "text-ink"
                     }`}
                   >
-                    {value || "—"}
+                    {value || ""}
                   </td>
                 );
               })}
@@ -1845,7 +1845,7 @@ function TestQuality({
       <span className="font-mono tnum">{cells}</span> ·{" "}
       <span className="font-mono tnum">{(avgMs / 1000).toFixed(1)}s</span> per row
       {fill < 0.6 &&
-        " — a lot of blanks. Try naming the columns more explicitly, or switch to a stronger model before running everything."}
+        ", a lot of blanks. Try naming the columns more explicitly, or switch to a stronger model before running everything."}
     </Callout>
   );
 }
@@ -1891,7 +1891,7 @@ function EstimatePanel({
                 ? `~${formatUSD(estimate.totalCost)}`
                 : range
                   ? formatUSDRange(range.low.totalCost, range.high.totalCost)
-                  : "—"}
+                  : ""}
             </div>
             <div className="mt-0.5 font-mono text-[10px] text-ink-3 tnum">
               ${(estimate.totalCost / Math.max(1, estimate.totalRows)).toFixed(4)} per row

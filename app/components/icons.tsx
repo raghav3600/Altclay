@@ -5,7 +5,7 @@ import type { Provider } from "@/lib/types";
  *
  *  Simplified glyphs used to identify which provider a model belongs to.
  *  They inherit currentColor so they work on either theme. These are
- *  identification marks only — each provider's own brand assets should be
+ *  identification marks only, each provider's own brand assets should be
  *  used if OpenClay ever needs to represent them officially.
  * ------------------------------------------------------------------ */
 
@@ -73,7 +73,7 @@ export function ProviderLogo({
 }
 
 /* ------------------------------------------------------------------ *
- *  UI icons — 1.75px strokes to sit alongside hairline rules
+ *  UI icons, 1.75px strokes to sit alongside hairline rules
  * ------------------------------------------------------------------ */
 
 type IconProps = { className?: string };

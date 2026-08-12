@@ -6,7 +6,7 @@ import { ContentPage, H2, P, UL, LI, CTA } from "@/app/components/ContentPage";
 import { LinkedInIcon, GitHubIcon } from "@/app/components/icons";
 
 /* ------------------------------------------------------------------ *
- *  EDIT ME — everything personal lives in this one object.
+ *  EDIT ME, everything personal lives in this one object.
  *
  *  Only verifiable facts are filled in. Anything that would be an
  *  invention about a real person is left blank on purpose: add your own
@@ -17,14 +17,13 @@ const AUTHOR = {
   name: "Raghav",
   /** Shown under the name. */
   tagline: "Builder of OpenClay",
-  email: "info@deeptech.build",
   linkedin: "https://www.linkedin.com/in/-raghav/",
   github: "https://github.com/raghav3600",
 
   /** One or two paragraphs in your own voice. Leave blank to hide. */
   bio: "",
 
-  /** Add entries as ["Role", "Where", "When"] — leave empty to hide the section. */
+  /** Add entries as ["Role", "Where", "When"], leave empty to hide the section. */
   work: [] as [string, string, string][],
 
   /** Other things you've built. ["Name", "URL", "One line"]. */
@@ -38,8 +37,8 @@ const AUTHOR = {
 } as const;
 
 export const metadata: Metadata = pageMetadata({
-  title: `About ${AUTHOR.name} — the maker of OpenClay`,
-  description: `${AUTHOR.name} built OpenClay, a free and open-source alternative to Clay for AI spreadsheet enrichment. Why it exists, how it is funded, and how to get in touch.`,
+  title: `About ${AUTHOR.name}, the maker of OpenClay`,
+  description: `${AUTHOR.name} built OpenClay, a free and open-source alternative to Clay for AI spreadsheet enrichment. Why it exists, how it stays free, and how to get in touch.`,
   path: "/about",
   keywords: [
     `${AUTHOR.name} OpenClay`,
@@ -57,7 +56,6 @@ export default function AboutPage() {
     "@type": "Person",
     name: AUTHOR.name,
     url: `${SITE_URL}/about`,
-    email: `mailto:${AUTHOR.email}`,
     sameAs: [AUTHOR.linkedin, AUTHOR.github].filter(Boolean),
     jobTitle: AUTHOR.tagline,
     worksFor: { "@type": "Organization", name: "OpenClay", url: SITE_URL },
@@ -96,12 +94,6 @@ export default function AboutPage() {
           <GitHubIcon className="h-3.5 w-3.5" />
           GitHub
         </a>
-        <a
-          href={`mailto:${AUTHOR.email}`}
-          className="inline-flex items-center gap-2 rounded border border-line-strong bg-surface px-3.5 py-2 font-mono text-xs text-ink transition-colors hover:border-accent hover:text-accent"
-        >
-          {AUTHOR.email}
-        </a>
       </div>
 
       {AUTHOR.bio && (
@@ -114,7 +106,7 @@ export default function AboutPage() {
       <H2>Why OpenClay exists</H2>
       <P>
         Data enrichment is, at its core, a simple job: take a row, look something up, write the
-        answer back. The tooling around it is priced as though it were much more than that — $149 to
+        answer back. The tooling around it is priced as though it were much more than that: $149 to
         $800 a month before you enrich a single record.
       </P>
       <P>
@@ -129,7 +121,7 @@ export default function AboutPage() {
       <P>
         It isn&apos;t, and that&apos;s deliberate. There is no company, no billing, no accounts and
         no database. You bring your own API key, so running OpenClay costs me nothing regardless of
-        how many people use it — which is exactly why the free tier can be honest rather than a
+        how many people use it. That is exactly why the free tier can be honest rather than a
         funnel.
       </P>
       <UL>
@@ -148,8 +140,7 @@ export default function AboutPage() {
             className="text-accent underline decoration-accent-line underline-offset-2"
           >
             open source
-          </a>
-          , so none of the above has to be taken on trust.
+          </a>, so none of the above has to be taken on trust.
         </LI>
       </UL>
 
@@ -197,8 +188,7 @@ export default function AboutPage() {
                   className="text-accent underline decoration-accent-line underline-offset-2"
                 >
                   {name}
-                </a>{" "}
-                — {line}
+                </a>{" "}, {line}
               </LI>
             ))}
           </UL>
@@ -221,8 +211,7 @@ export default function AboutPage() {
           className="text-accent underline decoration-accent-line underline-offset-2"
         >
           LinkedIn
-        </a>
-        , or open an issue on{" "}
+        </a>, or open an issue on{" "}
         <a
           href={REPO_URL}
           target="_blank"
@@ -230,8 +219,7 @@ export default function AboutPage() {
           className="text-accent underline decoration-accent-line underline-offset-2"
         >
           GitHub
-        </a>
-        . If you want to run your own copy, the{" "}
+        </a>. If you want to run your own copy, the{" "}
         <Link
           href="/self-host"
           className="text-accent underline decoration-accent-line underline-offset-2"

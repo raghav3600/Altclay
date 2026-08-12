@@ -149,7 +149,7 @@ export async function POST(req: NextRequest) {
   try {
     result = await probe(provider, (apiKey ?? "").trim(), { baseUrl, modelId });
   } catch (err) {
-    // Never reached the provider at all — a local/transport problem, not a bad key.
+    // Never reached the provider at all, a local/transport problem, not a bad key.
     // Vertex service-account parsing also lands here.
     return NextResponse.json({
       valid: false,
@@ -169,12 +169,12 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // A rate limit proves the key is real — it just has no headroom right now.
+  // A rate limit proves the key is real, it just has no headroom right now.
   if (status === 429) {
     return NextResponse.json({
       valid: true,
       warning:
-        "Key is valid but currently rate limited. Enrichment retries automatically with backoff — consider lowering concurrency.",
+        "Key is valid but currently rate limited. Enrichment retries automatically with backoff, consider lowering concurrency.",
     });
   }
 
@@ -195,7 +195,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // 5xx is the provider's problem, not the key's — let the user proceed.
+  // 5xx is the provider's problem, not the key's, let the user proceed.
   return NextResponse.json({
     valid: true,
     warning: `Provider returned HTTP ${status}, so the key could not be fully verified. You can continue, but enrichment may fail.`,

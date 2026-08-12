@@ -3,7 +3,7 @@
  *
  * FAQ_ITEMS is the single source of truth: the landing page renders it visibly
  * and FAQJsonLd serialises the same array. They previously duplicated each
- * other and had already drifted apart — the JSON-LD still advertised models
+ * other and had already drifted apart, the JSON-LD still advertised models
  * that had been replaced in the UI.
  */
 
@@ -17,15 +17,15 @@ export interface FaqItem {
 export const FAQ_ITEMS: FaqItem[] = [
   {
     q: "What is OpenClay?",
-    a: "OpenClay is a free, open-source alternative to Clay.com for AI-powered spreadsheet data enrichment. It uses AI models (GPT, Gemini, Claude or Grok) combined with live web search to research and enrich each row of your spreadsheet — finding company data, contacts, news, and any custom information you describe.",
+    a: "OpenClay is a free, open-source alternative to Clay.com for AI-powered spreadsheet data enrichment. It uses AI models (GPT, Gemini, Claude or Grok) combined with live web search to research and enrich each row of your spreadsheet, finding company data, contacts, news, and any custom information you describe.",
   },
   {
     q: "Is OpenClay really free?",
-    a: "Yes, OpenClay charges no platform fee — ever. The only cost is the AI provider's token usage (OpenAI, Google, Anthropic or xAI), which you pay directly at their published rates. Enriching 500 rows typically costs $1–$10 in API usage depending on the model chosen.",
+    a: "Yes, OpenClay charges no platform fee, ever. The only cost is the AI provider's token usage (OpenAI, Google, Anthropic or xAI), which you pay directly at their published rates. Enriching 500 rows typically costs $1–$10 in API usage depending on the model chosen.",
   },
   {
     q: "How is OpenClay different from Clay?",
-    a: "Clay connects to 150+ data providers (Apollo, ZoomInfo, etc.) for structured lookups and costs $149–$800/month. OpenClay uses AI + live web search to research each row — similar to Clay's Claygent feature. OpenClay is great for public information, news, company overviews, and custom research. It is not ideal for verified contact emails or data requiring proprietary database access.",
+    a: "Clay connects to 150+ data providers (Apollo, ZoomInfo, etc.) for structured lookups and costs $149–$800/month. OpenClay uses AI + live web search to research each row, similar to Clay's Claygent feature. OpenClay is great for public information, news, company overviews, and custom research. It is not ideal for verified contact emails or data requiring proprietary database access.",
   },
   {
     q: "Is my data safe with OpenClay?",
@@ -41,7 +41,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   },
   {
     q: "What file formats does OpenClay support?",
-    a: "CSV (.csv), Excel (.xlsx), and legacy Excel (.xls) up to 10MB. Files are parsed in your browser using PapaParse and SheetJS — nothing is uploaded to any server.",
+    a: "CSV (.csv), Excel (.xlsx), and legacy Excel (.xls) up to 10MB. Files are parsed in your browser using PapaParse and SheetJS, nothing is uploaded to any server.",
   },
   {
     q: "Do I need to create an account?",
@@ -94,7 +94,7 @@ export function SoftwareApplicationJsonLd() {
           priceCurrency: "USD",
         },
         description:
-          "Free, open-source alternative to Clay for AI-powered spreadsheet data enrichment. Supports OpenAI GPT, Google Gemini, Anthropic Claude and xAI Grok models with live web search. Bring your own API key — no subscription needed.",
+          "Free, open-source alternative to Clay for AI-powered spreadsheet data enrichment. Supports OpenAI GPT, Google Gemini, Anthropic Claude and xAI Grok models with live web search. Bring your own API key, no subscription needed.",
         featureList: [
           "AI-powered spreadsheet data enrichment",
           "Live web search for each row",
@@ -105,9 +105,9 @@ export function SoftwareApplicationJsonLd() {
           "Token usage and peak tokens-per-minute reporting",
           "Automatic retry with exponential backoff on rate limits",
           "Tunable request concurrency",
-          "100% free — no platform fee",
+          "100% free, no platform fee",
           "No account or sign-up required",
-          "Privacy-first — no data stored on servers",
+          "Privacy-first, no data stored on servers",
           "Fully open source on GitHub",
         ],
         screenshot: `${SITE_URL}/icon.svg`,

@@ -12,7 +12,6 @@ import {
   CheckIcon,
   LockIcon,
   GlobeIcon,
-  AlertIcon,
   PlusIcon,
   LinkedInIcon,
   GitHubIcon,
@@ -146,7 +145,7 @@ function CostCalculator() {
                 <optgroup key={p} label={`${PROVIDER_META[p].company} (${PROVIDER_META[p].name})`}>
                   {MODELS_BY_PROVIDER[p].map((m) => (
                     <option key={m.id} value={m.id}>
-                      {m.name} — ${m.inputPer1M}/${m.outputPer1M} per 1M
+                      {m.name}, ${m.inputPer1M}/${m.outputPer1M} per 1M
                     </option>
                   ))}
                 </optgroup>
@@ -207,7 +206,7 @@ function CostCalculator() {
                   onClick={() => setModelId(cheapest.model.id)}
                   className="mt-2 text-left text-[10px] leading-snug text-accent underline decoration-accent-line underline-offset-2"
                 >
-                  {cheapest.model.name} would run this for about {formatUSD(cheapest.total)} — switch?
+                  {cheapest.model.name} would run this for about {formatUSD(cheapest.total)}, switch?
                 </button>
               )}
 
@@ -268,7 +267,7 @@ const USE_CASES = [
   { title: "Startups", examples: "Latest round, investors, product summary, competitors" },
   { title: "Universities", examples: "Ranking, acceptance rate, tuition, notable alumni" },
   { title: "Products", examples: "Pricing, reviews, feature set, competitors, G2 rating" },
-  { title: "Anything else", examples: "Countries, property, restaurants, papers — just describe it" },
+  { title: "Anything else", examples: "Countries, property, restaurants, papers, just describe it" },
 ];
 
 const STEPS = [
@@ -285,7 +284,7 @@ const STEPS = [
   {
     n: "03",
     t: "Pick a model, add your key",
-    d: "GPT, Gemini, Claude or Grok. See the cost before you commit. Key stays in memory.",
+    d: "GPT, Gemini, Claude or Grok. See the cost before you commit, and your key stays in memory.",
   },
   {
     n: "04",
@@ -356,8 +355,8 @@ export default function LandingPage() {
 
           <p className="animate-rise delay-200 mx-auto mt-6 max-w-xl text-base leading-relaxed text-ink-2 sm:text-lg">
             The open-source alternative to Clay. Point it at a CSV, describe what you need in plain
-            English, and it researches every row with AI and live web search. You pay the model provider
-            directly — we take nothing.
+            English, and every row is researched with AI and live web search. You pay the model
+            provider directly and we take nothing.
           </p>
 
           <div className="animate-rise delay-300 mt-9 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
@@ -365,7 +364,7 @@ export default function LandingPage() {
               href="/tool"
               className="inline-flex w-full items-center justify-center gap-2 rounded bg-accent px-7 py-3 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-hover sm:w-auto"
             >
-              Start enriching — free
+              Start enriching for free
               <span aria-hidden="true">→</span>
             </Link>
             <a
@@ -394,7 +393,7 @@ export default function LandingPage() {
               <span className="h-2 w-2 rounded-full bg-line-strong" />
               <span className="h-2 w-2 rounded-full bg-line-strong" />
               <span className="ml-2 font-mono text-[10px] text-ink-3">
-                prospect_list.csv — enriched
+                prospect_list.csv, enriched
               </span>
             </div>
             <div className="thin-scroll overflow-x-auto">
@@ -431,7 +430,7 @@ export default function LandingPage() {
             </div>
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-3 py-2">
               <span className="font-mono text-[10px] text-ink-3">
-                Illustrative example. Real output varies — always verify.
+                Illustrative example. Real output varies, so always verify.
               </span>
               <span className="flex items-center gap-1.5 font-mono text-[10px] text-data">
                 <span className="h-1.5 w-1.5 rounded-full bg-data" />
@@ -449,15 +448,14 @@ export default function LandingPage() {
             <SectionLabel>What it does</SectionLabel>
             <Heading>Research for any dataset.</Heading>
             <p className="mt-4 max-w-2xl text-base text-ink-2">
-              Every row gets its own prompt, its own web search and its own answer. It works for any kind
-              of list — not just companies. Browse{" "}
+              Every row gets its own prompt, its own web search and its own answer, so it works for any
+              kind of list, not just companies. Browse{" "}
               <Link
                 href="/use-cases"
                 className="text-accent underline decoration-accent-line underline-offset-2"
               >
                 worked examples
-              </Link>
-              .
+              </Link>.
             </p>
           </R>
 
@@ -474,46 +472,41 @@ export default function LandingPage() {
             ))}
           </div>
 
-          {/* Honest limitations */}
+          {/* Positioning, not apology: say what it is built for. */}
           <R className="delay-400">
-            <div className="mt-12 rounded border border-warn-line bg-warn-soft p-5">
-              <h3 className="flex items-center gap-2 text-sm font-semibold text-warn">
-                <AlertIcon className="h-4 w-4" />
-                Where this differs from Clay — and where it falls short
+            <div className="mt-12 rounded border border-line bg-surface p-5">
+              <h3 className="text-sm font-semibold text-ink">
+                Built for research, not directory lookups
               </h3>
               <p className="mt-2.5 text-[13px] leading-relaxed text-ink-2">
-                Clay connects to 150+ verified data providers (Apollo, ZoomInfo, Clearbit) for structured
-                lookups. OpenClay does something different: it uses{" "}
-                <strong className="font-semibold text-ink">AI plus live web search</strong> to research each
-                row, closer to Clay&apos;s Claygent. That trade-off cuts both ways:
-              </p>
-              <p className="mt-2.5 text-[13px] leading-relaxed text-ink-2">
-                Full breakdown on the{" "}
-                <Link
-                  href="/alternatives/clay"
-                  className="text-accent underline decoration-accent-line underline-offset-2"
-                >
-                  Clay comparison page
-                </Link>
-                .
+                Clay queries 150+ data providers for structured records. OpenClay does the other
+                half of the job: it reads the live web and answers a question you write yourself,
+                per row. That makes it the right tool whenever the answer exists in public and the
+                question is specific to you.
               </p>
               <ul className="mt-3 space-y-2 text-[13px] text-ink-2">
                 {[
-                  ["good", "Public information, news, company overviews — anything findable on the open web"],
-                  ["good", "Custom research questions that don't fit a rigid data-provider schema"],
-                  ["bad", "Verified contact emails and phone numbers, or anything behind a proprietary database"],
-                  ["bad", "Guaranteed accuracy — a model can be confidently wrong, so spot-check before acting"],
-                ].map(([kind, text]) => (
+                  "Company overviews, funding, leadership, headcount and recent news",
+                  "Custom questions no data-provider schema has a field for",
+                  "Any list at all: products, universities, competitors, countries",
+                  "Live answers, researched at the moment you run them",
+                ].map((text) => (
                   <li key={text} className="flex items-start gap-2">
-                    {kind === "good" ? (
-                      <CheckIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-data" />
-                    ) : (
-                      <AlertIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warn" />
-                    )}
+                    <CheckIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-data" />
                     <span>{text}</span>
                   </li>
                 ))}
               </ul>
+              <p className="mt-3.5 text-[13px] leading-relaxed text-ink-2">
+                Pair it with a contact-data provider when you also need verified emails and phone
+                numbers. See the full{" "}
+                <Link
+                  href="/alternatives/clay"
+                  className="text-accent underline decoration-accent-line underline-offset-2"
+                >
+                  side-by-side comparison
+                </Link>.
+              </p>
             </div>
           </R>
         </div>
@@ -553,14 +546,13 @@ export default function LandingPage() {
             </Heading>
             <p className="mt-4 max-w-2xl text-base text-ink-2">
               No markup, no credits, no seats. You are billed by OpenAI, Google, Anthropic or xAI at their
-              published rates — and the tool tells you the number before you commit. See{" "}
+              published rates, and the tool tells you the number before you commit. See{" "}
               <Link
                 href="/models"
                 className="text-accent underline decoration-accent-line underline-offset-2"
               >
                 every model compared
-              </Link>
-              .
+              </Link>.
             </p>
           </R>
           <R className="delay-200">
@@ -677,7 +669,7 @@ export default function LandingPage() {
               ))}
             </div>
             <p className="mt-6 text-center text-xs text-ink-3">
-              Don&apos;t take our word for it —{" "}
+              Don&apos;t take our word for it.{" "}
               <a
                 href="https://github.com/raghav3600/Altclay"
                 target="_blank"
@@ -685,8 +677,7 @@ export default function LandingPage() {
                 className="text-accent underline decoration-accent-line underline-offset-2"
               >
                 read the source
-              </a>
-              .
+              </a>.
             </p>
           </R>
         </div>
@@ -746,9 +737,9 @@ export default function LandingPage() {
               Built in the open by Raghav
             </h2>
             <p className="mx-auto mt-3 max-w-md text-[13px] leading-relaxed text-ink-2">
-              OpenClay exists because enrichment shouldn&apos;t cost $150 a month. Several features here —
-              the reset control, the token and rate-limit stats, exponential backoff — came from users who
-              wrote in. Tell me what&apos;s missing.
+              OpenClay exists because enrichment shouldn&apos;t cost $150 a month. Several features here came
+              straight from users who wrote in: the reset control, the token and rate-limit stats, and
+              exponential backoff. Tell me what&apos;s missing.
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
               <a

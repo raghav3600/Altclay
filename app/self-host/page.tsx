@@ -3,7 +3,7 @@ import { pageMetadata, howToJsonLd, REPO_URL } from "@/lib/seo";
 import { ContentPage, H2, H3, P, UL, LI, Pre, Code, CTA } from "@/app/components/ContentPage";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Self-host OpenClay — clone, run and deploy in minutes",
+  title: "Self-host OpenClay: clone, run and deploy in minutes",
   description:
     "Run OpenClay locally or deploy your own instance to Vercel. No database, no environment variables, no accounts. Clone the repo, npm install, npm run dev.",
   path: "/self-host",
@@ -47,7 +47,7 @@ cd Altclay
 npm install
 npm run dev`}</Pre>
       <P>
-        Open <Code>http://localhost:3000</Code>. That is the whole setup — no <Code>.env</Code> to
+        Open <Code>http://localhost:3000</Code>. That is the whole setup. There is no <Code>.env</Code> to
         fill in, because API keys are entered in the browser at run time and never read from the
         environment.
       </P>
@@ -55,14 +55,14 @@ npm run dev`}</Pre>
       <H3>Requirements</H3>
       <UL>
         <LI>Node.js 20 or newer.</LI>
-        <LI>An API key from OpenAI, Google, Anthropic or xAI — whichever you want to enrich with.</LI>
+        <LI>An API key from OpenAI, Google, Anthropic or xAI, whichever you prefer.</LI>
         <LI>Nothing else. No Postgres, no Redis, no queue, no object storage.</LI>
       </UL>
 
       <H2>Deploy your own instance</H2>
       <P>
         The project is a stock Next.js App Router app and deploys to Vercel&apos;s free tier without
-        configuration. Fork the repo, import it in Vercel, and deploy — there are no environment
+        configuration. Fork the repo, import it in Vercel, and deploy. There are no environment
         variables to set.
       </P>
       <Pre>{`# or from the CLI
@@ -77,28 +77,28 @@ vercel`}</Pre>
       <H2>How it is put together</H2>
       <UL>
         <LI>
-          <Code>app/tool/page.tsx</Code> — the enrichment UI and run loop.
+          <Code>app/tool/page.tsx</Code>: the enrichment UI and run loop.
         </LI>
         <LI>
-          <Code>lib/pricing.ts</Code> — the model catalog. Add a model here and the picker, cost
+          <Code>lib/pricing.ts</Code>: the model catalog. Add a model here and the picker, cost
           estimator, comparison pages and SEO copy all pick it up.
         </LI>
         <LI>
-          <Code>lib/enrichClient.ts</Code> — the retry loop, with jittered exponential backoff.
+          <Code>lib/enrichClient.ts</Code>: the retry loop, with jittered exponential backoff.
         </LI>
         <LI>
-          <Code>lib/promptTemplates.ts</Code> — builds the per-row prompt and validates custom
+          <Code>lib/promptTemplates.ts</Code>: builds the per-row prompt and validates custom
           templates.
         </LI>
         <LI>
-          <Code>app/api/enrich/route.ts</Code> — the proxy. It logs nothing and stores nothing.
+          <Code>app/api/enrich/route.ts</Code>: the proxy. It logs nothing and stores nothing.
         </LI>
       </UL>
 
       <H3>Why a proxy exists at all</H3>
       <P>
         Browsers block direct cross-origin calls to these provider APIs, so the request has to pass
-        through a same-origin endpoint. That route forwards the key and returns the response — it
+        through a same-origin endpoint. That route forwards the key and returns the response. It
         does not read, log or persist the body. If you are self-hosting, the key never leaves
         infrastructure you control.
       </P>

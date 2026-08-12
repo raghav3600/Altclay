@@ -11,8 +11,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.74.0",
-    "@google/generative-ai": "^0.24.1",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/papaparse": "^5.5.2",
     "@vercel/analytics": "^1.6.1",

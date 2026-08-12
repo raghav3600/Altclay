@@ -7,8 +7,8 @@
  * "http://localhost:6379" would be fetched by our server, from inside our
  * network, with our credentials available to whatever responds.
  *
- * Self-hosters legitimately want localhost — that is how you reach Ollama or
- * LM Studio — so private ranges are permitted only when the deployment opts in
+ * Self-hosters legitimately want localhost, that is how you reach Ollama or
+ * LM Studio, so private ranges are permitted only when the deployment opts in
  * via OPENCLAY_ALLOW_PRIVATE_ENDPOINTS. The hosted instance leaves it off.
  */
 
@@ -97,7 +97,7 @@ export function checkEndpointUrl(raw: string, allowPrivate = privateEndpointsAll
 
   // Plaintext to a public host would put the API key on the wire.
   if (url.protocol === "http:" && !isPrivate) {
-    return { ok: false, error: "Use https for a public host — http would send your API key in plaintext." };
+    return { ok: false, error: "Use https for a public host, http would send your API key in plaintext." };
   }
 
   return { ok: true, url };

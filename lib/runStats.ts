@@ -52,7 +52,7 @@ export class TokenRateTracker {
 
 /**
  * Count cells the model couldn't fill. Treats blank, "N/A", "n/a", "unknown"
- * and "none" as misses — models use all of these interchangeably, so counting
+ * and "none" as misses, models use all of these interchangeably, so counting
  * only the literal "N/A" the prompt asks for would undercount badly.
  */
 const MISSING_VALUES = new Set(["", "n/a", "na", "none", "unknown", "not available", "null", "-"]);
@@ -90,9 +90,9 @@ export function estimateRemainingMs(
   return Math.round(msPerRow * (total - completed));
 }
 
-/** "1h 04m", "3m 20s", "45s" — compact enough for a progress line. */
+/** "1h 04m", "3m 20s", "45s", compact enough for a progress line. */
 export function formatDuration(ms: number): string {
-  if (!Number.isFinite(ms) || ms < 0) return "—";
+  if (!Number.isFinite(ms) || ms < 0) return ", ";
   const totalSeconds = Math.round(ms / 1000);
   if (totalSeconds < 60) return `${totalSeconds}s`;
 
@@ -115,7 +115,7 @@ export function formatFinishTime(remainingMs: number, now: number = Date.now()):
 /**
  * Money, rounded honestly.
  *
- * A run that costs a third of a cent is not "$0.00" — that reads as free and
+ * A run that costs a third of a cent is not "$0.00", that reads as free and
  * makes the whole estimator look broken. Sub-cent totals get "<$0.01" instead.
  */
 export function formatUSD(n: number): string {

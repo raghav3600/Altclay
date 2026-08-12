@@ -6,7 +6,7 @@ function escapeRegex(s: string): string {
 }
 
 /**
- * Build the prompt *template* — the reusable form, with `{column}` placeholders
+ * Build the prompt *template*, the reusable form, with `{column}` placeholders
  * left un-substituted.
  *
  * This is what advanced mode must edit. Handing users a prompt with row 1's
@@ -50,7 +50,7 @@ export function renderPrompt(
 
 /**
  * The prompt actually sent for one row. Pass `customTemplate` to use an
- * edited template instead of the generated one — either way the row's values
+ * edited template instead of the generated one, either way the row's values
  * are substituted at this point, never earlier.
  */
 export function buildPrompt(
@@ -81,7 +81,7 @@ export interface TemplateWarning {
 
 /**
  * Guardrail for advanced mode. A template with no placeholders sends a byte-identical
- * prompt for every row, which silently produces the same answer N times — the
+ * prompt for every row, which silently produces the same answer N times, the
  * failure mode that shipped before this check existed.
  */
 export function validateTemplate(

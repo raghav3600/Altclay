@@ -40,7 +40,7 @@ cat <<'BANNER'
   OpenClay is ready.
 
   Starting the dev server on http://localhost:3000
-  There is no .env to configure — you enter your API key in the browser,
+  There is no .env to configure, you enter your API key in the browser,
   and it is never written to disk.
 
   Stop with Ctrl-C. Start again later with:  npm run dev

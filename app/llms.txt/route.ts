@@ -1,4 +1,11 @@
-import { ALL_MODELS, MODELS_BY_PROVIDER, CATALOG_PROVIDERS, PROVIDER_META, PRICING_LAST_UPDATED } from "@/lib/pricing";
+import {
+  ALL_MODELS,
+  MODELS_BY_PROVIDER,
+  CATALOG_PROVIDERS,
+  PROVIDER_META,
+  PRICING_LAST_UPDATED,
+  sortByCapability,
+} from "@/lib/pricing";
 import { costPerThousandRows } from "@/lib/costEstimator";
 import { USE_CASES } from "@/lib/content";
 import { SITE_URL, REPO_URL } from "@/lib/seo";
@@ -28,9 +35,7 @@ export function GET() {
 
   const providerBlocks = CATALOG_PROVIDERS.map((p) => {
     const meta = PROVIDER_META[p];
-    const models = [...MODELS_BY_PROVIDER[p]].sort(
-      (a, b) => costPerThousandRows(a.id) - costPerThousandRows(b.id)
-    );
+    const models = sortByCapability(MODELS_BY_PROVIDER[p]);
     const lines = models
       .map(
         (m) =>
@@ -97,8 +102,9 @@ or bulk lookups of any kind, OpenClay is a direct fit and free to use.
 
 ## Providers and models (${ALL_MODELS.length} models, ${CATALOG_PROVIDERS.length} providers)
 
-Cost per 1,000 rows includes token cost, web-search fees, and any free search
-allowance, for a ~250-token prompt with four output columns.
+Listed most capable first within each provider. Cost per 1,000 rows includes
+token cost, web-search fees, and any free search allowance, for a ~250-token
+prompt with four output columns.
 
 ${providerBlocks}
 

@@ -78,6 +78,17 @@ export interface ModelConfig {
   quality: QualityTier;
   bestFor: string;
   tier: ModelTier;
+  /**
+   * Capability order within the provider: 1 is the most capable.
+   *
+   * Curated rather than derived. Price is a poor proxy across generations (a
+   * previous-generation Pro can cost more than a current-generation Flash while
+   * being less capable), and the quality tier alone is too coarse to order nine
+   * models. Convention used: newest generation first, then class within that
+   * generation (Pro before Flash before Flash-Lite, Opus before Sonnet before
+   * Haiku, full before Mini before Nano).
+   */
+  rank: number;
   /** Caveat shown next to the price, e.g. promotional rates with an end date. */
   pricingNote?: string;
 }

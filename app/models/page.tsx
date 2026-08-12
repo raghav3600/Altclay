@@ -1,6 +1,14 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ALL_MODELS, MODELS_BY_PROVIDER, PROVIDER_META, CATALOG_PROVIDERS, PRICING_LAST_UPDATED } from "@/lib/pricing";
+import {
+  ALL_MODELS,
+  MODELS_BY_PROVIDER,
+  PROVIDER_META,
+  CATALOG_PROVIDERS,
+  PRICING_LAST_UPDATED,
+  sortByCapability,
+  sortByProviderThenCapability,
+} from "@/lib/pricing";
 import { costPerThousandRows } from "@/lib/costEstimator";
 import { formatUSD } from "@/lib/runStats";
 import { pageMetadata, SITE_URL, jsonLdScript } from "@/lib/seo";
@@ -8,7 +16,7 @@ import { ContentPage, H2, P, CTA } from "@/app/components/ContentPage";
 import { ProviderLogo } from "@/app/components/icons";
 
 export const metadata: Metadata = pageMetadata({
-  title: `AI model pricing compared: ${ALL_MODELS.length} models`,
+  title: `AI Model Pricing Compared: ${ALL_MODELS.length} Models`,
   description: `Side-by-side API pricing for ${ALL_MODELS.length} models from OpenAI, Google, Anthropic and xAI, including web-search fees and real cost per 1,000 enriched rows. Verified ${PRICING_LAST_UPDATED}.`,
   path: "/models",
   keywords: [
@@ -23,9 +31,8 @@ export const metadata: Metadata = pageMetadata({
 
 /** A real comparison table is the kind of page that earns links. */
 export default function ModelsIndex() {
-  const rows = [...ALL_MODELS].sort(
-    (a, b) => costPerThousandRows(a.id) - costPerThousandRows(b.id)
-  );
+  // Grouped by provider, most capable first, with cost alongside for comparison.
+  const rows = sortByProviderThenCapability(ALL_MODELS);
 
   const itemList = {
     "@context": "https://schema.org",
@@ -53,7 +60,7 @@ export default function ModelsIndex() {
   return (
     <ContentPage
       title="AI model pricing, compared honestly"
-      lede={`Every model OpenClay supports, ranked by what 1,000 enriched rows actually cost, counting tokens plus web-search fees and any free allowance. Verified ${PRICING_LAST_UPDATED} against each provider's published rates.`}
+      lede={`Every model OpenClay supports, grouped by provider and listed most capable first, with what 1,000 enriched rows actually cost on each. Verified ${PRICING_LAST_UPDATED} against each provider's published rates.`}
       updated={PRICING_LAST_UPDATED}
       crumbs={[
         { name: "Home", path: "/" },
@@ -137,6 +144,7 @@ export default function ModelsIndex() {
           const cheapest = [...models].sort(
             (a, b) => costPerThousandRows(a.id) - costPerThousandRows(b.id)
           )[0];
+          const best = sortByCapability(models)[0];
           return (
             <Link
               key={p}
@@ -148,7 +156,10 @@ export default function ModelsIndex() {
                 {meta.company} {meta.name}
               </h3>
               <p className="mt-1.5 font-mono text-[11px] text-ink-2 tnum">
-                {models.length} models · from {formatUSD(costPerThousandRows(cheapest.id))}/1k rows
+                {models.length} models · best: {best.name}
+              </p>
+              <p className="font-mono text-[10px] text-ink-3 tnum">
+                from {formatUSD(costPerThousandRows(cheapest.id))} per 1k rows
               </p>
             </Link>
           );

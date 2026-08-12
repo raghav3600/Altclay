@@ -2,7 +2,13 @@
 
 import { useMemo, useState } from "react";
 import type { CustomEndpoint, ModelConfig, Provider } from "@/lib/types";
-import { MODELS_BY_PROVIDER, PROVIDER_META, PROVIDER_ORDER, searchModels } from "@/lib/pricing";
+import {
+  MODELS_BY_PROVIDER,
+  PROVIDER_META,
+  PROVIDER_ORDER,
+  searchModels,
+  sortByCapability,
+} from "@/lib/pricing";
 import { checkEndpointUrl } from "@/lib/customEndpoint";
 import { costPerThousandRows as modelCostPerThousandRows } from "@/lib/costEstimator";
 import { ProviderLogo, SearchIcon, CheckIcon } from "./icons";
@@ -263,16 +269,17 @@ export function ModelPicker({
 
   const { visible, hiddenCount } = useMemo(() => {
     const matched = searchModels(all, query);
-    const byCost = [...matched].sort((a, b) => costPerThousandRows(a) - costPerThousandRows(b));
+    // Most capable first: a picker should open on the best option, not the cheapest.
+    const ordered = sortByCapability(matched);
 
     // A search should look at everything; the tier filter is only for the
     // default, unsearched view.
-    if (query.trim() || showAll) return { visible: byCost, hiddenCount: 0 };
+    if (query.trim() || showAll) return { visible: ordered, hiddenCount: 0 };
 
-    const recommended = byCost.filter((m) => m.tier === "recommended");
+    const recommended = ordered.filter((m) => m.tier === "recommended");
     return {
-      visible: recommended.length > 0 ? recommended : byCost,
-      hiddenCount: Math.max(0, byCost.length - recommended.length),
+      visible: recommended.length > 0 ? recommended : ordered,
+      hiddenCount: Math.max(0, ordered.length - recommended.length),
     };
   }, [all, query, showAll]);
 

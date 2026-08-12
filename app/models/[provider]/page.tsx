@@ -7,6 +7,7 @@ import {
   PROVIDER_META,
   CATALOG_PROVIDERS,
   PRICING_LAST_UPDATED,
+  sortByCapability,
 } from "@/lib/pricing";
 import { costPerThousandRows } from "@/lib/costEstimator";
 import { formatUSD } from "@/lib/runStats";
@@ -84,16 +85,17 @@ export default async function ProviderPage({
 
   const meta = PROVIDER_META[provider];
   const notes = PROVIDER_NOTES[provider]!;
-  const models = [...MODELS_BY_PROVIDER[provider]].sort(
+  // Most capable first.
+  const models = sortByCapability(MODELS_BY_PROVIDER[provider]);
+  const best = models[0];
+  const cheapest = [...models].sort(
     (a, b) => costPerThousandRows(a.id) - costPerThousandRows(b.id)
-  );
-  const cheapest = models[0];
-  const best = models.find((m) => m.quality === "best") ?? models[models.length - 1];
+  )[0];
 
   return (
     <ContentPage
       title={`${meta.company} ${meta.name} pricing for enrichment`}
-      lede={`All ${models.length} ${meta.company} models OpenClay supports, ranked by what 1,000 enriched rows actually cost once search fees are included.`}
+      lede={`All ${models.length} ${meta.company} models OpenClay supports, listed most capable first, with what 1,000 enriched rows cost on each once search fees are included.`}
       updated={PRICING_LAST_UPDATED}
       crumbs={[
         { name: "Home", path: "/" },
@@ -108,17 +110,17 @@ export default async function ProviderPage({
 
       <div className="mb-6 grid gap-3 sm:grid-cols-2">
         <div className="rounded border border-line bg-surface-2 p-3">
-          <div className="eyebrow">Cheapest per row</div>
-          <div className="mt-1 text-sm font-semibold text-ink">{cheapest.name}</div>
-          <div className="font-mono text-[11px] text-ink-2 tnum">
-            {formatUSD(costPerThousandRows(cheapest.id))} per 1,000 rows
-          </div>
-        </div>
-        <div className="rounded border border-line bg-surface-2 p-3">
           <div className="eyebrow">Most capable</div>
           <div className="mt-1 text-sm font-semibold text-ink">{best.name}</div>
           <div className="font-mono text-[11px] text-ink-2 tnum">
             {formatUSD(costPerThousandRows(best.id))} per 1,000 rows
+          </div>
+        </div>
+        <div className="rounded border border-line bg-surface-2 p-3">
+          <div className="eyebrow">Lowest cost per row</div>
+          <div className="mt-1 text-sm font-semibold text-ink">{cheapest.name}</div>
+          <div className="font-mono text-[11px] text-ink-2 tnum">
+            {formatUSD(costPerThousandRows(cheapest.id))} per 1,000 rows
           </div>
         </div>
       </div>

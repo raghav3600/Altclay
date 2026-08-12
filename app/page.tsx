@@ -2,7 +2,14 @@
 
 import { useEffect, useRef, useState, useMemo } from "react";
 import Link from "next/link";
-import { ALL_MODELS, MODELS_BY_PROVIDER, PROVIDER_META, CATALOG_PROVIDERS, getModel } from "@/lib/pricing";
+import {
+  ALL_MODELS,
+  MODELS_BY_PROVIDER,
+  PROVIDER_META,
+  CATALOG_PROVIDERS,
+  getModel,
+  sortByCapability,
+} from "@/lib/pricing";
 import { estimateCostSimple } from "@/lib/costEstimator";
 import { formatUSD, formatUSDRange } from "@/lib/runStats";
 import { FAQJsonLd, FAQ_ITEMS } from "./structured-data";
@@ -143,7 +150,7 @@ function CostCalculator() {
             >
               {CATALOG_PROVIDERS.map((p) => (
                 <optgroup key={p} label={`${PROVIDER_META[p].company} (${PROVIDER_META[p].name})`}>
-                  {MODELS_BY_PROVIDER[p].map((m) => (
+                  {sortByCapability(MODELS_BY_PROVIDER[p]).map((m) => (
                     <option key={m.id} value={m.id}>
                       {m.name}, ${m.inputPer1M}/${m.outputPer1M} per 1M
                     </option>

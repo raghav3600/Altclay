@@ -89,6 +89,7 @@ const ANTHROPIC: ModelConfig[] = [
     quality: "good",
     bestFor: "High-volume runs where throughput matters more than depth",
     tier: "recommended",
+    rank: 5,
   },
   {
     id: "claude-sonnet-5",
@@ -106,6 +107,7 @@ const ANTHROPIC: ModelConfig[] = [
     quality: "great",
     bestFor: "Near-Opus quality at Sonnet cost, the default for most datasets",
     tier: "recommended",
+    rank: 3,
     pricingNote: "Promotional rate through 31 Aug 2026, then $3 / $15",
   },
   {
@@ -124,6 +126,7 @@ const ANTHROPIC: ModelConfig[] = [
     quality: "best",
     bestFor: "Hard research where a wrong answer costs more than a few cents",
     tier: "recommended",
+    rank: 1,
   },
   {
     id: "claude-opus-4-8",
@@ -141,6 +144,7 @@ const ANTHROPIC: ModelConfig[] = [
     quality: "best",
     bestFor: "Pin this if you have already validated a run against Opus 4.8",
     tier: "standard",
+    rank: 2,
   },
   {
     id: "claude-sonnet-4-6",
@@ -158,6 +162,7 @@ const ANTHROPIC: ModelConfig[] = [
     quality: "great",
     bestFor: "Reproducing an earlier run byte-for-byte",
     tier: "legacy",
+    rank: 4,
   },
 ];
 
@@ -184,6 +189,7 @@ const GEMINI: ModelConfig[] = [
     quality: "good",
     bestFor: "Large simple lookups, the lowest cost per row of any model here",
     tier: "recommended",
+    rank: 6,
   },
   {
     id: "gemini-3-flash-preview",
@@ -198,6 +204,7 @@ const GEMINI: ModelConfig[] = [
     quality: "great",
     bestFor: "Strong quality at a fraction of flagship cost, great default",
     tier: "recommended",
+    rank: 4,
   },
   {
     id: "gemini-3.1-pro-preview",
@@ -212,6 +219,7 @@ const GEMINI: ModelConfig[] = [
     quality: "best",
     bestFor: "Google's strongest reasoning with live search grounding",
     tier: "recommended",
+    rank: 1,
   },
   {
     id: "gemini-3.6-flash",
@@ -226,6 +234,7 @@ const GEMINI: ModelConfig[] = [
     quality: "great",
     bestFor: "Latest Flash generation, cheaper output than 3.5 Flash",
     tier: "standard",
+    rank: 2,
   },
   {
     id: "gemini-3.5-flash",
@@ -240,6 +249,7 @@ const GEMINI: ModelConfig[] = [
     quality: "great",
     bestFor: "Generally available Flash, no preview caveats",
     tier: "standard",
+    rank: 3,
   },
   {
     id: "gemini-3.5-flash-lite",
@@ -254,6 +264,7 @@ const GEMINI: ModelConfig[] = [
     quality: "good",
     bestFor: "Stable low-cost tier when you want GA over preview",
     tier: "standard",
+    rank: 5,
   },
   {
     id: "gemini-2.5-flash-lite",
@@ -268,6 +279,7 @@ const GEMINI: ModelConfig[] = [
     quality: "good",
     bestFor: "Lowest token price, but search costs 2.5x the 3.x models",
     tier: "legacy",
+    rank: 9,
   },
   {
     id: "gemini-2.5-flash",
@@ -282,6 +294,7 @@ const GEMINI: ModelConfig[] = [
     quality: "good",
     bestFor: "Reproducing an earlier 2.5-era run",
     tier: "legacy",
+    rank: 8,
   },
   {
     id: "gemini-2.5-pro",
@@ -296,6 +309,7 @@ const GEMINI: ModelConfig[] = [
     quality: "great",
     bestFor: "Reproducing an earlier 2.5-era run",
     tier: "legacy",
+    rank: 7,
   },
 ];
 
@@ -322,6 +336,7 @@ const GROK: ModelConfig[] = [
     quality: "great",
     bestFor: "Cheapest output tokens of any flagship-class model here",
     tier: "recommended",
+    rank: 2,
   },
   {
     id: "grok-4.5",
@@ -336,6 +351,7 @@ const GROK: ModelConfig[] = [
     quality: "best",
     bestFor: "xAI's strongest model, with live X and web search",
     tier: "recommended",
+    rank: 1,
   },
   {
     id: "grok-4.20-0309-non-reasoning",
@@ -350,6 +366,7 @@ const GROK: ModelConfig[] = [
     quality: "good",
     bestFor: "Skips reasoning for lower latency on simple extractions",
     tier: "standard",
+    rank: 4,
   },
   {
     id: "grok-4.20-0309-reasoning",
@@ -364,6 +381,7 @@ const GROK: ModelConfig[] = [
     quality: "great",
     bestFor: "Same price as non-reasoning, with step-by-step inference",
     tier: "standard",
+    rank: 3,
   },
   {
     id: "grok-build-0.1",
@@ -378,6 +396,7 @@ const GROK: ModelConfig[] = [
     quality: "good",
     bestFor: "Cheapest xAI option; smaller context window",
     tier: "standard",
+    rank: 5,
   },
 ];
 
@@ -410,6 +429,7 @@ const OPENAI: ModelConfig[] = [
     quality: "great",
     bestFor: "Newest small model, the cheapest sensible default for OpenAI",
     tier: "recommended",
+    rank: 3,
   },
   {
     id: "gpt-5-mini",
@@ -425,6 +445,7 @@ const OPENAI: ModelConfig[] = [
     quality: "good",
     bestFor: "Well-understood workhorse for high-volume simple lookups",
     tier: "recommended",
+    rank: 8,
   },
   {
     id: "gpt-5.6-terra",
@@ -440,6 +461,7 @@ const OPENAI: ModelConfig[] = [
     quality: "best",
     bestFor: "Strong reasoning for research that needs judgement, not just lookup",
     tier: "recommended",
+    rank: 2,
   },
   {
     id: "gpt-5-nano",
@@ -455,6 +477,7 @@ const OPENAI: ModelConfig[] = [
     quality: "good",
     bestFor: "Cheapest tokens anywhere here, but the weakest at open-web research",
     tier: "standard",
+    rank: 9,
   },
   {
     id: "gpt-5.4-mini",
@@ -470,6 +493,7 @@ const OPENAI: ModelConfig[] = [
     quality: "great",
     bestFor: "Step up from Mini when answers need a little more care",
     tier: "standard",
+    rank: 5,
   },
   {
     id: "gpt-5.1",
@@ -485,6 +509,7 @@ const OPENAI: ModelConfig[] = [
     quality: "great",
     bestFor: "Mature flagship if you'd rather not run a newer release",
     tier: "standard",
+    rank: 6,
   },
   {
     id: "gpt-5.4",
@@ -500,6 +525,7 @@ const OPENAI: ModelConfig[] = [
     quality: "best",
     bestFor: "Pin this to reproduce a run already validated on GPT-5.4",
     tier: "standard",
+    rank: 4,
   },
   {
     id: "gpt-5.6-sol",
@@ -515,6 +541,7 @@ const OPENAI: ModelConfig[] = [
     quality: "best",
     bestFor: "Hardest research questions; expensive per row, so test first",
     tier: "standard",
+    rank: 1,
   },
   {
     id: "gpt-5",
@@ -530,6 +557,7 @@ const OPENAI: ModelConfig[] = [
     quality: "great",
     bestFor: "Original GPT-5, kept for reproducibility",
     tier: "legacy",
+    rank: 7,
   },
 ];
 
@@ -582,6 +610,8 @@ export function buildCustomModel(cfg: CustomEndpoint): ModelConfig {
     quality: "great",
     bestFor: "An OpenAI-compatible endpoint you control",
     tier: "recommended",
+    // Only ever one custom model at a time, so the rank is nominal.
+    rank: 1,
   };
 }
 
@@ -603,14 +633,47 @@ export function requireModel(id: string): ModelConfig {
   return m;
 }
 
-/** The model we preselect when a user switches to a provider. */
+/**
+ * The model preselected when a user switches provider.
+ *
+ * Deliberately the best-value recommended model rather than the top-ranked one:
+ * this is a bring-your-own-key tool, and opening on the most expensive option
+ * would quietly cost people money on their first run. Lists are ordered by
+ * capability; the default optimises for a cheap, representative first test.
+ */
 export function defaultModelFor(provider: Provider): ModelConfig {
   const models = MODELS_BY_PROVIDER[provider];
-  return models.find((m) => m.tier === "recommended") ?? models[0];
+  const recommended = models.filter((m) => m.tier === "recommended");
+  const pool = recommended.length > 0 ? recommended : models;
+  // A local price proxy rather than importing costPerThousandRows: the cost
+  // estimator imports this module, and a cycle here would be fragile for the
+  // sake of picking a default.
+  const priceProxy = (m: ModelConfig) =>
+    m.inputPer1M + m.outputPer1M + (m.search ? m.search.per1K : 0);
+  return [...pool].sort((a, b) => priceProxy(a) - priceProxy(b))[0];
 }
 
 export function isValidModelFor(provider: Provider, id: string): boolean {
   return MODELS_BY_PROVIDER[provider].some((m) => m.id === id);
+}
+
+/**
+ * Best model first, within a provider.
+ *
+ * This is the default order everywhere a model list is shown. Sorting by price
+ * put the weakest model at the top of every picker, which is the opposite of
+ * what someone choosing a model wants to see first.
+ */
+export function sortByCapability(models: ModelConfig[]): ModelConfig[] {
+  return [...models].sort((a, b) => a.rank - b.rank);
+}
+
+/** Across providers: group by provider order, best model first inside each. */
+export function sortByProviderThenCapability(models: ModelConfig[]): ModelConfig[] {
+  return [...models].sort(
+    (a, b) =>
+      PROVIDER_ORDER.indexOf(a.provider) - PROVIDER_ORDER.indexOf(b.provider) || a.rank - b.rank
+  );
 }
 
 /**

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { WebsiteJsonLd, SoftwareApplicationJsonLd } from "./structured-data";
 import "./globals.css";
 
@@ -97,6 +98,7 @@ export default function RootLayout({
         <SoftwareApplicationJsonLd />
         {children}
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

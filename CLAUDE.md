@@ -24,9 +24,18 @@ OpenClay is a free, open-source web tool that lets users enrich spreadsheet data
 - API key lives in React state only — never localStorage, never cookies
 
 ## Models Supported
-- Anthropic: Claude Haiku 4.5, Sonnet 4.5, Opus 4.5
-- Google: Gemini 2.0 Flash, 2.5 Flash, 2.5 Pro
-- xAI: Grok 4.1 Fast, Grok 4.20
+The catalog lives in `lib/pricing.ts` as a single `ModelConfig[]` per provider —
+add models there and the picker, cost estimator, landing page and SEO copy all
+pick them up. Do not hard-code model names or counts in the UI.
+
+- OpenAI: GPT-5.6 (Luna/Terra/Sol), GPT-5 (Mini/Nano), GPT-5.4 family, GPT-5.1
+- Google: Gemini 3.x (Flash, Flash-Lite, Pro) and the 2.5 series
+- Anthropic: Claude Haiku 4.5, Sonnet 5, Opus 5, plus previous flagships
+- xAI: Grok 4.3, 4.5, and the 4.20 variants
+
+Each model carries a `tier` (recommended/standard/legacy) that drives what the
+picker shows before "show all", and its own search pricing — including any
+per-search token overhead, which for OpenAI dominates the cost of a short row.
 
 ## Privacy Rules (NON-NEGOTIABLE)
 - NEVER use localStorage or cookies for API keys
@@ -34,6 +43,7 @@ OpenClay is a free, open-source web tool that lets users enrich spreadsheet data
 - ALWAYS show trust/privacy messaging on every step of the UI
 - API key stays in React useState() and nowhere else
 - Vercel Web Analytics is used for anonymous page views (no cookies, no personal data)
+- Session recovery (lib/sessionStore.ts) persists the in-progress session (file, settings, results) to localStorage on the user's own device so work survives a reload/tab-close. The API key is NEVER part of the saved session. This local-only storage is disclosed on the privacy page and clearable via "Start fresh".
 
 ## Commands
 - `npm run dev` — Start development server

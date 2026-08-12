@@ -222,19 +222,28 @@ function readGeminiResponse(data: {
   };
 }
 
+/**
+ * Vertex serves the Gemini 3.x models only from the `global` location, on the
+ * un-prefixed host. Using the regional host for those returns a 404 that reads
+ * like a bad model id, which is a genuinely confusing way to fail.
+ */
+function vertexEndpoint(modelId: string, projectId: string, location: string): string {
+  if (modelId.startsWith("gemini-3")) {
+    return `https://aiplatform.googleapis.com/v1/projects/${projectId}/locations/global/publishers/google/models/${modelId}:generateContent`;
+  }
+  return `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:generateContent`;
+}
+
 async function callGemini(apiKey: string, modelId: string, prompt: string, useWebSearch: boolean) {
   const vertex = parseVertexConfig(apiKey);
 
   if (vertex) {
     const accessToken = await getVertexAccessToken(vertex);
-    const res = await fetch(
-      `https://${vertex.location}-aiplatform.googleapis.com/v1/projects/${vertex.projectId}/locations/${vertex.location}/publishers/google/models/${modelId}:generateContent`,
-      {
-        method: "POST",
-        headers: { "content-type": "application/json", Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify(geminiBody(prompt, useWebSearch, modelId)),
-      }
-    );
+    const res = await fetch(vertexEndpoint(modelId, vertex.projectId, vertex.location), {
+      method: "POST",
+      headers: { "content-type": "application/json", Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify(geminiBody(prompt, useWebSearch, modelId)),
+    });
     await assertOk(res, "Vertex AI");
     return readGeminiResponse(await res.json());
   }

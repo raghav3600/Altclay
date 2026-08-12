@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getModel } from "@/lib/pricing";
 import { parseVertexConfig, getVertexAccessToken } from "@/lib/vertexAuth";
+import { checkEndpointUrl, chatCompletionsUrl } from "@/lib/customEndpoint";
 
 /*
  * Thin proxy. It forwards the user's key to the chosen provider and returns the
@@ -346,13 +347,76 @@ async function callOpenAI(apiKey: string, modelId: string, prompt: string, useWe
 }
 
 /* ------------------------------------------------------------------ */
+/*  Custom OpenAI-compatible endpoint                                   */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Chat Completions rather than the Responses API: every OpenAI-compatible
+ * gateway implements /v1/chat/completions, but almost none implement
+ * /v1/responses. One shape covers Azure, OpenRouter, Groq, Together,
+ * Fireworks, DeepInfra, Ollama, LM Studio and vLLM.
+ */
+async function callCustom(
+  apiKey: string,
+  modelId: string,
+  prompt: string,
+  baseUrl: string
+) {
+  const check = checkEndpointUrl(baseUrl);
+  if (!check.ok) throw new UpstreamError(check.error ?? "Invalid endpoint URL", 400);
+
+  const headers: Record<string, string> = { "content-type": "application/json" };
+  // Some gateways (a local Ollama, for instance) need no key at all.
+  if (apiKey) {
+    headers.Authorization = `Bearer ${apiKey}`;
+    // Azure OpenAI reads the key from its own header instead.
+    headers["api-key"] = apiKey;
+  }
+
+  const res = await fetch(chatCompletionsUrl(baseUrl), {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      model: modelId,
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: MAX_OUTPUT_TOKENS,
+      // Nudges compliant servers to emit parseable output. Gateways that don't
+      // support it generally ignore unknown fields rather than erroring.
+      response_format: { type: "json_object" },
+    }),
+  });
+  await assertOk(res, "Custom endpoint");
+
+  const data = await res.json();
+  const text: string = data?.choices?.[0]?.message?.content ?? "";
+
+  if (!text) {
+    const reason = data?.choices?.[0]?.finish_reason;
+    throw new UpstreamError(
+      `Endpoint returned no content${reason ? ` (finish_reason: ${reason})` : ""}. Check the model id.`,
+      422
+    );
+  }
+
+  return {
+    data: extractJSON(text),
+    inputTokens: data?.usage?.prompt_tokens ?? 0,
+    outputTokens: data?.usage?.completion_tokens ?? 0,
+  };
+}
+
+/* ------------------------------------------------------------------ */
 
 export async function POST(req: NextRequest) {
   try {
-    const { provider, apiKey, modelId, prompt, useWebSearch = true } = await req.json();
+    const { provider, apiKey, modelId, prompt, useWebSearch = true, baseUrl } = await req.json();
 
-    if (!apiKey || !modelId || !prompt) {
+    if (!modelId || !prompt) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+    // A local gateway may need no key; every hosted provider does.
+    if (!apiKey && provider !== "custom") {
+      return NextResponse.json({ error: "Missing API key" }, { status: 400 });
     }
 
     const result =
@@ -364,7 +428,9 @@ export async function POST(req: NextRequest) {
             ? await callGrok(apiKey, modelId, prompt, useWebSearch)
             : provider === "openai"
               ? await callOpenAI(apiKey, modelId, prompt, useWebSearch)
-              : null;
+              : provider === "custom"
+                ? await callCustom(apiKey, modelId, prompt, baseUrl)
+                : null;
 
     if (!result) return NextResponse.json({ error: "Unknown provider" }, { status: 400 });
     return NextResponse.json(result);

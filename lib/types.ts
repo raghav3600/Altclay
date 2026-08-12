@@ -1,4 +1,21 @@
-export type Provider = "anthropic" | "gemini" | "grok" | "openai";
+export type Provider = "anthropic" | "gemini" | "grok" | "openai" | "custom";
+
+/**
+ * A user-supplied OpenAI-compatible endpoint.
+ *
+ * One adapter covers Azure OpenAI, OpenRouter, Groq, Together, Fireworks,
+ * DeepInfra, Ollama, LM Studio and vLLM, because they all speak
+ * /v1/chat/completions. Prices are entered by the user since we cannot know
+ * them; zero means "don't pretend to estimate".
+ */
+export interface CustomEndpoint {
+  baseUrl: string;
+  modelId: string;
+  inputPer1M: number;
+  outputPer1M: number;
+  /** Most OpenAI-compatible gateways do not implement a server-side search tool. */
+  supportsSearch: boolean;
+}
 
 export type SpeedTier = "fast" | "medium" | "slow";
 export type QualityTier = "good" | "great" | "best";

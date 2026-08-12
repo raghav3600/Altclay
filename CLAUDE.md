@@ -32,6 +32,8 @@ pick them up. Do not hard-code model names or counts in the UI.
 - Google: Gemini 3.x (Flash, Flash-Lite, Pro) and the 2.5 series
 - Anthropic: Claude Haiku 4.5, Sonnet 5, Opus 5, plus previous flagships
 - xAI: Grok 4.3, 4.5, and the 4.20 variants
+- Custom: any OpenAI-compatible /v1/chat/completions endpoint (Azure, OpenRouter,
+  Groq, Together, vLLM, Ollama, LM Studio), configured by the user at run time
 
 Each model carries a `tier` (recommended/standard/legacy) that drives what the
 picker shows before "show all", and its own search pricing — including any
@@ -45,7 +47,16 @@ per-search token overhead, which for OpenAI dominates the cost of a short row.
 - Vercel Web Analytics is used for anonymous page views (no cookies, no personal data)
 - Session recovery (lib/sessionStore.ts) persists the in-progress session (file, settings, results) to localStorage on the user's own device so work survives a reload/tab-close. The API key is NEVER part of the saved session. This local-only storage is disclosed on the privacy page and clearable via "Start fresh".
 
+## Environment
+- `OPENCLAY_ALLOW_PRIVATE_ENDPOINTS` (default false) — permits custom endpoints on
+  loopback/private addresses so a self-hoster can use a local model. Leave OFF on
+  any publicly reachable instance: the proxy runs server-side, so allowing private
+  addresses turns a user-supplied URL into an SSRF vector (cloud metadata, internal
+  services). Validation lives in `lib/customEndpoint.ts`.
+
 ## Commands
 - `npm run dev` — Start development server
 - `npm run build` — Build for production
 - `npm run lint` — Run ESLint
+- `npm run typecheck` — tsc --noEmit
+- `npm run setup` — install and start (for people who just cloned)

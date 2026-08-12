@@ -5,7 +5,7 @@ import type { Provider } from "@/lib/types";
 import {
   MODELS_BY_PROVIDER,
   PROVIDER_META,
-  PROVIDER_ORDER,
+  CATALOG_PROVIDERS,
   PRICING_LAST_UPDATED,
 } from "@/lib/pricing";
 import { costPerThousandRows } from "@/lib/costEstimator";
@@ -14,12 +14,13 @@ import { pageMetadata } from "@/lib/seo";
 import { ContentPage, H2, H3, P, UL, LI, Code, CTA } from "@/app/components/ContentPage";
 import { ProviderLogo } from "@/app/components/icons";
 
+// Only catalogued providers get a pricing page; the custom endpoint has none.
 function isProvider(v: string): v is Provider {
-  return (PROVIDER_ORDER as string[]).includes(v);
+  return (CATALOG_PROVIDERS as string[]).includes(v);
 }
 
 export function generateStaticParams() {
-  return PROVIDER_ORDER.map((p) => ({ provider: p }));
+  return CATALOG_PROVIDERS.map((p) => ({ provider: p }));
 }
 
 export async function generateMetadata({
@@ -46,7 +47,7 @@ export async function generateMetadata({
 }
 
 /** Provider-specific quirks worth knowing before a large run. */
-const PROVIDER_NOTES: Record<Provider, { searchNote: string; quirk: string }> = {
+const PROVIDER_NOTES: Partial<Record<Provider, { searchNote: string; quirk: string }>> = {
   openai: {
     searchNote:
       "OpenAI bills web search at $10 per 1,000 calls plus the search content itself as input tokens — roughly 8k per search. On a short enrichment prompt that overhead is the dominant cost, not the prompt.",
@@ -82,7 +83,7 @@ export default async function ProviderPage({
   if (!isProvider(provider)) notFound();
 
   const meta = PROVIDER_META[provider];
-  const notes = PROVIDER_NOTES[provider];
+  const notes = PROVIDER_NOTES[provider]!;
   const models = [...MODELS_BY_PROVIDER[provider]].sort(
     (a, b) => costPerThousandRows(a.id) - costPerThousandRows(b.id)
   );
@@ -195,7 +196,7 @@ export default async function ProviderPage({
 
       <H3>Compare against other providers</H3>
       <UL>
-        {PROVIDER_ORDER.filter((p) => p !== provider).map((p) => (
+        {CATALOG_PROVIDERS.filter((p) => p !== provider).map((p) => (
           <LI key={p}>
             <Link
               href={`/models/${p}`}

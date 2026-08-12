@@ -1,0 +1,14 @@
+services:
+  openclay:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      # Allows a local model server (Ollama, LM Studio) as a custom endpoint.
+      # Only safe because this instance is not exposed to the internet.
+      - OPENCLAY_ALLOW_PRIVATE_ENDPOINTS=true
+    # host.docker.internal lets the container reach a model server on your Mac
+    # or Windows host. On Linux, use --network host instead.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped

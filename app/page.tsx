@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo } from "react";
 import Link from "next/link";
-import { ALL_MODELS, MODELS_BY_PROVIDER, PROVIDER_META, PROVIDER_ORDER, getModel } from "@/lib/pricing";
+import { ALL_MODELS, MODELS_BY_PROVIDER, PROVIDER_META, CATALOG_PROVIDERS, getModel } from "@/lib/pricing";
 import { estimateCostSimple } from "@/lib/costEstimator";
 import { formatUSD, formatUSDRange } from "@/lib/runStats";
 import { FAQJsonLd, FAQ_ITEMS } from "./structured-data";
@@ -142,7 +142,7 @@ function CostCalculator() {
               onChange={(e) => setModelId(e.target.value)}
               className="mt-1.5 w-full rounded border border-line bg-surface-2 px-2.5 py-2 font-mono text-xs text-ink focus:border-accent focus:bg-surface focus:outline-none"
             >
-              {PROVIDER_ORDER.map((p) => (
+              {CATALOG_PROVIDERS.map((p) => (
                 <optgroup key={p} label={`${PROVIDER_META[p].company} (${PROVIDER_META[p].name})`}>
                   {MODELS_BY_PROVIDER[p].map((m) => (
                     <option key={m.id} value={m.id}>
@@ -298,7 +298,7 @@ const COMPARISON: [string, string, string][] = [
   ["Platform fee", "$149 – $800/mo", "$0 forever"],
   ["AI research per row", "Uses your Clay credits", "Paid to the provider directly"],
   ["500 rows researched", "Eats credit quota", "~$1 – $10 in API usage"],
-  ["Model choice", "Claygent's model", `${PROVIDER_ORDER.length} providers, ${ALL_MODELS.length} models`],
+  ["Model choice", "Claygent's model", `${CATALOG_PROVIDERS.length} providers, ${ALL_MODELS.length} models`],
   ["Web search", "Yes, via Claygent", "Yes, built in"],
   ["Where your data lives", "Their servers", "Your browser"],
   ["Rate-limit handling", "Managed for you", "Backoff + retry + tunable concurrency"],
@@ -377,7 +377,7 @@ export default function LandingPage() {
           </div>
 
           <div className="animate-fade delay-500 mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 font-mono text-[10px] text-ink-3">
-            {["We charge $0, always", "Nothing stored", "Open source", `${PROVIDER_ORDER.length} providers, ${ALL_MODELS.length} models`].map((t) => (
+            {["We charge $0, always", "Nothing stored", "Open source", `${CATALOG_PROVIDERS.length} providers, ${ALL_MODELS.length} models`].map((t) => (
               <span key={t} className="flex items-center gap-1.5">
                 <CheckIcon className="h-3 w-3 text-data" />
                 {t}

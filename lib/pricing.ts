@@ -10,7 +10,7 @@
 // low tier: one enrichment row is a few hundred tokens, so the high tier can
 // never apply here.
 
-import type { ModelConfig, Provider } from "./types";
+import type { CustomEndpoint, ModelConfig, Provider } from "./types";
 
 export const PRICING_LAST_UPDATED = "August 2026";
 
@@ -49,6 +49,14 @@ export const PROVIDER_META: Record<
     keyUrl: "https://platform.openai.com/api-keys",
     pricingUrl: "https://developers.openai.com/api/docs/pricing",
     docsLabel: "OpenAI Platform",
+  },
+  custom: {
+    name: "Custom",
+    company: "Custom",
+    keyPrefix: "",
+    keyUrl: "https://openclay.io/docs/custom-endpoint",
+    pricingUrl: "https://openclay.io/docs/custom-endpoint",
+    docsLabel: "the setup guide",
   },
 };
 
@@ -536,10 +544,51 @@ export const MODELS_BY_PROVIDER: Record<Provider, ModelConfig[]> = {
   gemini: GEMINI,
   grok: GROK,
   openai: OPENAI,
+  // Configured at run time by the user, so there is nothing to list here.
+  custom: [],
 };
 
 /** Tab order in the picker: cheapest-to-get-started first. */
-export const PROVIDER_ORDER: Provider[] = ["gemini", "openai", "anthropic", "grok"];
+export const PROVIDER_ORDER: Provider[] = ["gemini", "openai", "anthropic", "grok", "custom"];
+
+/** Providers whose models ship in the catalog. */
+export const CATALOG_PROVIDERS: Provider[] = ["gemini", "openai", "anthropic", "grok"];
+
+export const DEFAULT_CUSTOM_ENDPOINT: CustomEndpoint = {
+  baseUrl: "",
+  modelId: "",
+  inputPer1M: 0,
+  outputPer1M: 0,
+  supportsSearch: false,
+};
+
+/**
+ * Present a user-configured endpoint as a ModelConfig so the estimator, picker
+ * and run loop don't need a special case for it.
+ */
+export function buildCustomModel(cfg: CustomEndpoint): ModelConfig {
+  return {
+    id: cfg.modelId || "custom-model",
+    name: cfg.modelId || "Custom model",
+    provider: "custom",
+    label: "Your endpoint",
+    inputPer1M: cfg.inputPer1M,
+    outputPer1M: cfg.outputPer1M,
+    // Only priced if the user told us the rates; otherwise the UI says so
+    // rather than quoting a confident $0.00.
+    search: cfg.supportsSearch ? { per1K: 0, estimated: true } : null,
+    contextWindow: 128_000,
+    speed: "medium",
+    quality: "great",
+    bestFor: "An OpenAI-compatible endpoint you control",
+    tier: "recommended",
+  };
+}
+
+/** True when we have enough to actually send a request. */
+export function isCustomEndpointReady(cfg: CustomEndpoint): boolean {
+  return cfg.baseUrl.trim().length > 0 && cfg.modelId.trim().length > 0;
+}
 
 const MODEL_INDEX = new Map(ALL_MODELS.map((m) => [m.id, m]));
 

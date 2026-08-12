@@ -52,6 +52,7 @@ export function SiteFooter() {
         ["/models", "Models & pricing"],
         ["/use-cases", "Use cases"],
         ["/self-host", "Self-host"],
+        ["/docs/api", "HTTP API"],
       ],
     },
     {
@@ -61,11 +62,13 @@ export function SiteFooter() {
         ["/models/openai", "OpenAI pricing"],
         ["/models/gemini", "Gemini pricing"],
         ["/models/anthropic", "Claude pricing"],
+        ["/docs/custom-endpoint", "Custom endpoints"],
       ],
     },
     {
       title: "Legal",
       links: [
+        ["/about", "About"],
         ["/privacy", "Privacy"],
         ["/terms", "Terms"],
         ["/data", "Data practices"],

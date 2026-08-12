@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ALL_MODELS, MODELS_BY_PROVIDER, PROVIDER_META, PROVIDER_ORDER, PRICING_LAST_UPDATED } from "@/lib/pricing";
+import { ALL_MODELS, MODELS_BY_PROVIDER, PROVIDER_META, CATALOG_PROVIDERS, PRICING_LAST_UPDATED } from "@/lib/pricing";
 import { costPerThousandRows } from "@/lib/costEstimator";
 import { formatUSD } from "@/lib/runStats";
 import { pageMetadata, SITE_URL, jsonLdScript } from "@/lib/seo";
@@ -131,7 +131,7 @@ export default function ModelsIndex() {
 
       <H2>By provider</H2>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        {PROVIDER_ORDER.map((p) => {
+        {CATALOG_PROVIDERS.map((p) => {
           const meta = PROVIDER_META[p];
           const models = MODELS_BY_PROVIDER[p];
           const cheapest = [...models].sort(

@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { ModelConfig, Provider } from "@/lib/types";
+import type { CustomEndpoint, ModelConfig, Provider } from "@/lib/types";
 import { MODELS_BY_PROVIDER, PROVIDER_META, PROVIDER_ORDER, searchModels } from "@/lib/pricing";
+import { checkEndpointUrl } from "@/lib/customEndpoint";
 import { costPerThousandRows as modelCostPerThousandRows } from "@/lib/costEstimator";
 import { ProviderLogo, SearchIcon, CheckIcon } from "./icons";
 
@@ -118,16 +119,142 @@ function ModelRow({
   );
 }
 
+/** Known-good presets so nobody has to hunt for a base URL. */
+const ENDPOINT_PRESETS: { label: string; baseUrl: string; modelId: string; note: string }[] = [
+  { label: "OpenRouter", baseUrl: "https://openrouter.ai/api/v1", modelId: "openai/gpt-5-mini", note: "One key, hundreds of models" },
+  { label: "Groq", baseUrl: "https://api.groq.com/openai/v1", modelId: "llama-3.3-70b-versatile", note: "Very fast inference" },
+  { label: "Together", baseUrl: "https://api.together.xyz/v1", modelId: "meta-llama/Llama-3.3-70B-Instruct-Turbo", note: "Open models" },
+  { label: "Ollama (local)", baseUrl: "http://localhost:11434/v1", modelId: "llama3.2", note: "Self-host only" },
+];
+
+function CustomEndpointForm({
+  value,
+  onChange,
+}: {
+  value: CustomEndpoint;
+  onChange: (next: CustomEndpoint) => void;
+}) {
+  const set = <K extends keyof CustomEndpoint>(key: K, v: CustomEndpoint[K]) =>
+    onChange({ ...value, [key]: v });
+
+  // Client-side check mirrors the server's, so bad URLs are caught before a request.
+  const urlCheck = value.baseUrl.trim() ? checkEndpointUrl(value.baseUrl, true) : null;
+  const looksPrivate =
+    /localhost|127\.0\.0\.1|\[::1\]|192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\./.test(value.baseUrl);
+
+  const field = "w-full rounded border border-line bg-surface px-2.5 py-1.5 font-mono text-[11px] text-ink placeholder:text-ink-3 focus:border-accent focus:outline-none";
+
+  return (
+    <div className="mt-3 space-y-3 rounded border border-line bg-surface p-3">
+      <p className="text-[11px] leading-snug text-ink-2">
+        Any endpoint that speaks the OpenAI <code className="font-mono text-ink">/chat/completions</code>{" "}
+        API — Azure, OpenRouter, Groq, Together, Fireworks, vLLM, Ollama, LM Studio.
+      </p>
+
+      <div className="flex flex-wrap gap-1.5">
+        {ENDPOINT_PRESETS.map((preset) => (
+          <button
+            key={preset.label}
+            type="button"
+            onClick={() => onChange({ ...value, baseUrl: preset.baseUrl, modelId: preset.modelId })}
+            title={preset.note}
+            className="rounded border border-line px-2 py-1 font-mono text-[10px] text-ink-2 transition-colors hover:border-accent hover:text-accent"
+          >
+            {preset.label}
+          </button>
+        ))}
+      </div>
+
+      <div>
+        <label htmlFor="custom-base-url" className="eyebrow">
+          Base URL
+        </label>
+        <input
+          id="custom-base-url"
+          value={value.baseUrl}
+          onChange={(e) => set("baseUrl", e.target.value)}
+          placeholder="https://api.example.com/v1"
+          spellCheck={false}
+          className={`mt-1 ${field}`}
+        />
+        {urlCheck && !urlCheck.ok && (
+          <p className="mt-1 font-mono text-[10px] text-danger">{urlCheck.error}</p>
+        )}
+        {looksPrivate && (
+          <p className="mt-1 font-mono text-[10px] text-warn">
+            Local address — only reachable from a self-hosted OpenClay with
+            OPENCLAY_ALLOW_PRIVATE_ENDPOINTS=true.
+          </p>
+        )}
+      </div>
+
+      <div>
+        <label htmlFor="custom-model-id" className="eyebrow">
+          Model ID
+        </label>
+        <input
+          id="custom-model-id"
+          value={value.modelId}
+          onChange={(e) => set("modelId", e.target.value)}
+          placeholder="gpt-5-mini"
+          spellCheck={false}
+          className={`mt-1 ${field}`}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <label htmlFor="custom-in-price" className="eyebrow">
+            $ / 1M input
+          </label>
+          <input
+            id="custom-in-price"
+            type="number"
+            min={0}
+            step="0.01"
+            value={value.inputPer1M || ""}
+            onChange={(e) => set("inputPer1M", Math.max(0, Number(e.target.value) || 0))}
+            placeholder="0.00"
+            className={`mt-1 ${field}`}
+          />
+        </div>
+        <div>
+          <label htmlFor="custom-out-price" className="eyebrow">
+            $ / 1M output
+          </label>
+          <input
+            id="custom-out-price"
+            type="number"
+            min={0}
+            step="0.01"
+            value={value.outputPer1M || ""}
+            onChange={(e) => set("outputPer1M", Math.max(0, Number(e.target.value) || 0))}
+            placeholder="0.00"
+            className={`mt-1 ${field}`}
+          />
+        </div>
+      </div>
+      <p className="font-mono text-[10px] text-ink-3">
+        Optional. Leave at 0 and OpenClay reports token counts without guessing a price.
+      </p>
+    </div>
+  );
+}
+
 export function ModelPicker({
   provider,
   modelId,
+  customEndpoint,
   onProviderChange,
   onModelChange,
+  onCustomChange,
 }: {
   provider: Provider;
   modelId: string;
+  customEndpoint: CustomEndpoint;
   onProviderChange: (p: Provider) => void;
   onModelChange: (id: string) => void;
+  onCustomChange: (next: CustomEndpoint) => void;
 }) {
   const [query, setQuery] = useState("");
   const [showAll, setShowAll] = useState(false);
@@ -155,7 +282,7 @@ export function ModelPicker({
       <div
         role="tablist"
         aria-label="AI provider"
-        className="grid grid-cols-2 overflow-hidden rounded border border-line sm:grid-cols-4"
+        className="grid grid-cols-2 overflow-hidden rounded border border-line sm:grid-cols-5"
       >
         {PROVIDER_ORDER.map((p, i) => {
           const active = provider === p;
@@ -166,10 +293,10 @@ export function ModelPicker({
               role="tab"
               aria-selected={active}
               onClick={() => onProviderChange(p)}
-              className={`flex items-center justify-center gap-2 px-3 py-2.5 text-xs font-medium transition-colors ${i % 2 === 1 ? "border-l border-line" : ""} ${
-                i >= 2 ? "border-t border-line sm:border-t-0" : ""
-              } ${
-                i === 2 ? "sm:border-l sm:border-line" : ""
+              className={`flex items-center justify-center gap-2 px-3 py-2.5 text-xs font-medium transition-colors ${
+                i % 2 === 1 ? "border-l border-line" : ""
+              } ${i >= 2 ? "border-t border-line sm:border-t-0" : ""} ${
+                i > 0 ? "sm:border-l sm:border-line" : "sm:border-l-0"
               } ${
                 active
                   ? "bg-ink text-paper"
@@ -184,6 +311,10 @@ export function ModelPicker({
         })}
       </div>
 
+      {provider === "custom" ? (
+        <CustomEndpointForm value={customEndpoint} onChange={onCustomChange} />
+      ) : (
+        <>
       {/* Search — only earns its place once the list is long enough to scan */}
       {all.length > 5 && (
         <div className="relative mt-3">
@@ -239,6 +370,8 @@ export function ModelPicker({
           {visible.length} of {all.length} shown
         </span>
       </div>
+        </>
+      )}
     </div>
   );
 }

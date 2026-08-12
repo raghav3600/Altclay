@@ -95,14 +95,15 @@ export async function enrichRowOnce(
   apiKey: string,
   modelId: string,
   prompt: string,
-  useWebSearch: boolean
+  useWebSearch: boolean,
+  baseUrl?: string
 ): Promise<EnrichResponse> {
   let res: Response;
   try {
     res = await fetch("/api/enrich", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ provider, apiKey, modelId, prompt, useWebSearch }),
+      body: JSON.stringify({ provider, apiKey, modelId, prompt, useWebSearch, baseUrl }),
     });
   } catch (err) {
     throw new EnrichError((err as Error).message || "Network request failed", { retryable: true });
@@ -136,7 +137,7 @@ export async function enrichRowWithRetry(
   modelId: string,
   prompt: string,
   useWebSearch: boolean,
-  opts: RetryOptions = {}
+  opts: RetryOptions & { baseUrl?: string } = {}
 ): Promise<EnrichAttemptOutcome> {
   const { maxAttempts } = { ...DEFAULTS, ...opts };
   let retries = 0;
@@ -146,7 +147,7 @@ export async function enrichRowWithRetry(
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     if (opts.signal?.aborted) throw new EnrichError("Run stopped", { retryable: false });
     try {
-      const result = await enrichRowOnce(provider, apiKey, modelId, prompt, useWebSearch);
+      const result = await enrichRowOnce(provider, apiKey, modelId, prompt, useWebSearch, opts.baseUrl);
       return { ...result, retries, hitRateLimit };
     } catch (err) {
       lastError = err instanceof EnrichError ? err : new EnrichError((err as Error).message);
@@ -167,12 +168,13 @@ export async function enrichRowWithRetry(
 
 export async function validateApiKey(
   provider: Provider,
-  apiKey: string
+  apiKey: string,
+  custom?: { baseUrl: string; modelId: string }
 ): Promise<{ valid: boolean; error?: string; warning?: string }> {
   const res = await fetch("/api/validate-key", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ provider, apiKey }),
+    body: JSON.stringify({ provider, apiKey, ...custom }),
   });
   return res.json();
 }

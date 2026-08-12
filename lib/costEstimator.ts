@@ -1,6 +1,16 @@
 import { requireModel } from "./pricing";
 import type { CostEstimate, ModelConfig, OutputColumn } from "./types";
 
+/**
+ * Cost functions accept either a catalog id or a ModelConfig, because a custom
+ * endpoint is configured at run time and has no catalog entry to look up.
+ */
+export type ModelRef = string | ModelConfig;
+
+function resolve(ref: ModelRef): ModelConfig {
+  return typeof ref === "string" ? requireModel(ref) : ref;
+}
+
 // Web search injects search results into the prompt, inflating input tokens well
 // beyond the prompt we authored. We can't know by how much until a real request
 // comes back, so pre-test estimates are quoted as a range.
@@ -12,8 +22,8 @@ function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);
 }
 
-export function estimateInputTokensPerRow(samplePrompt: string, modelId: string): number {
-  const model = requireModel(modelId);
+export function estimateInputTokensPerRow(samplePrompt: string, modelId: ModelRef): number {
+  const model = resolve(modelId);
   return estimateTokens(samplePrompt) + (model.toolOverheadTokens ?? 0);
 }
 
@@ -38,10 +48,10 @@ export function calculateCostEstimate(
   totalRows: number,
   inputTokensPerRow: number,
   outputTokensPerRow: number,
-  modelId: string,
+  modelId: ModelRef,
   useWebSearch: boolean
 ): CostEstimate {
-  const model = requireModel(modelId);
+  const model = resolve(modelId);
   const totalInputTokens = inputTokensPerRow * totalRows;
   const totalOutputTokens = outputTokensPerRow * totalRows;
 
@@ -83,10 +93,10 @@ export function calculateCostRange(
   totalRows: number,
   baseInputTokensPerRow: number,
   outputTokensPerRow: number,
-  modelId: string,
+  modelId: ModelRef,
   useWebSearch: boolean
 ): { low: CostEstimate; high: CostEstimate } {
-  const model = requireModel(modelId);
+  const model = resolve(modelId);
   const searching = useWebSearch && model.search !== null;
 
   // When a provider publishes how much search content it injects, use that
@@ -136,15 +146,15 @@ const REFERENCE_ROW = { promptTokens: 250, outputTokens: 140 };
  * Delegating to calculateCostEstimate means the picker and the sidebar estimate
  * can't disagree.
  */
-export function costPerThousandRows(modelId: string, useWebSearch: boolean = true): number {
-  const model = requireModel(modelId);
+export function costPerThousandRows(modelId: ModelRef, useWebSearch: boolean = true): number {
+  const model = resolve(modelId);
   const searching = useWebSearch && model.search !== null;
   const inputTokens =
     REFERENCE_ROW.promptTokens +
     (model.toolOverheadTokens ?? 0) +
     (searching ? (model.search!.tokenOverheadPerSearch ?? 0) : 0);
 
-  return calculateCostEstimate(1000, inputTokens, REFERENCE_ROW.outputTokens, modelId, useWebSearch)
+  return calculateCostEstimate(1000, inputTokens, REFERENCE_ROW.outputTokens, model, useWebSearch)
     .totalCost;
 }
 
@@ -153,7 +163,7 @@ export function calculateCostFromActualTokens(
   totalRows: number,
   avgInputTokens: number,
   avgOutputTokens: number,
-  modelId: string,
+  modelId: ModelRef,
   useWebSearch: boolean
 ): CostEstimate {
   return calculateCostEstimate(totalRows, avgInputTokens, avgOutputTokens, modelId, useWebSearch);
@@ -161,13 +171,13 @@ export function calculateCostFromActualTokens(
 
 /** Cost already incurred, from tokens actually billed so far. */
 export function calculateActualSpend(
-  modelId: string,
+  modelId: ModelRef,
   inputTokens: number,
   outputTokens: number,
   searchedRows: number,
   useWebSearch: boolean
 ): number {
-  const model = requireModel(modelId);
+  const model = resolve(modelId);
   const inputCost = (inputTokens / 1_000_000) * model.inputPer1M;
   const outputCost = (outputTokens / 1_000_000) * model.outputPer1M;
   const searching = useWebSearch && model.search !== null;
@@ -181,11 +191,11 @@ export function calculateActualSpend(
 export function estimateCostSimple(
   rowCount: number,
   fieldCount: number,
-  modelId: string
+  modelId: ModelRef
 ): { low: CostEstimate; high: CostEstimate } {
-  const model = requireModel(modelId);
+  const model = resolve(modelId);
   const avgInputTokens = 200; // prompt + one column of row data
   const inputTokensPerRow = avgInputTokens + (model.toolOverheadTokens ?? 0);
   const outputTokensPerRow = 20 + fieldCount * 30;
-  return calculateCostRange(rowCount, inputTokensPerRow, outputTokensPerRow, modelId, true);
+  return calculateCostRange(rowCount, inputTokensPerRow, outputTokensPerRow, model, true);
 }

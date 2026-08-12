@@ -3,6 +3,7 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import type {
+  CustomEndpoint,
   Provider,
   OutputColumn,
   ParsedFile,
@@ -17,6 +18,9 @@ import {
   defaultModelFor,
   requireModel,
   isValidModelFor,
+  buildCustomModel,
+  isCustomEndpointReady,
+  DEFAULT_CUSTOM_ENDPOINT,
 } from "@/lib/pricing";
 import { buildPrompt, buildPromptTemplate, validateTemplate } from "@/lib/promptTemplates";
 import {
@@ -321,6 +325,7 @@ export default function ToolPage() {
   const [provider, setProvider] = useState<Provider>("gemini");
   const [modelId, setModelId] = useState<string>(defaultModelFor("gemini").id);
   const [useWebSearch, setUseWebSearch] = useState(true);
+  const [customEndpoint, setCustomEndpoint] = useState<CustomEndpoint>(DEFAULT_CUSTOM_ENDPOINT);
   const [concurrency, setConcurrency] = useState(DEFAULT_CONCURRENCY);
 
   /* ---- key ---- */
@@ -348,7 +353,14 @@ export default function ToolPage() {
   const rateRef = useRef(new TokenRateTracker());
 
   /* ---- derived ---- */
-  const model = useMemo(() => requireModel(modelId), [modelId]);
+  const isCustom = provider === "custom";
+  // A custom endpoint has no catalog entry, so synthesise a ModelConfig from
+  // what the user typed and let the rest of the app treat it like any other.
+  const model = useMemo(
+    () => (isCustom ? buildCustomModel(customEndpoint) : requireModel(modelId)),
+    [isCustom, customEndpoint, modelId]
+  );
+  const effectiveModelId = isCustom ? customEndpoint.modelId : modelId;
   const providerMeta = PROVIDER_META[provider];
 
   const generatedTemplate = useMemo(
@@ -389,7 +401,8 @@ export default function ToolPage() {
   const defineReady =
     !!file && description.trim().length > 0 && inputColumns.length > 0 && outputColumns.length > 0;
   const configReady = defineReady && !templateBlocked && (!advancedMode || customTemplate.trim().length > 0);
-  const runReady = configReady && keyValid;
+  const endpointReady = !isCustom || isCustomEndpointReady(customEndpoint);
+  const runReady = configReady && keyValid && endpointReady;
 
   const completed = fullResults.length;
   const failed = fullResults.filter((r) => !r.success).length;
@@ -398,14 +411,14 @@ export default function ToolPage() {
 
   const costRange = useMemo(() => {
     if (!file || inputColumns.length === 0 || outputColumns.length === 0 || !previewPrompt) return null;
-    const inp = estimateInputTokensPerRow(previewPrompt, modelId);
+    const inp = estimateInputTokensPerRow(previewPrompt, model);
     const out = estimateOutputTokensPerRow(outputColumns);
-    return calculateCostRange(file.totalRows, inp, out, modelId, useWebSearch);
-  }, [file, inputColumns, outputColumns, previewPrompt, modelId, useWebSearch]);
+    return calculateCostRange(file.totalRows, inp, out, model, useWebSearch);
+  }, [file, inputColumns, outputColumns, previewPrompt, model, useWebSearch]);
 
   const spentSoFar = useMemo(
-    () => calculateActualSpend(modelId, stats.inputTokens, stats.outputTokens, succeeded, useWebSearch),
-    [modelId, stats.inputTokens, stats.outputTokens, succeeded, useWebSearch]
+    () => calculateActualSpend(model, stats.inputTokens, stats.outputTokens, succeeded, useWebSearch),
+    [model, stats.inputTokens, stats.outputTokens, succeeded, useWebSearch]
   );
 
   const etaMs = useMemo(() => {
@@ -438,15 +451,18 @@ export default function ToolPage() {
     return () => clearInterval(id);
   }, [fullRunning]);
 
-  // Keep the model valid when the provider changes.
+  // Keep the model valid when the provider changes. The custom provider has no
+  // catalog, so it is exempt.
   useEffect(() => {
-    if (!isValidModelFor(provider, modelId)) setModelId(defaultModelFor(provider).id);
+    if (provider !== "custom" && !isValidModelFor(provider, modelId)) {
+      setModelId(defaultModelFor(provider).id);
+    }
   }, [provider, modelId]);
 
   /* ---- handlers ---- */
   const handleProviderChange = (p: Provider) => {
     setProvider(p);
-    setModelId(defaultModelFor(p).id);
+    if (p !== "custom") setModelId(defaultModelFor(p).id);
     setKeyValid(false);
     setApiKey("");
     setKeyError("");
@@ -493,15 +509,25 @@ export default function ToolPage() {
   };
 
   const validateKey = async () => {
-    if (!apiKey.trim()) {
+    // A local gateway may legitimately have no key, so only require one for
+    // the hosted providers.
+    if (!apiKey.trim() && !isCustom) {
       setKeyError("Enter an API key first.");
+      return;
+    }
+    if (isCustom && !isCustomEndpointReady(customEndpoint)) {
+      setKeyError("Enter a base URL and model ID first.");
       return;
     }
     setValidating(true);
     setKeyError("");
     setKeyWarning("");
     try {
-      const data = await validateApiKey(provider, apiKey.trim());
+      const data = await validateApiKey(
+        provider,
+        apiKey.trim(),
+        isCustom ? { baseUrl: customEndpoint.baseUrl, modelId: customEndpoint.modelId } : undefined
+      );
       if (data.valid) {
         setKeyValid(true);
         if (data.warning) setKeyWarning(data.warning);
@@ -555,8 +581,9 @@ export default function ToolPage() {
       );
       const startedAt = Date.now();
       try {
-        const r = await enrichRowWithRetry(provider, apiKey, modelId, prompt, useWebSearch, {
+        const r = await enrichRowWithRetry(provider, apiKey, effectiveModelId, prompt, useWebSearch, {
           signal: abortRef.current,
+          baseUrl: isCustom ? customEndpoint.baseUrl : undefined,
           onRetry: ({ attempt, delayMs, error }) =>
             setThrottleNotice(
               error.isRateLimit
@@ -585,7 +612,7 @@ export default function ToolPage() {
         };
       }
     },
-    [inputColumns, outputColumns, description, advancedMode, customTemplate, provider, apiKey, modelId, useWebSearch]
+    [inputColumns, outputColumns, description, advancedMode, customTemplate, provider, apiKey, effectiveModelId, isCustom, customEndpoint.baseUrl, useWebSearch]
   );
 
   const runTest = async () => {
@@ -612,7 +639,7 @@ export default function ToolPage() {
       const avgIn = Math.round(ok.reduce((s, r) => s + (r.inputTokens || 0), 0) / ok.length);
       const avgOut = Math.round(ok.reduce((s, r) => s + (r.outputTokens || 0), 0) / ok.length);
       setPreciseEstimate(
-        calculateCostFromActualTokens(file.totalRows, avgIn, avgOut, modelId, useWebSearch)
+        calculateCostFromActualTokens(file.totalRows, avgIn, avgOut, model, useWebSearch)
       );
     }
     setTestDone(true);
@@ -1188,6 +1215,12 @@ export default function ToolPage() {
                 <ModelPicker
                   provider={provider}
                   modelId={modelId}
+                  customEndpoint={customEndpoint}
+                  onCustomChange={(next) => {
+                    setCustomEndpoint(next);
+                    setKeyValid(false);
+                    setPreciseEstimate(null);
+                  }}
                   onProviderChange={handleProviderChange}
                   onModelChange={(id) => {
                     setModelId(id);
@@ -1201,7 +1234,8 @@ export default function ToolPage() {
                     <label className="flex cursor-pointer items-start gap-2 text-xs">
                       <input
                         type="checkbox"
-                        checked={useWebSearch}
+                        // Never render as ticked when the model can't search.
+                        checked={useWebSearch && !!model.search}
                         disabled={!model.search}
                         onChange={(e) => {
                           setUseWebSearch(e.target.checked);
@@ -1268,7 +1302,7 @@ export default function ToolPage() {
             <Panel muted={!configReady} active={configReady && !keyValid}>
               <StepHeader
                 num={4}
-                title={`Connect your ${providerMeta.company} key`}
+                title={isCustom ? "Connect your endpoint" : `Connect your ${providerMeta.company} key`}
                 hint="Held in memory only. Never stored or logged."
                 done={keyValid}
                 active={configReady && !keyValid}
@@ -1288,7 +1322,7 @@ export default function ToolPage() {
                         onKeyDown={(e) => {
                           if (e.key === "Enter") validateKey();
                         }}
-                        placeholder={`${providerMeta.keyPrefix}…`}
+                        placeholder={isCustom ? "Bearer token (leave blank if none)" : `${providerMeta.keyPrefix}…`}
                         autoComplete="off"
                         spellCheck={false}
                         className="min-w-0 flex-1 rounded border border-line bg-surface-2 px-2.5 py-2 font-mono text-xs text-ink placeholder:text-ink-3 focus:border-accent focus:bg-surface focus:outline-none"
@@ -1296,7 +1330,7 @@ export default function ToolPage() {
                       <Button
                         variant="primary"
                         onClick={validateKey}
-                        disabled={validating || !apiKey.trim()}
+                        disabled={validating || (!apiKey.trim() && !isCustom)}
                         className="sm:w-36"
                       >
                         {validating ? "Checking…" : "Validate key"}

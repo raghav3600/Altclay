@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ALL_MODELS, PROVIDER_ORDER, PRICING_LAST_UPDATED } from "@/lib/pricing";
+import { ALL_MODELS, CATALOG_PROVIDERS, PRICING_LAST_UPDATED } from "@/lib/pricing";
 import { costPerThousandRows } from "@/lib/costEstimator";
 import { formatUSD } from "@/lib/runStats";
 import { pageMetadata, articleJsonLd } from "@/lib/seo";
@@ -33,7 +33,7 @@ export default function ClayAlternativePage() {
     ["Platform fee", "$149 – $800 per month", "$0"],
     ["AI research per row", "Consumes Clay credits", "Billed by the model provider directly"],
     ["1,000 researched rows", "Draws down your credit quota", `From ${formatUSD(costPerThousandRows(cheapest.id))} in API usage`],
-    ["Model choice", "Whatever Claygent runs", `${ALL_MODELS.length} models across ${PROVIDER_ORDER.length} providers`],
+    ["Model choice", "Whatever Claygent runs", `${ALL_MODELS.length} models across ${CATALOG_PROVIDERS.length} providers, or any OpenAI-compatible endpoint`],
     ["Verified emails & phones", "Yes — 150+ data providers", "No"],
     ["Waterfall enrichment", "Yes", "No"],
     ["CRM sync", "Yes", "No — export CSV or XLSX"],

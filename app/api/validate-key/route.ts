@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Provider } from "@/lib/types";
 import { parseVertexConfig, getVertexAccessToken } from "@/lib/vertexAuth";
+import { checkEndpointUrl, chatCompletionsUrl } from "@/lib/customEndpoint";
 
 /*
  * Sends the smallest possible request to confirm a key works. Logs nothing.
@@ -14,6 +15,8 @@ const PROBE_MODEL: Record<Provider, string> = {
   gemini: "gemini-3.1-flash-lite",
   grok: "grok-4.3",
   openai: "gpt-5-nano",
+  // Supplied by the user; there is no fixed model to probe.
+  custom: "",
 };
 
 interface ProbeResult {
@@ -35,7 +38,32 @@ function readMessage(body: string): string {
   }
 }
 
-async function probe(provider: Provider, apiKey: string): Promise<ProbeResult> {
+async function probe(
+  provider: Provider,
+  apiKey: string,
+  custom?: { baseUrl: string; modelId: string }
+): Promise<ProbeResult> {
+  if (provider === "custom") {
+    const check = checkEndpointUrl(custom?.baseUrl ?? "");
+    if (!check.ok) return { status: 400, body: JSON.stringify({ error: check.error }) };
+
+    const headers: Record<string, string> = { "content-type": "application/json" };
+    if (apiKey) {
+      headers.Authorization = `Bearer ${apiKey}`;
+      headers["api-key"] = apiKey;
+    }
+    const res = await fetch(chatCompletionsUrl(custom!.baseUrl), {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model: custom!.modelId,
+        messages: [{ role: "user", content: "Hi" }],
+        max_tokens: 4,
+      }),
+    });
+    return { status: res.status, body: await res.text().catch(() => "") };
+  }
+
   if (provider === "anthropic") {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -108,9 +136,9 @@ async function probe(provider: Provider, apiKey: string): Promise<ProbeResult> {
 }
 
 export async function POST(req: NextRequest) {
-  const { provider, apiKey } = await req.json();
+  const { provider, apiKey, baseUrl, modelId } = await req.json();
 
-  if (!apiKey || typeof apiKey !== "string") {
+  if (provider !== "custom" && (!apiKey || typeof apiKey !== "string")) {
     return NextResponse.json({ valid: false, error: "Missing API key" }, { status: 400 });
   }
   if (!Object.prototype.hasOwnProperty.call(PROBE_MODEL, provider)) {
@@ -119,7 +147,7 @@ export async function POST(req: NextRequest) {
 
   let result: ProbeResult;
   try {
-    result = await probe(provider, apiKey.trim());
+    result = await probe(provider, (apiKey ?? "").trim(), { baseUrl, modelId });
   } catch (err) {
     // Never reached the provider at all — a local/transport problem, not a bad key.
     // Vertex service-account parsing also lands here.
@@ -130,7 +158,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { status, body } = result;
-  const isVertex = provider === "gemini" && parseVertexConfig(apiKey.trim()) !== null;
+  const isVertex = provider === "gemini" && parseVertexConfig((apiKey ?? "").trim()) !== null;
 
   if (status >= 200 && status < 300) {
     return NextResponse.json({

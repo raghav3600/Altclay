@@ -7,7 +7,7 @@
 The free, open-source alternative to Clay's AI research layer.
 No account, no database, no platform fee.
 
-[Live app](https://openclay.io/tool) · [Models & pricing](https://openclay.io/models) · [vs Clay](https://openclay.io/alternatives/clay) · [HTTP API](https://openclay.io/docs/api)
+[Live app](https://openclay.io/tool) · [vs Clay](https://openclay.io/alternatives/clay) · [Models & pricing](https://openclay.io/models) · [Use cases](https://openclay.io/use-cases) · [Self-host](https://openclay.io/self-host) · [HTTP API](https://openclay.io/docs/api)
 
 </div>
 
@@ -19,7 +19,7 @@ No account, no database, no platform fee.
 git clone https://github.com/raghav3600/Altclay.git openclay && cd openclay && npm install && npm run dev
 ```
 
-Open <http://localhost:3000>. There is no `.env` to fill in, API keys are entered in the browser at run time, never read from the environment.
+Open <http://localhost:3000>. There is no `.env` to fill in: API keys are entered in the browser at run time and never read from the environment.
 
 <details>
 <summary><strong>Other ways to run it</strong></summary>
@@ -36,7 +36,7 @@ npx degit raghav3600/Altclay openclay && cd openclay && npm install && npm run d
 docker compose up --build
 ```
 
-**One-line setup script**, it clones, installs and starts. Read it first if you'd rather not pipe a script into your shell; it's a dozen lines and lives at [`public/install.sh`](public/install.sh):
+**One-line setup script.** It clones, installs and starts. Read it first if you'd rather not pipe a script into your shell; it is a dozen lines and lives at [`public/install.sh`](public/install.sh):
 
 ```bash
 curl -fsSL https://openclay.io/install.sh | sh
@@ -56,7 +56,7 @@ Stripe     stripe.com    →  Patrick Collison  $8.7B      Expanded Stripe Tax�
 Vercel     vercel.com    →  Guillermo Rauch   $563M      Announced Next.js 16…
 ```
 
-You pay the model provider directly. OpenClay takes nothing, and can't, there's no billing code in the repo.
+You pay the model provider directly. OpenClay takes nothing, and could not if it wanted to: there is no billing code in the repo.
 
 ## Requirements
 
@@ -65,50 +65,57 @@ You pay the model provider directly. OpenClay takes nothing, and can't, there's 
 
 ## Models
 
-28 models across 4 providers, plus **any OpenAI-compatible endpoint** (Azure, OpenRouter, Groq, Together, Fireworks, vLLM, Ollama, LM Studio).
+Four providers plus **any OpenAI-compatible endpoint** (Azure, OpenRouter, Groq, Together, Fireworks, vLLM, Ollama, LM Studio). The live catalog lives in [`lib/pricing.ts`](lib/pricing.ts); [/models](https://openclay.io/models) renders it with current prices.
+
+Lists are ordered most capable first, driven by an explicit `rank` on each model rather than inferred from price, since a previous-generation flagship can cost more than a current-generation mid-tier while being less capable.
 
 | Provider | Cheapest per 1,000 rows | Notes |
 | --- | --- | --- |
 | Google Gemini | ~$0.27 | 5,000 free grounded searches/month |
-| xAI Grok | ~$5.66 | Search rate is an estimate, xAI doesn't publish one |
+| xAI Grok | ~$5.66 | Search rate is our estimate; xAI publishes none |
 | Anthropic Claude | ~$11.30 | $10/1k searches, no free tier |
 | OpenAI GPT | ~$11.82 | $10/1k searches **plus** ~8k tokens of search content |
 
 Figures include token cost, search fees and free allowances. Full table at [/models](https://openclay.io/models), source of truth in [`lib/pricing.ts`](lib/pricing.ts).
 
-## What it can't do
+## Scope
 
-Worth being blunt, because it decides whether this is the right tool:
+OpenClay is the research layer. It covers any question whose answer is publicly findable and can be written as a sentence:
 
-- **No verified emails or phone numbers.** Those need proprietary databases (Apollo, ZoomInfo). OpenClay reads the open web only.
-- **No waterfall enrichment** across multiple data sources.
-- **No CRM sync, scheduling or team workspace.**
-- **Models can be confidently wrong.** Always spot-check before acting on output.
+- Company context: leadership, funding, headcount, tech stack, recent news
+- Custom questions no data-provider schema has a field for
+- Any kind of list: products, universities, competitors, countries
+- Live answers, researched at the moment you run them
 
-If you need verified contact data, keep Clay. If you were mainly using Claygent, this replaces it.
+It is not a contact database. Verified emails and phone numbers come from licensed providers such as Apollo or ZoomInfo, and running one of those alongside OpenClay is a common and effective setup: the provider supplies the contact record, OpenClay supplies the context around it. CRM sync and scheduled runs also stay with your existing stack.
+
+As with any AI output, spot-check before acting on it. The five-row test reports a fill rate so you can see quality before committing to a batch.
 
 ## Privacy
 
-These are architectural properties, not policy promises, you can verify each in the source:
+These are architectural properties rather than policy promises, and you can verify each one in the source:
 
 - Spreadsheets are parsed **in your browser** and never uploaded.
 - Your API key lives in React state. Never written to disk, a database, a cookie or a log.
 - The API routes are stateless proxies that exist only because browsers block cross-origin calls to provider APIs. They log nothing.
 - No user accounts, no database.
-- In-progress work is saved to your own `localStorage` so a reload doesn't lose a run, the key is never part of it.
+- In-progress work is saved to your own `localStorage` so a reload doesn't lose a run. The key is never part of it.
 
 ## Project layout
 
 | Path | What lives there |
 | --- | --- |
 | `app/tool/page.tsx` | The enrichment UI and run loop |
-| `app/api/enrich/route.ts` | Provider proxy, one branch per provider |
+| `app/api/enrich/route.ts` | Provider proxy; one branch per provider |
 | `lib/pricing.ts` | **Model catalog.** Add a model here and the picker, estimator, pricing pages and SEO copy all pick it up |
 | `lib/promptTemplates.ts` | Per-row prompt building and template validation |
 | `lib/enrichClient.ts` | Retry loop with jittered exponential backoff |
 | `lib/runStats.ts` | Token-rate tracking, ETA, blank-cell counting |
 | `lib/customEndpoint.ts` | URL validation for user-supplied endpoints (SSRF guard) |
-| `lib/content.ts` | Use-case pages content |
+| `lib/content.ts` | Use-case page content |
+| `lib/alternatives.ts` | The Clay-alternative page cluster |
+| `lib/sessionStore.ts` | Session recovery, never stores the API key |
+| `lib/seo.ts` | Metadata, canonicals and JSON-LD helpers |
 
 ## Common changes
 

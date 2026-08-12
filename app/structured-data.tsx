@@ -7,8 +7,7 @@
  * that had been replaced in the UI.
  */
 
-const SITE_URL = "https://openclay.io";
-const REPO_URL = "https://github.com/raghav3600/Altclay";
+import { SITE_URL, REPO_URL, jsonLdScript } from "@/lib/seo";
 
 export interface FaqItem {
   q: string;
@@ -56,7 +55,7 @@ export const FAQ_ITEMS: FaqItem[] = [
 
 function JsonLd({ data }: { data: object }) {
   return (
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(data) }} />
   );
 }
 

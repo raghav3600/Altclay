@@ -762,6 +762,8 @@ export default function ToolPage() {
         </div>
       </header>
 
+      <h1 className="sr-only">Enrich a spreadsheet with AI and live web search</h1>
+
       <div className="mx-auto max-w-[1400px] px-4 py-5 pb-28 sm:px-6 lg:pb-5">
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
           {/* ================= LEFT ================= */}

@@ -6,6 +6,7 @@ import { ALL_MODELS, MODELS_BY_PROVIDER, PROVIDER_META, PROVIDER_ORDER, getModel
 import { estimateCostSimple } from "@/lib/costEstimator";
 import { formatUSD, formatUSDRange } from "@/lib/runStats";
 import { FAQJsonLd, FAQ_ITEMS } from "./structured-data";
+import { SiteFooter } from "./components/ContentPage";
 import {
   ProviderLogo,
   CheckIcon,
@@ -449,7 +450,14 @@ export default function LandingPage() {
             <Heading>Research for any dataset.</Heading>
             <p className="mt-4 max-w-2xl text-base text-ink-2">
               Every row gets its own prompt, its own web search and its own answer. It works for any kind
-              of list — not just companies.
+              of list — not just companies. Browse{" "}
+              <Link
+                href="/use-cases"
+                className="text-accent underline decoration-accent-line underline-offset-2"
+              >
+                worked examples
+              </Link>
+              .
             </p>
           </R>
 
@@ -478,6 +486,16 @@ export default function LandingPage() {
                 lookups. OpenClay does something different: it uses{" "}
                 <strong className="font-semibold text-ink">AI plus live web search</strong> to research each
                 row, closer to Clay&apos;s Claygent. That trade-off cuts both ways:
+              </p>
+              <p className="mt-2.5 text-[13px] leading-relaxed text-ink-2">
+                Full breakdown on the{" "}
+                <Link
+                  href="/alternatives/clay"
+                  className="text-accent underline decoration-accent-line underline-offset-2"
+                >
+                  Clay comparison page
+                </Link>
+                .
               </p>
               <ul className="mt-3 space-y-2 text-[13px] text-ink-2">
                 {[
@@ -535,7 +553,14 @@ export default function LandingPage() {
             </Heading>
             <p className="mt-4 max-w-2xl text-base text-ink-2">
               No markup, no credits, no seats. You are billed by OpenAI, Google, Anthropic or xAI at their
-              published rates — and the tool tells you the number before you commit.
+              published rates — and the tool tells you the number before you commit. See{" "}
+              <Link
+                href="/models"
+                className="text-accent underline decoration-accent-line underline-offset-2"
+              >
+                every model compared
+              </Link>
+              .
             </p>
           </R>
           <R className="delay-200">
@@ -749,41 +774,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ---------- FOOTER ---------- */}
-      <footer className="px-4 py-10 sm:px-6">
-        <div className="mx-auto max-w-5xl">
-          <div className="flex flex-col items-center justify-between gap-5 sm:flex-row">
-            <div className="flex items-center gap-2 font-mono text-[10px] text-ink-3">
-              <img src="/icon.svg" alt="" className="h-4 w-4" />
-              <span>OpenClay — free, open-source data enrichment.</span>
-            </div>
-            <div className="flex flex-wrap items-center justify-center gap-4 font-mono text-[10px] text-ink-3">
-              <Link href="/privacy" className="transition-colors hover:text-accent">
-                Privacy
-              </Link>
-              <Link href="/terms" className="transition-colors hover:text-accent">
-                Terms
-              </Link>
-              <Link href="/data" className="transition-colors hover:text-accent">
-                Data practices
-              </Link>
-              <a
-                href="https://github.com/raghav3600/Altclay"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="transition-colors hover:text-accent"
-              >
-                GitHub
-              </a>
-            </div>
-          </div>
-          <p className="mt-6 text-center text-[10px] leading-relaxed text-ink-3">
-            Disclaimer: OpenClay is provided as-is without warranty. AI-generated data may be inaccurate —
-            always verify results. We are not responsible for the accuracy, completeness, or consequences
-            of any enrichment output. Use at your own risk.
-          </p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

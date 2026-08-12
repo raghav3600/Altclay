@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import type { ModelConfig, Provider } from "@/lib/types";
 import { MODELS_BY_PROVIDER, PROVIDER_META, PROVIDER_ORDER, searchModels } from "@/lib/pricing";
 import { costPerThousandRows as modelCostPerThousandRows } from "@/lib/costEstimator";
-import { ProviderLogo, SearchIcon, CheckIcon, GlobeIcon } from "./icons";
+import { ProviderLogo, SearchIcon, CheckIcon } from "./icons";
 
 /*
  * Providers ship dozens of models and the list keeps growing, so showing all of
@@ -18,17 +18,23 @@ import { ProviderLogo, SearchIcon, CheckIcon, GlobeIcon } from "./icons";
  *      "what will this cost me" is the question users actually arrive with.
  */
 
-const SPEED_LABEL: Record<ModelConfig["speed"], string> = {
-  fast: "Fast",
-  medium: "Medium",
-  slow: "Slow",
-};
-
 const QUALITY_LABEL: Record<ModelConfig["quality"], string> = {
   good: "Good",
   great: "Great",
   best: "Best",
 };
+
+/*
+ * Only badge speed when it is actually a reason to pick or avoid a model.
+ * A neutral "Fast" chip on a card whose neighbour says "Medium" in the same
+ * grey carries no signal — it is just another word to read. Fast earns a
+ * positive tone, Slow earns a warning, Medium says nothing and is omitted.
+ */
+function speedChip(speed: ModelConfig["speed"]) {
+  if (speed === "fast") return { label: "Fast", tone: "data" as const };
+  if (speed === "slow") return { label: "Slow", tone: "warn" as const };
+  return null;
+}
 
 /** Per-1k-rows figure used both to label and to rank models. */
 function costPerThousandRows(model: ModelConfig): number {
@@ -66,6 +72,7 @@ function ModelRow({
   selected: boolean;
   onSelect: () => void;
 }) {
+  const speed = speedChip(model.speed);
   return (
     <button
       type="button"
@@ -92,28 +99,21 @@ function ModelRow({
 
       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
         <Chip tone="accent">{model.label}</Chip>
-        <Chip>{SPEED_LABEL[model.speed]}</Chip>
+        {speed && <Chip tone={speed.tone}>{speed.label}</Chip>}
         <Chip tone="data">{QUALITY_LABEL[model.quality]}</Chip>
-        {model.search ? (
-          <Chip tone="data">
-            <GlobeIcon className="mr-0.5 inline h-2.5 w-2.5 align-[-1px]" />
-            Search
-          </Chip>
-        ) : (
-          <Chip tone="warn">No search</Chip>
-        )}
+        {/* Every listed model searches, so only the exception is worth a badge. */}
+        {!model.search && <Chip tone="warn">No search</Chip>}
         <span className="ml-auto font-mono text-[10px] text-ink-3 tnum">
           ~${costPerThousandRows(model).toFixed(2)}/1k rows
         </span>
       </div>
 
-      <p className="mt-1.5 text-[11px] leading-snug text-ink-2">{model.bestFor}</p>
+      {/* Rationale only for the current pick — nine of these at once is a wall. */}
+      {selected && <p className="mt-1.5 text-[11px] leading-snug text-ink-2">{model.bestFor}</p>}
 
       {model.pricingNote && (
         <p className="mt-1 font-mono text-[10px] text-warn">{model.pricingNote}</p>
       )}
-
-      <p className="mt-1 font-mono text-[10px] text-ink-3">{model.id}</p>
     </button>
   );
 }
@@ -192,7 +192,7 @@ export function ModelPicker({
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={`Filter ${all.length} ${PROVIDER_META[provider].name} models — try "cheap" or "fast"`}
+            placeholder={`Filter ${all.length} models`}
             className="w-full rounded border border-line bg-surface py-2 pl-8 pr-3 font-mono text-[11px] text-ink placeholder:text-ink-3 focus:border-accent focus:outline-none"
           />
         </div>

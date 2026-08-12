@@ -771,7 +771,7 @@ export default function ToolPage() {
               <StepHeader
                 num={1}
                 title="Load your spreadsheet"
-                hint="CSV, XLS or XLSX up to 10 MB. Parsed locally — never uploaded."
+                hint="CSV or Excel, up to 10 MB. Parsed in your browser."
                 done={!!file}
                 active={!file}
                 aside={
@@ -896,7 +896,6 @@ export default function ToolPage() {
               <StepHeader
                 num={2}
                 title="Set up the enrichment"
-                hint="Say what you need, pick which columns the model reads, name the columns it writes."
                 done={defineReady}
                 active={!!file && !defineReady}
                 aside={
@@ -914,7 +913,7 @@ export default function ToolPage() {
                   htmlFor="what-to-find"
                   className="mb-2 block text-[11px] font-semibold uppercase tracking-wide text-ink-2"
                 >
-                  What should the model find for each row?
+                  What to find, per row
                 </label>
                 <textarea
                   id="what-to-find"
@@ -927,11 +926,11 @@ export default function ToolPage() {
                     }
                   }}
                   rows={2}
-                  placeholder="e.g. Find the CEO name, total funding raised, employee count, and a one-line company description"
+                  placeholder="e.g. CEO name, total funding raised, employee count"
                   className="w-full resize-y rounded border border-line bg-surface-2 px-3 py-2.5 text-sm leading-relaxed text-ink placeholder:text-ink-3 focus:border-accent focus:bg-surface focus:outline-none"
                 />
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                  <span className="eyebrow mr-0.5">Start from</span>
+                  <span className="eyebrow mr-0.5">Presets</span>
                   {TEMPLATES.map((t) => (
                     <button
                       key={t.label}
@@ -960,16 +959,12 @@ export default function ToolPage() {
                         <Tip text="Values from these columns are substituted into the prompt for each row. Pick the ones that identify the thing being researched." />
                       </span>
                       <span className="font-mono text-[10px] text-ink-3">
-                        {inputColumns.length} of {file?.columns.length ?? 0} selected
+                        {inputColumns.length}/{file?.columns.length ?? 0}
                       </span>
                     </header>
-                    <p className="mb-2.5 text-[11px] leading-snug text-ink-3">
-                      Columns the model reads from your file.
-                    </p>
-
                     {!file ? (
                       <p className="rounded border border-dashed border-line px-3 py-4 text-center font-mono text-[10px] text-ink-3">
-                        Load a file to choose columns
+                        Load a file first
                       </p>
                     ) : (
                       <>
@@ -1012,7 +1007,7 @@ export default function ToolPage() {
                         )}
                         {inputColumns.length === 0 && (
                           <p className="mt-2 font-mono text-[10px] text-warn">
-                            Select at least one — the model needs something to look up.
+                            Pick at least one.
                           </p>
                         )}
                       </>
@@ -1042,13 +1037,9 @@ export default function ToolPage() {
                         <Tip text="One new spreadsheet column per entry. The model is asked to return exactly these keys as JSON." />
                       </span>
                       <span className="font-mono text-[10px] text-ink-3">
-                        {outputColumns.length} new column{outputColumns.length === 1 ? "" : "s"}
+                        {outputColumns.length} new
                       </span>
                     </header>
-                    <p className="mb-2.5 text-[11px] leading-snug text-ink-3">
-                      New columns appended to your file.
-                    </p>
-
                     {outputColumns.length > 0 && (
                       <ul className="mb-2 flex flex-wrap gap-1.5">
                         {outputColumns.map((col) => (
@@ -1081,7 +1072,7 @@ export default function ToolPage() {
                             addOutputColumn();
                           }
                         }}
-                        placeholder="Add a column, e.g. CEO Name"
+                        placeholder="Add a column"
                         className="min-w-0 flex-1 rounded border border-line bg-surface px-2 py-1.5 font-mono text-[11px] text-ink placeholder:text-ink-3 focus:border-accent focus:outline-none"
                       />
                       <button
@@ -1097,7 +1088,7 @@ export default function ToolPage() {
 
                     {outputColumns.length === 0 && (
                       <p className="mt-2 font-mono text-[10px] text-warn">
-                        Describe your enrichment above and these fill in automatically.
+                        Filled in from your description above.
                       </p>
                     )}
                   </section>
@@ -1120,7 +1111,7 @@ export default function ToolPage() {
                     className="flex cursor-pointer list-none items-center gap-2 font-mono text-[11px] text-ink-2 hover:text-ink"
                   >
                     <span className="text-ink-3">{advancedMode ? "\u2212" : "+"}</span>
-                    Edit the raw prompt template
+                    Edit the prompt template
                   </summary>
 
                   {advancedMode && (
@@ -1180,7 +1171,7 @@ export default function ToolPage() {
               <StepHeader
                 num={3}
                 title="Pick a model"
-                hint="You pay the provider directly. OpenClay adds nothing."
+                hint="Billed by the provider. We add nothing."
                 done={!!modelId}
                 active={!!file && defineReady}
                 aside={
@@ -1222,16 +1213,14 @@ export default function ToolPage() {
                           Live web search
                         </span>
                         <span className="mt-0.5 block text-[11px] leading-snug text-ink-2">
-                          {model.search
-                            ? "Grounds answers in current pages. Billed per search by the provider."
-                            : "This model cannot search the web."}
+                          {model.search ? "Billed per search by the provider." : "Not supported by this model."}
                         </span>
                       </span>
                     </label>
                     {!useWebSearch && model.search && (
                       <div className="mt-2">
                         <Callout tone="warn" icon={<AlertIcon className="h-3.5 w-3.5" />}>
-                          Training data only — results may be out of date.
+                          Training data only — may be out of date.
                         </Callout>
                       </div>
                     )}
@@ -1263,10 +1252,10 @@ export default function ToolPage() {
                     </div>
                     <p className="mt-1 font-mono text-[10px] text-ink-3">
                       {concurrency <= 2
-                        ? "Gentle — safest for new API keys"
+                        ? "Gentle"
                         : concurrency <= 5
                           ? "Balanced"
-                          : "Aggressive — watch for 429s"}
+                          : "Aggressive"}
                     </p>
                   </div>
                 </div>
@@ -1278,7 +1267,7 @@ export default function ToolPage() {
               <StepHeader
                 num={4}
                 title={`Connect your ${providerMeta.company} key`}
-                hint="Held in memory for this tab only. Never stored, logged or sent to our servers."
+                hint="Held in memory only. Never stored or logged."
                 done={keyValid}
                 active={configReady && !keyValid}
               />
@@ -1329,14 +1318,14 @@ export default function ToolPage() {
                       </a>
                       {provider === "gemini" && (
                         <span className="font-mono text-[10px] text-ink-3">
-                          Vertex AI: paste your service-account JSON instead
+                          Vertex AI: paste service-account JSON
                         </span>
                       )}
                     </div>
 
                     <Callout tone="data" icon={<LockIcon className="h-3.5 w-3.5" />}>
-                      Your key goes from this tab to a stateless proxy and straight on to{" "}
-                      {providerMeta.company}. It is never written to disk, a database, a log or a cookie.
+                      Your key passes through a stateless proxy to {providerMeta.company}. Never written
+                      to disk, a database, a log or a cookie.
                     </Callout>
                   </div>
                 ) : (
@@ -1372,7 +1361,7 @@ export default function ToolPage() {
               <StepHeader
                 num={5}
                 title="Test, run, download"
-                hint={`Always test ${TEST_ROW_COUNT} rows first — it also gives you an exact cost per row.`}
+                hint={`Test ${TEST_ROW_COUNT} rows first for an exact cost per row.`}
                 done={fullDone && failed === 0}
                 active={runReady && !fullDone}
               />
@@ -1487,7 +1476,7 @@ export default function ToolPage() {
                       <Stat
                         label="Peak TPM"
                         value={formatTokens(stats.peakTokensPerMinute)}
-                        sub="rate-limit sizing"
+                        sub="for quota sizing"
                         tone="accent"
                       />
                       <Stat
@@ -1593,7 +1582,7 @@ export default function ToolPage() {
                           </Button>
                         </div>
                         <p className="text-center font-mono text-[10px] text-ink-3">
-                          Clearing keeps your file, columns, prompt and key — only the results go.
+                          Keeps your file, columns, prompt and key.
                         </p>
 
                         {fullResults.length > 0 && (
@@ -1610,7 +1599,7 @@ export default function ToolPage() {
                               />
                               {fullResults.length > 100 && (
                                 <p className="mt-1.5 text-center font-mono text-[10px] text-ink-3">
-                                  Showing the first 100 — download for everything.
+                                  First 100 shown.
                                 </p>
                               )}
                             </div>
@@ -1624,8 +1613,7 @@ export default function ToolPage() {
             </Panel>
 
             <p className="px-2 text-center text-[10px] leading-relaxed text-ink-3">
-              OpenClay is provided as-is. AI-generated data can be wrong or out of date — verify anything
-              you act on. We are not responsible for the accuracy or consequences of any output.
+              Provided as-is. AI-generated data can be wrong — verify anything you act on.
             </p>
           </div>
 
@@ -1648,11 +1636,11 @@ export default function ToolPage() {
                 </div>
                 <ul className="space-y-1.5 p-3">
                   {[
-                    "API key lives in memory, never storage",
-                    "Spreadsheets parsed in your browser",
+                    "Key in memory, never storage",
+                    "Files parsed in your browser",
                     "No database, no cookies, no accounts",
-                    "Server logs nothing about your data",
-                    "Open source — read it yourself",
+                    "Server logs nothing",
+                    "Open source",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-1.5 text-[11px] leading-snug text-ink-2">
                       <CheckIcon className="mt-px h-3 w-3 shrink-0 text-data" />
@@ -1664,14 +1652,14 @@ export default function ToolPage() {
 
               <div className="space-y-1 px-1 text-center font-mono text-[10px] text-ink-3">
                 <p>
-                  Pricing verified {PRICING_LAST_UPDATED} ·{" "}
+                  Prices {PRICING_LAST_UPDATED} ·{" "}
                   <a
                     href={providerMeta.pricingUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="underline decoration-line-strong underline-offset-2 hover:text-accent"
                   >
-                    check current rates
+                    official rates
                   </a>
                 </p>
                 <p className="flex items-center justify-center gap-3 pt-1">
@@ -1856,7 +1844,7 @@ function EstimatePanel({
 
       {!estimate ? (
         <p className="p-3 text-[11px] leading-snug text-ink-2">
-          Load a file and describe your enrichment to see what it will cost.
+          Load a file to see costs.
         </p>
       ) : (
         <div className="p-3">
@@ -1912,7 +1900,7 @@ function EstimatePanel({
           )}
           {estimate.searchCostEstimated && useWebSearch && (
             <p className="mt-1.5 text-[10px] leading-snug text-warn">
-              * xAI does not publish a per-search rate. This line is our estimate, not a quoted price.
+              * xAI publishes no per-search rate; this is our estimate.
             </p>
           )}
           {model.pricingNote && (
@@ -1920,8 +1908,7 @@ function EstimatePanel({
           )}
           {!precise && (
             <p className="mt-2 text-[10px] leading-snug text-ink-3">
-              The range is wide because web search injects a variable amount of page content into each
-              prompt. Run the test for an exact figure.
+              Wide because search injects a variable amount of page content. Test for an exact figure.
             </p>
           )}
         </div>

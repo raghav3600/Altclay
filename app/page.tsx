@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import Link from "next/link";
 import { ALL_MODELS, MODELS_BY_PROVIDER, PROVIDER_META, PROVIDER_ORDER, getModel } from "@/lib/pricing";
 import { estimateCostSimple } from "@/lib/costEstimator";
+import { formatUSD, formatUSDRange } from "@/lib/runStats";
 import { FAQJsonLd, FAQ_ITEMS } from "./structured-data";
 import {
   ProviderLogo,
@@ -165,9 +166,7 @@ function CostCalculator() {
               <div className="text-center">
                 <div className="eyebrow">Estimated range</div>
                 <div className="mt-1 font-mono text-3xl font-bold text-ink tnum">
-                  ${estimate.low.totalCost.toFixed(2)}
-                  <span className="text-ink-3">–</span>
-                  {estimate.high.totalCost.toFixed(2)}
+                  {formatUSDRange(estimate.low.totalCost, estimate.high.totalCost)}
                 </div>
                 <div className="mt-1 font-mono text-[10px] text-ink-3 tnum">
                   ${(estimate.low.totalCost / rows).toFixed(4)}–
@@ -183,17 +182,17 @@ function CostCalculator() {
                 <div className="flex justify-between">
                   <dt className="text-ink-3">Input tokens</dt>
                   <dd className="text-ink-2 tnum">
-                    ${estimate.low.inputCost.toFixed(2)}–{estimate.high.inputCost.toFixed(2)}
+                    {formatUSDRange(estimate.low.inputCost, estimate.high.inputCost)}
                   </dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-ink-3">Output tokens</dt>
-                  <dd className="text-ink-2 tnum">${estimate.low.outputCost.toFixed(2)}</dd>
+                  <dd className="text-ink-2 tnum">{formatUSD(estimate.low.outputCost)}</dd>
                 </div>
                 {estimate.low.searchCost >= 0 && (
                   <div className="flex justify-between">
                     <dt className="text-ink-3">Web search</dt>
-                    <dd className="text-ink-2 tnum">${estimate.low.searchCost.toFixed(2)}</dd>
+                    <dd className="text-ink-2 tnum">{formatUSD(estimate.low.searchCost)}</dd>
                   </div>
                 )}
               </dl>
@@ -207,7 +206,7 @@ function CostCalculator() {
                   onClick={() => setModelId(cheapest.model.id)}
                   className="mt-2 text-left text-[10px] leading-snug text-accent underline decoration-accent-line underline-offset-2"
                 >
-                  {cheapest.model.name} would run this for about ${cheapest.total.toFixed(2)} — switch?
+                  {cheapest.model.name} would run this for about {formatUSD(cheapest.total)} — switch?
                 </button>
               )}
 

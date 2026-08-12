@@ -35,6 +35,8 @@ import {
   formatDuration,
   formatFinishTime,
   formatTokens,
+  formatUSD,
+  formatUSDRange,
 } from "@/lib/runStats";
 import { ModelPicker } from "@/app/components/ModelPicker";
 import {
@@ -252,7 +254,15 @@ function detectOutputColumns(description: string): OutputColumn[] {
 
   const parts = cleaned
     .split(/,\s*|\s+and\s+/i)
-    .map((p) => p.replace(/^(the|their|its|a|an)\s+/i, "").trim())
+    // "A, B, and C" splits on the comma first, leaving "and C" — strip the
+    // conjunction before the article, or you get a column called
+    // "and employee count" and a JSON key of `and_employee_count`.
+    .map((p) =>
+      p
+        .replace(/^(and|or|plus|&)\s+/i, "")
+        .replace(/^(the|their|its|a|an)\s+/i, "")
+        .trim()
+    )
     .filter((p) => p.length > 1 && p.length < 60 && !p.includes("."));
 
   return parts
@@ -881,160 +891,237 @@ export default function ToolPage() {
             </Panel>
 
             {/* ---------- 2. Define ---------- */}
+            {/* ---------- 2. Map input to output ---------- */}
             <Panel muted={!file} active={!!file && !defineReady}>
               <StepHeader
                 num={2}
-                title="Describe what to look up"
-                hint="Plain English. OpenClay turns it into a prompt and runs it once per row."
+                title="Set up the enrichment"
+                hint="Say what you need, pick which columns the model reads, name the columns it writes."
                 done={defineReady}
                 active={!!file && !defineReady}
+                aside={
+                  defineReady ? (
+                    <span className="hidden shrink-0 items-center gap-1.5 rounded border border-data-line bg-data-soft px-2 py-1 font-mono text-[10px] text-data sm:inline-flex">
+                      {inputColumns.length} in &rarr; {outputColumns.length} out
+                    </span>
+                  ) : undefined
+                }
               />
 
-              <div className="space-y-5 p-4">
-                {/* Input columns */}
-                <div>
-                  <label className="mb-2 flex items-center text-[11px] font-semibold uppercase tracking-wide text-ink-2">
-                    Columns the model can see
-                    <Tip text="These values are substituted into the prompt for each row. Pick the ones that identify the thing you're researching." />
-                  </label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {(showAllColumns
-                      ? [...smartColumns.recommended, ...smartColumns.other]
-                      : smartColumns.recommended
-                    ).map((col) => {
-                      const on = inputColumns.includes(col);
-                      return (
-                        <button
-                          key={col}
-                          onClick={() =>
-                            setInputColumns((p) =>
-                              p.includes(col) ? p.filter((c) => c !== col) : [...p, col]
-                            )
-                          }
-                          className={`rounded border px-2 py-1 font-mono text-[11px] transition-colors ${
-                            on
-                              ? "border-accent bg-accent text-on-accent"
-                              : "border-line text-ink-2 hover:border-line-strong hover:text-ink"
-                          }`}
-                        >
-                          {col}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {smartColumns.other.length > 0 && (
+              <div className="p-4">
+                {/* --- The instruction. Primary input, so it leads. --- */}
+                <label
+                  htmlFor="what-to-find"
+                  className="mb-2 block text-[11px] font-semibold uppercase tracking-wide text-ink-2"
+                >
+                  What should the model find for each row?
+                </label>
+                <textarea
+                  id="what-to-find"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  onBlur={() => {
+                    if (outputColumns.length === 0 && description.trim()) {
+                      const detected = detectOutputColumns(description);
+                      if (detected.length > 0) setOutputColumns(detected);
+                    }
+                  }}
+                  rows={2}
+                  placeholder="e.g. Find the CEO name, total funding raised, employee count, and a one-line company description"
+                  className="w-full resize-y rounded border border-line bg-surface-2 px-3 py-2.5 text-sm leading-relaxed text-ink placeholder:text-ink-3 focus:border-accent focus:bg-surface focus:outline-none"
+                />
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <span className="eyebrow mr-0.5">Start from</span>
+                  {TEMPLATES.map((t) => (
                     <button
-                      onClick={() => setShowAllColumns((v) => !v)}
-                      className="mt-2 font-mono text-[11px] text-ink-2 underline decoration-line-strong underline-offset-2 hover:text-accent"
+                      key={t.label}
+                      onClick={() => applyTemplate(t)}
+                      className="rounded border border-line px-2 py-1 font-mono text-[10px] text-ink-2 transition-colors hover:border-accent hover:text-accent"
                     >
-                      {showAllColumns
-                        ? "Show suggested only"
-                        : `+ ${smartColumns.other.length} more column${smartColumns.other.length === 1 ? "" : "s"}`}
+                      {t.label}
                     </button>
-                  )}
+                  ))}
                 </div>
 
-                {/* Description */}
-                <div>
-                  <label
-                    htmlFor="what-to-find"
-                    className="mb-2 flex items-center text-[11px] font-semibold uppercase tracking-wide text-ink-2"
+                {/* --- Input -> output mapping.
+                       Laid out as a transform because that is what it is: the
+                       model reads the left column and writes the right one.
+                       Stacking these as two similar-looking boxes was what made
+                       "columns to add" read as another filter rather than the
+                       result. --- */}
+                <div className="mt-5 grid gap-3 border-t border-line pt-5 lg:grid-cols-[1fr_auto_1fr]">
+                  {/* INPUT */}
+                  <section className="rounded border border-line bg-surface-2/60 p-3">
+                    <header className="mb-2.5 flex items-baseline justify-between gap-2">
+                      <span className="flex items-center">
+                        <h3 className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-ink-2">
+                          Input
+                        </h3>
+                        <Tip text="Values from these columns are substituted into the prompt for each row. Pick the ones that identify the thing being researched." />
+                      </span>
+                      <span className="font-mono text-[10px] text-ink-3">
+                        {inputColumns.length} of {file?.columns.length ?? 0} selected
+                      </span>
+                    </header>
+                    <p className="mb-2.5 text-[11px] leading-snug text-ink-3">
+                      Columns the model reads from your file.
+                    </p>
+
+                    {!file ? (
+                      <p className="rounded border border-dashed border-line px-3 py-4 text-center font-mono text-[10px] text-ink-3">
+                        Load a file to choose columns
+                      </p>
+                    ) : (
+                      <>
+                        <div className="flex flex-wrap gap-1.5">
+                          {(showAllColumns
+                            ? [...smartColumns.recommended, ...smartColumns.other]
+                            : smartColumns.recommended
+                          ).map((col) => {
+                            const on = inputColumns.includes(col);
+                            return (
+                              <button
+                                key={col}
+                                onClick={() =>
+                                  setInputColumns((p) =>
+                                    p.includes(col) ? p.filter((c) => c !== col) : [...p, col]
+                                  )
+                                }
+                                aria-pressed={on}
+                                className={`inline-flex items-center gap-1 rounded border px-2 py-1 font-mono text-[11px] transition-colors ${
+                                  on
+                                    ? "border-accent bg-accent text-on-accent"
+                                    : "border-line bg-surface text-ink-2 hover:border-line-strong hover:text-ink"
+                                }`}
+                              >
+                                {on && <CheckIcon className="h-2.5 w-2.5" />}
+                                {col}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {smartColumns.other.length > 0 && (
+                          <button
+                            onClick={() => setShowAllColumns((v) => !v)}
+                            className="mt-2 font-mono text-[10px] text-ink-2 underline decoration-line-strong underline-offset-2 hover:text-accent"
+                          >
+                            {showAllColumns
+                              ? "Show suggested only"
+                              : `+ ${smartColumns.other.length} more column${smartColumns.other.length === 1 ? "" : "s"}`}
+                          </button>
+                        )}
+                        {inputColumns.length === 0 && (
+                          <p className="mt-2 font-mono text-[10px] text-warn">
+                            Select at least one — the model needs something to look up.
+                          </p>
+                        )}
+                      </>
+                    )}
+                  </section>
+
+                  {/* TRANSFORM */}
+                  <div
+                    aria-hidden="true"
+                    className="flex items-center justify-center gap-2 lg:flex-col lg:px-1"
                   >
-                    What should the model find?
-                  </label>
-                  <textarea
-                    id="what-to-find"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    onBlur={() => {
-                      if (outputColumns.length === 0 && description.trim()) {
-                        const detected = detectOutputColumns(description);
-                        if (detected.length > 0) setOutputColumns(detected);
+                    <span className="h-px flex-1 bg-line lg:h-full lg:w-px lg:flex-none" />
+                    <span className="flex shrink-0 items-center gap-1 rounded border border-line bg-surface px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-ink-3">
+                      {useWebSearch ? <GlobeIcon className="h-2.5 w-2.5 text-data" /> : null}
+                      {useWebSearch ? "AI + search" : "AI"}
+                    </span>
+                    <span className="h-px flex-1 bg-line lg:h-full lg:w-px lg:flex-none" />
+                  </div>
+
+                  {/* OUTPUT */}
+                  <section className="rounded border border-data-line bg-data-soft/30 p-3">
+                    <header className="mb-2.5 flex items-baseline justify-between gap-2">
+                      <span className="flex items-center">
+                        <h3 className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-data">
+                          Output
+                        </h3>
+                        <Tip text="One new spreadsheet column per entry. The model is asked to return exactly these keys as JSON." />
+                      </span>
+                      <span className="font-mono text-[10px] text-ink-3">
+                        {outputColumns.length} new column{outputColumns.length === 1 ? "" : "s"}
+                      </span>
+                    </header>
+                    <p className="mb-2.5 text-[11px] leading-snug text-ink-3">
+                      New columns appended to your file.
+                    </p>
+
+                    {outputColumns.length > 0 && (
+                      <ul className="mb-2 flex flex-wrap gap-1.5">
+                        {outputColumns.map((col) => (
+                          <li
+                            key={col.key}
+                            className="inline-flex items-center gap-1.5 rounded border border-data-line bg-surface px-2 py-1 font-mono text-[11px] text-data"
+                          >
+                            {col.label}
+                            <button
+                              onClick={() =>
+                                setOutputColumns((p) => p.filter((c) => c.key !== col.key))
+                              }
+                              aria-label={`Remove ${col.label}`}
+                              className="text-ink-3 transition-colors hover:text-danger"
+                            >
+                              <CloseIcon className="h-3 w-3" />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    <div className="flex gap-1.5">
+                      <input
+                        value={newColumnName}
+                        onChange={(e) => setNewColumnName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            addOutputColumn();
+                          }
+                        }}
+                        placeholder="Add a column, e.g. CEO Name"
+                        className="min-w-0 flex-1 rounded border border-line bg-surface px-2 py-1.5 font-mono text-[11px] text-ink placeholder:text-ink-3 focus:border-accent focus:outline-none"
+                      />
+                      <button
+                        onClick={addOutputColumn}
+                        disabled={!newColumnName.trim()}
+                        aria-label="Add output column"
+                        className="inline-flex items-center gap-1 rounded border border-data-line bg-surface px-2.5 py-1.5 font-mono text-[11px] text-data transition-colors hover:bg-data-soft disabled:opacity-30"
+                      >
+                        <PlusIcon className="h-3 w-3" />
+                        Add
+                      </button>
+                    </div>
+
+                    {outputColumns.length === 0 && (
+                      <p className="mt-2 font-mono text-[10px] text-warn">
+                        Describe your enrichment above and these fill in automatically.
+                      </p>
+                    )}
+                  </section>
+                </div>
+
+                {/* --- Advanced: the raw template --- */}
+                <details className="mt-4 border-t border-line pt-3" open={advancedMode}>
+                  <summary
+                    onClick={(e) => {
+                      e.preventDefault();
+                      const next = !advancedMode;
+                      setAdvancedMode(next);
+                      // Seed with the *template* — placeholders intact. Seeding with a
+                      // preview (row 1's values already substituted) is what made every
+                      // row come back with the first row's data.
+                      if (next && !customTemplate && generatedTemplate) {
+                        setCustomTemplate(generatedTemplate);
                       }
                     }}
-                    rows={3}
-                    placeholder="e.g. Find the CEO name, total funding raised, employee count, and a one-line company description"
-                    className="w-full resize-y rounded border border-line bg-surface-2 px-2.5 py-2 text-sm text-ink placeholder:text-ink-3 focus:border-accent focus:bg-surface focus:outline-none"
-                  />
-                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                    <span className="eyebrow mr-1">Presets</span>
-                    {TEMPLATES.map((t) => (
-                      <button
-                        key={t.label}
-                        onClick={() => applyTemplate(t)}
-                        className="rounded border border-line px-2 py-1 font-mono text-[10px] text-ink-2 transition-colors hover:border-accent hover:text-accent"
-                      >
-                        {t.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Output columns */}
-                <div className="rounded border border-line bg-surface-2 p-3">
-                  <label className="mb-2.5 flex items-center text-[11px] font-semibold uppercase tracking-wide text-ink-2">
-                    <PlusIcon className="mr-1 h-3 w-3 text-data" />
-                    Columns to add
-                    <Tip text="One new spreadsheet column per entry. The model is asked to return exactly these keys as JSON." />
-                  </label>
-
-                  {outputColumns.length > 0 && (
-                    <ul className="mb-2.5 flex flex-wrap gap-1.5">
-                      {outputColumns.map((col) => (
-                        <li
-                          key={col.key}
-                          className="flex items-center gap-1.5 rounded border border-data-line bg-data-soft px-2 py-1 font-mono text-[11px] text-data"
-                        >
-                          {col.label}
-                          <button
-                            onClick={() => setOutputColumns((p) => p.filter((c) => c.key !== col.key))}
-                            aria-label={`Remove ${col.label}`}
-                            className="text-data/60 transition-colors hover:text-danger"
-                          >
-                            <CloseIcon className="h-3 w-3" />
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-
-                  <div className="flex gap-2">
-                    <input
-                      value={newColumnName}
-                      onChange={(e) => setNewColumnName(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          addOutputColumn();
-                        }
-                      }}
-                      placeholder="Column name, e.g. CEO Name"
-                      className="min-w-0 flex-1 rounded border border-line bg-surface px-2.5 py-1.5 font-mono text-[11px] text-ink placeholder:text-ink-3 focus:border-accent focus:outline-none"
-                    />
-                    <Button onClick={addOutputColumn} disabled={!newColumnName.trim()}>
-                      Add
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Advanced template */}
-                <div className="border-t border-line pt-3">
-                  <label className="flex cursor-pointer items-center gap-2 text-xs">
-                    <input
-                      type="checkbox"
-                      checked={advancedMode}
-                      onChange={(e) => {
-                        const on = e.target.checked;
-                        setAdvancedMode(on);
-                        // Seed with the *template* — placeholders intact. Seeding with a
-                        // preview (row 1's values already substituted) is what made every
-                        // row come back with the first row's data.
-                        if (on && !customTemplate && generatedTemplate) setCustomTemplate(generatedTemplate);
-                      }}
-                      className="accent-accent"
-                    />
-                    <span className="font-medium text-ink-2">Edit the prompt template directly</span>
-                  </label>
+                    className="flex cursor-pointer list-none items-center gap-2 font-mono text-[11px] text-ink-2 hover:text-ink"
+                  >
+                    <span className="text-ink-3">{advancedMode ? "\u2212" : "+"}</span>
+                    Edit the raw prompt template
+                  </summary>
 
                   {advancedMode && (
                     <div className="mt-2.5 space-y-2">
@@ -1083,9 +1170,10 @@ export default function ToolPage() {
                       )}
                     </div>
                   )}
-                </div>
+                </details>
               </div>
             </Panel>
+
 
             {/* ---------- 3. Model ---------- */}
             <Panel muted={!file}>
@@ -1429,7 +1517,7 @@ export default function ToolPage() {
                               ? formatDuration(stats.finishedAt - stats.startedAt)
                               : "—"
                           }
-                          sub={`~$${spentSoFar.toFixed(2)} spent`}
+                          sub={`~${formatUSD(spentSoFar)} spent`}
                           tone="data"
                         />
                       )}
@@ -1612,9 +1700,9 @@ export default function ToolPage() {
             </span>
             <span className="shrink-0 font-mono text-sm font-bold text-ink tnum">
               {preciseEstimate
-                ? `~$${estimate.totalCost.toFixed(2)}`
+                ? `~${formatUSD(estimate.totalCost)}`
                 : costRange
-                  ? `$${costRange.low.totalCost.toFixed(2)}–${costRange.high.totalCost.toFixed(2)}`
+                  ? formatUSDRange(costRange.low.totalCost, costRange.high.totalCost)
                   : "—"}
             </span>
           </div>
@@ -1776,9 +1864,9 @@ function EstimatePanel({
             <div className="eyebrow">{precise ? "Projected total" : "Likely range"}</div>
             <div className="mt-1 font-mono text-2xl font-bold text-ink tnum">
               {precise
-                ? `~$${estimate.totalCost.toFixed(2)}`
+                ? `~${formatUSD(estimate.totalCost)}`
                 : range
-                  ? `$${range.low.totalCost.toFixed(2)}–${range.high.totalCost.toFixed(2)}`
+                  ? formatUSDRange(range.low.totalCost, range.high.totalCost)
                   : "—"}
             </div>
             <div className="mt-0.5 font-mono text-[10px] text-ink-3 tnum">
@@ -1789,7 +1877,7 @@ function EstimatePanel({
           {spent !== null && (
             <div className="mt-2 flex items-baseline justify-between rounded border border-accent-line bg-accent-soft px-2.5 py-1.5">
               <span className="eyebrow">Spent so far</span>
-              <span className="font-mono text-sm font-bold text-accent tnum">${spent.toFixed(2)}</span>
+              <span className="font-mono text-sm font-bold text-accent tnum">{formatUSD(spent)}</span>
             </div>
           )}
 
@@ -1806,15 +1894,15 @@ function EstimatePanel({
               label="Input tokens"
               value={
                 precise || !range
-                  ? `$${estimate.inputCost.toFixed(2)}`
-                  : `$${range.low.inputCost.toFixed(2)}–${range.high.inputCost.toFixed(2)}`
+                  ? formatUSD(estimate.inputCost)
+                  : formatUSDRange(range.low.inputCost, range.high.inputCost)
               }
             />
-            <Row label="Output tokens" value={`$${estimate.outputCost.toFixed(2)}`} />
+            <Row label="Output tokens" value={formatUSD(estimate.outputCost)} />
             {useWebSearch && (
               <Row
                 label="Web search"
-                value={`$${estimate.searchCost.toFixed(2)}${estimate.searchCostEstimated ? "*" : ""}`}
+                value={`${formatUSD(estimate.searchCost)}${estimate.searchCostEstimated ? "*" : ""}`}
               />
             )}
           </dl>

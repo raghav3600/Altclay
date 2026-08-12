@@ -112,6 +112,25 @@ export function formatFinishTime(remainingMs: number, now: number = Date.now()):
   });
 }
 
+/**
+ * Money, rounded honestly.
+ *
+ * A run that costs a third of a cent is not "$0.00" — that reads as free and
+ * makes the whole estimator look broken. Sub-cent totals get "<$0.01" instead.
+ */
+export function formatUSD(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) return "$0.00";
+  if (n < 0.01) return "<$0.01";
+  return `$${n.toFixed(2)}`;
+}
+
+/** Collapses to a single figure when both ends round the same way. */
+export function formatUSDRange(low: number, high: number): string {
+  const a = formatUSD(low);
+  const b = formatUSD(high);
+  return a === b ? a : `${a}–${b}`;
+}
+
 /** 12345 -> "12.3k", 1234567 -> "1.23M". Keeps token counts scannable. */
 export function formatTokens(n: number): string {
   if (n < 1_000) return String(n);
